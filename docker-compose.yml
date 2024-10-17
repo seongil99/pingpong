@@ -1,15 +1,23 @@
 services:
   db:
     image: postgres:17
-    ports:
-      - "5432:5432"
+    container_name: db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U postgres'"]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+    ports:
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: always
+    networks:
+      - ft_transcendence
 
   frontend:
     image: frontend:0.0.1
@@ -20,8 +28,11 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
+    networks:
+      - ft_transcendence
 
   backend:
     image: backend:0.0.1
@@ -32,8 +43,11 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
+    networks:
+      - ft_transcendence
 
   load_balancer:
     image: load_balancer:0.0.1
@@ -48,6 +62,11 @@ services:
       - frontend
       - backend
     restart: always
+    networks:
+      - ft_transcendence
 
 volumes:
   db_data:
+
+networks:
+  ft_transcendence:

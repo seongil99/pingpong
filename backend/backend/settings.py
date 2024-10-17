@@ -171,7 +171,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = False  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
+SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
 
 
 # Internationalization
