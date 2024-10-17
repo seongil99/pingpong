@@ -13,3 +13,5 @@
 Vite를 사용해서 개발하는 중이긴 한데
 
 배포할 때는 nginx사용 예정
+
+### docker compose 설정 완료
