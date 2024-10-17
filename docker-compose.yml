@@ -11,5 +11,43 @@ services:
       - db_data:/var/lib/postgresql/data
     restart: always
 
+  frontend:
+    image: frontend:0.0.1
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    restart: always
+
+  backend:
+    image: backend:0.0.1
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: always
+
+  load_balancer:
+    image: load_balancer:0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: load_balancer
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
 volumes:
   db_data:

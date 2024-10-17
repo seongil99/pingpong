@@ -8,13 +8,11 @@ class LoginButton extends HTMLElement {
     this.template();
     this.shadowRoot
       .querySelector("button")
-      .addEventListener("click", () => this.handleLogin());
+      .addEventListener("click", this.handleLogin);
   }
 
   async handleLogin() {
-    const url = "https://api.example.com/login"; // 로그인 API 서버 URL
-    const username = this.getAttribute("username"); // 속성으로 전달받은 사용자 이름
-    const password = this.getAttribute("password"); // 속성으로 전달받은 비밀번호
+    const url = "https://localhost/api/v1/accounts/login/"; // 로그인 API 서버 URL
 
     // POST 요청을 통해 서버에 로그인 요청을 보냄
     try {
@@ -23,9 +21,10 @@ class LoginButton extends HTMLElement {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          username: username,
-          password: password,
+          email: "test@test.com",
+          password: "dkssudgktpdy1234!",
         }),
       });
 
