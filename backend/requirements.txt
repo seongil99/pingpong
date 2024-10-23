@@ -15,5 +15,3 @@ requests==2.32.3
 sqlparse==0.5.1
 typing_extensions==4.12.2
 urllib3==2.2.3
-django-otp==1.5.4
-django-two-factor-auth==1.17.0

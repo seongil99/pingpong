@@ -95,7 +95,11 @@ DATABASES = {
         'PASSWORD': 'postgres',
         'HOST': 'db',
         'PORT': 5432,
-    }
+    },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
 }
 
 
@@ -158,6 +162,10 @@ REST_AUTH = {
     'TOKEN_MODEL': None,
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # 기본 백엔드
+    # 추가적인 백엔드를 여기에 정의할 수 있습니다.
+]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
@@ -168,6 +176,7 @@ CORS_ORIGIN_WHITELIST = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # front-end origin
     "http://localhost:8000",  # back-end origin
+    "http://localhost:3000",  # front-end origin
 ]
 
 SESSION_COOKIE_SAMESITE = 'None'

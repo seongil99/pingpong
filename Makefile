@@ -2,7 +2,7 @@ all:
 	docker compose up -d
 
 dev:
-	docker compose up --build
+	docker compose up --build --force-recreate
 
 re:
 	docker compose down

@@ -1,3 +1,5 @@
+// import { getCSRFToken } from "../Utils/csrf";
+
 class LoginButton extends HTMLElement {
   constructor() {
     super();
@@ -12,6 +14,8 @@ class LoginButton extends HTMLElement {
   }
 
   async handleLogin() {
+    // const csrfToken = getCSRFToken();
+    // console.log("CSRF Token:", csrfToken);
     const url = "https://localhost/api/v1/accounts/login/"; // 로그인 API 서버 URL
 
     // POST 요청을 통해 서버에 로그인 요청을 보냄
@@ -20,11 +24,12 @@ class LoginButton extends HTMLElement {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // 'X-CSRFToken': csrfToken,
         },
         credentials: "include",
         body: JSON.stringify({
           email: "test@test.com",
-          password: "dkssudgktpdy1234!",
+          password: "1234",
         }),
       });
 
