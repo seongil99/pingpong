@@ -29,7 +29,7 @@ class LoginButton extends HTMLElement {
         credentials: "include",
         body: JSON.stringify({
           email: "test@test.com",
-          password: "1234",
+          password: "dkssudgktpdy1234!",
         }),
       });
 
@@ -40,6 +40,9 @@ class LoginButton extends HTMLElement {
       const data = await response.json();
       console.log("Login successful:", data);
       alert("Login successful!");
+      // updateNavBarLogin();
+      window.location.href = "/"; // 로그인 성공 시 홈
+
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed!");
@@ -68,6 +71,15 @@ class LoginButton extends HTMLElement {
       <button>Login</button>
     `;
   }
+}
+
+function updateNavBarLogin() {
+  const navProfile = document.querySelector(".nav-profile");
+  const navLogin = document.querySelector(".nav-login");
+  const navRegister = document.querySelector(".nav-register");
+  navProfile.style.display = "block";
+  navLogin.style.display = "none";
+  navRegister.style.display = "none";
 }
 
 customElements.define("login-button", LoginButton);

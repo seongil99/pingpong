@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -154,7 +153,16 @@ REST_FRAMEWORK = {
 
 REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+    
 }
+
+# Set SameSite to 'None' (for cross-origin requests) or 'Lax'/'Strict' as needed
+JWT_AUTH_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-origin requests
+JWT_AUTH_REFRESH_COOKIE_SAMESITE = 'None'  # Same for refresh token
+
+# Ensure the cookie is secure (for HTTPS) if SameSite=None is used
+JWT_AUTH_COOKIE_SECURE = True  # True if using HTTPS, False for local development over HTTP
+JWT_AUTH_REFRESH_COOKIE_SECURE = True  # Same for refresh token
 
 REST_AUTH = {
     'USE_JWT': True,
@@ -162,6 +170,8 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'ft_transcendence-app-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
     'TOKEN_MODEL': None,
+    'USER_DETAILS_SERIALIZER': 'accounts.serializers.CustomUserDetailsSerializer',
+    'REGISTER_SERIALIZER': 'accounts.serializers.CustomRegisterSerializer',
 }
 
 AUTHENTICATION_BACKENDS = [
