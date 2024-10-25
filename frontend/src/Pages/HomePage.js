@@ -65,6 +65,7 @@ class HomePage {
           "X-CSRFToken": csrftoken, // CSRF 토큰을 헤더에 포함
         });
         const data = await response.json();
+        window.location.href = "/login";
         return data;
       } catch (error) {
         console.error("Error:", error);
