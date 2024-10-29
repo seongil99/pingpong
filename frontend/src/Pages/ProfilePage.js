@@ -2,7 +2,7 @@ import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
 
 class LoginPage {
-  template() {
+  async template() {
 
     const navBar = document.createElement("div");
     navBar.innerHTML = NavBar;
@@ -55,7 +55,7 @@ class LoginPage {
     // // DOM에 요소 추가
     
     
-    const userData = fetchUserProfile();
+    const userData = await fetchUserProfile();
     displayProfile(userData);
     if (!userData.mfa_enabled) {
         const enableMfaButton = document.createElement('button');
@@ -72,7 +72,6 @@ async function fetchUserProfile() {
         if (!response.ok) throw new Error('Network response was not ok');
         
         const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
-        console.log('User data:', userData);
         // Populate the profile info
         
         return userData;
@@ -82,6 +81,9 @@ async function fetchUserProfile() {
 }
 
 function displayProfile(userData) {
+    // console.log(`email: ${userData.email}`);
+    // console.log(`first_name: ${userData.first_name}`);
+    // console.log(`last_name: ${userData.last_name}`);
     document.getElementById('email').querySelector('span').textContent = userData.email;
 
     const firstName = document.getElementById('first-name').querySelector('span');
@@ -100,7 +102,7 @@ function displayProfile(userData) {
 }
 
 function generate2fa() {
-    if 
+    
 }
 
 export default new LoginPage();
