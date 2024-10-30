@@ -1,5 +1,6 @@
 import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
+import { qrcodeImage } from "../Components/mfaQRcode.js"
 
 class LoginPage {
   async template() {
@@ -57,8 +58,11 @@ class LoginPage {
     
     const userData = await fetchUserProfile();
     displayProfile(userData);
+
     if (!userData.mfa_enabled) {
         const enableMfaButton = document.createElement('button');
+    } else {
+        document.createElement('div');
     }
 
 

@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from rest_framework_simplejwt.views import TokenVerifyView
 from .models import User
 
 import pyotp
