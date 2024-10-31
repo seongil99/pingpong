@@ -15,6 +15,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -48,7 +49,6 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -95,11 +95,7 @@ DATABASES = {
         'PASSWORD': 'postgres',
         'HOST': 'db',
         'PORT': 5432,
-    },
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
+    }
 }
 
 
@@ -147,23 +143,12 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
-    
 }
-
-# Set SameSite to 'None' (for cross-origin requests) or 'Lax'/'Strict' as needed
-JWT_AUTH_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-origin requests
-JWT_AUTH_REFRESH_COOKIE_SAMESITE = 'None'  # Same for refresh token
-
-# Ensure the cookie is secure (for HTTPS) if SameSite=None is used
-JWT_AUTH_COOKIE_SECURE = True  # True if using HTTPS, False for local development over HTTP
-JWT_AUTH_REFRESH_COOKIE_SECURE = True  # Same for refresh token
 
 REST_AUTH = {
     'USE_JWT': True,
@@ -171,14 +156,8 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'ft_transcendence-app-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
     'TOKEN_MODEL': None,
-    'USER_DETAILS_SERIALIZER': 'accounts.serializers.CustomUserDetailsSerializer',
-    'REGISTER_SERIALIZER': 'accounts.serializers.CustomRegisterSerializer',
 }
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # 기본 백엔드
-    # 추가적인 백엔드를 여기에 정의할 수 있습니다.
-]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
@@ -189,7 +168,6 @@ CORS_ORIGIN_WHITELIST = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # front-end origin
     "http://localhost:8000",  # back-end origin
-    "http://localhost:3000",  # front-end origin
 ]
 
 SESSION_COOKIE_SAMESITE = 'None'
@@ -217,9 +195,3 @@ STATIC_URL = 'api/static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your Project API',
-    'DESCRIPTION': 'Your project description',
-    'VERSION': '1.0.0',
-}

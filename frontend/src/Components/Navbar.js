@@ -10,14 +10,13 @@ const NavBar = `
           <li class="nav-item">
             <a class="nav-link active navigate" path="/" aria-current="page" href="/">Home</a>
           </li>
-          <li class="nav-item nav-profile">
-            <button class="nav-link navigate" path="/profile">Profile</button>
+          <li class="nav-item">
+            <button class="nav-link navigate" path="/login">Login</button>
           </li>
         </ul>
       </div>
     </div>
   </nav>
   `;
-
 
 export default NavBar;
