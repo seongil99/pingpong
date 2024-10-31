@@ -240,4 +240,20 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Your Project API',
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
+    'APPEND_PATHS': {
+        '/api/v1/accounts/oauth2/fortytwo/login/': {
+            'post': {
+                'operationId': 'fortytwo_oauth2_login',
+                'description': '42 OAuth2 로그인 엔드포인트입니다.'
+                               '42 OAuth2 인증 URL로 리다이렉트합니다.'
+                               'csrf token이 필요합니다.',
+                'tags': ['Authentication'],
+                'responses': {
+                    '302': {
+                        'description': 'Redirects to the 42 OAuth2 authorization URL.',
+                    },
+                },
+            },
+        },
+    },
 }
