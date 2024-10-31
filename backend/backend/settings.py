@@ -183,16 +183,35 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:5173",
     "http://localhost:8000",
+    'https://localhost',
+    'https://127.0.0.1',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # front-end origin
     "http://localhost:8000",  # back-end origin
     "http://localhost:3000",  # front-end origin
+    'https://localhost',
+    'https://127.0.0.1',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost',
+    'https://127.0.0.1',
 ]
 
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
+
+SOCIALACCOUNT_PROVIDERS = {
+    'fortytwo': {
+        'APP': {
+            'client_id': 'u-s4t2ud-80c35252b5c6defa03f294f295f7bc83623a37a929b5ade66bed0dbafce4f667',
+            'secret': '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',
+            'key': ''
+        }
+    }
+}
 
 
 # Internationalization
