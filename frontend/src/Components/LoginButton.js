@@ -38,9 +38,13 @@ class LoginButton extends HTMLElement {
       }
 
       const data = await response.json();
-      console.log("Login successful:", data);
-      alert("Login successful!");
       // updateNavBarLogin();
+      console.dir(response);
+      console.dir(data);
+      if (data.is_2fa_required) {
+        window.location.href = "/mfa-verify"; // 2FA 활성화 시 2FA 페이지로 이동
+        return;
+      }
       window.location.href = "/"; // 로그인 성공 시 홈
 
     } catch (error) {

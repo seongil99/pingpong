@@ -1,6 +1,9 @@
 import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
-import { qrcodeImage } from "../Components/mfaQRcode.js"
+import mfaQRcode from "../Components/MfaQRcode.js";
+import mfaForm from "../Components/MfaForm.js";
+import createFormComponent from "../Components/MfaForm.js";
+import DisableMFAbutton from "../Components/DiableMFAbutton.js";
 
 class LoginPage {
   async template() {
@@ -36,33 +39,24 @@ class LoginPage {
 
     document.getElementById('app').innerHTML = ''; // Clear previous content
     document.getElementById('app').appendChild(container); // Append the profile page
-
-    // Add event listeners for the buttons
-    // document.getElementById('edit-profile').addEventListener('click', showEditForm);
-    // document.getElementById('save-changes').addEventListener('click', saveChanges);
-    // document.getElementById('cancel-edit').addEventListener('click', cancelEdit);
-    // 컨테이너 div 생성
-    // const container = document.createElement("div");
-    // container.classList.add("login-container");
-
-
-    // // 제목 추가
-    // title.textContent = "Profile Page";
-
-    
-
-    // // 로그인 버튼 생성
-
-    // // DOM에 요소 추가
-    
     
     const userData = await fetchUserProfile();
     displayProfile(userData);
 
     if (!userData.mfa_enabled) {
-        const enableMfaButton = document.createElement('button');
+        const mfaEnableTitle = document.createElement('h2');
+        mfaEnableTitle.textContent = 'Enable MFA';
+        const mfaQRcode = document.createElement('mfa-qr-display');
+        container.appendChild(mfaEnableTitle);
+        container.appendChild(mfaQRcode);
+        const mfaForm = createFormComponent();
+        container.appendChild(mfaForm);
     } else {
-        document.createElement('div');
+        const mfaDisableTitle = document.createElement('h2');
+        const mfaDisableButton = document.createElement('disable-mfa-button');
+        mfaDisableTitle.textContent = 'Disable MFA';
+        container.appendChild(mfaDisableTitle);
+        container.appendChild(mfaDisableButton);
     }
 
 
@@ -103,10 +97,6 @@ function displayProfile(userData) {
     } else {
         lastName.textContent = userData.last_name;
     }
-}
-
-function generate2fa() {
-    
 }
 
 export default new LoginPage();

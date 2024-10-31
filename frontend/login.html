@@ -64,7 +64,7 @@
 </head>
 
 <body>
-    <script src="src/loginRedirect.js"></script>
+    <!-- <script src="src/loginRedirect.js"></script> -->
     <div class="login-container">
         <h2>Login</h2>
         <form id="login-form">
@@ -84,7 +84,7 @@
             const messageDiv = document.getElementById('login-message');
 
             try {
-                const response = await fetch("/api/v1/accounts/login/", {
+                const response = await fetch("/api/v1/accounts/custom_login/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -103,7 +103,13 @@
                     // localStorage.setItem('username', username);
 
                     // Redirect to the main application
-                    window.location.href = '/'; // Change this to your main app's URL
+                    console.dir(response);
+                    console.dir(data);
+                    if (data.mfa_enabled) {
+                        window.location.href = "/mfa-verify";
+                        return ;
+                    }
+                    window.location.href = "/"; // 로그인 성공 시 홈
                 } else {
                     const errorData = await response.json();
                     messageDiv.textContent = errorData.message || 'Login failed. Please try again.';
@@ -113,6 +119,7 @@
                 messageDiv.textContent = 'An error occurred. Please try again later.';
             }
         });
+
     </script>
 
 </body>
