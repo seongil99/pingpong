@@ -1,5 +1,3 @@
-// import { getCSRFToken } from "../Utils/csrf";
-
 class LoginButton extends HTMLElement {
   constructor() {
     super();
@@ -14,8 +12,6 @@ class LoginButton extends HTMLElement {
   }
 
   async handleLogin() {
-    // const csrfToken = getCSRFToken();
-    // console.log("CSRF Token:", csrfToken);
     const url = "https://localhost/api/v1/accounts/login/"; // 로그인 API 서버 URL
 
     // POST 요청을 통해 서버에 로그인 요청을 보냄
@@ -24,7 +20,6 @@ class LoginButton extends HTMLElement {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // 'X-CSRFToken': csrfToken,
         },
         credentials: "include",
         body: JSON.stringify({
@@ -38,15 +33,8 @@ class LoginButton extends HTMLElement {
       }
 
       const data = await response.json();
-      // updateNavBarLogin();
-      console.dir(response);
-      console.dir(data);
-      if (data.is_2fa_required) {
-        window.location.href = "/mfa-verify"; // 2FA 활성화 시 2FA 페이지로 이동
-        return;
-      }
-      window.location.href = "/"; // 로그인 성공 시 홈
-
+      console.log("Login successful:", data);
+      alert("Login successful!");
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed!");
@@ -75,15 +63,6 @@ class LoginButton extends HTMLElement {
       <button>Login</button>
     `;
   }
-}
-
-function updateNavBarLogin() {
-  const navProfile = document.querySelector(".nav-profile");
-  const navLogin = document.querySelector(".nav-login");
-  const navRegister = document.querySelector(".nav-register");
-  navProfile.style.display = "block";
-  navLogin.style.display = "none";
-  navRegister.style.display = "none";
 }
 
 customElements.define("login-button", LoginButton);
