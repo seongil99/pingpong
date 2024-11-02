@@ -1,8 +1,12 @@
 import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
+import mfaQRcode from "../Components/MfaQRcode.js";
+import mfaForm from "../Components/MfaForm.js";
+import createFormComponent from "../Components/MfaForm.js";
+import DisableMFAbutton from "../Components/DiableMFAbutton.js";
 
 class LoginPage {
-  template() {
+  async template() {
 
     const navBar = document.createElement("div");
     navBar.innerHTML = NavBar;
@@ -35,30 +39,24 @@ class LoginPage {
 
     document.getElementById('app').innerHTML = ''; // Clear previous content
     document.getElementById('app').appendChild(container); // Append the profile page
-
-    // Add event listeners for the buttons
-    // document.getElementById('edit-profile').addEventListener('click', showEditForm);
-    // document.getElementById('save-changes').addEventListener('click', saveChanges);
-    // document.getElementById('cancel-edit').addEventListener('click', cancelEdit);
-    // 컨테이너 div 생성
-    // const container = document.createElement("div");
-    // container.classList.add("login-container");
-
-
-    // // 제목 추가
-    // title.textContent = "Profile Page";
-
     
-
-    // // 로그인 버튼 생성
-
-    // // DOM에 요소 추가
-    
-    
-    const userData = fetchUserProfile();
+    const userData = await fetchUserProfile();
     displayProfile(userData);
+
     if (!userData.mfa_enabled) {
-        const enableMfaButton = document.createElement('button');
+        const mfaEnableTitle = document.createElement('h2');
+        mfaEnableTitle.textContent = 'Enable MFA';
+        const mfaQRcode = document.createElement('mfa-qr-display');
+        container.appendChild(mfaEnableTitle);
+        container.appendChild(mfaQRcode);
+        const mfaForm = createFormComponent();
+        container.appendChild(mfaForm);
+    } else {
+        const mfaDisableTitle = document.createElement('h2');
+        const mfaDisableButton = document.createElement('disable-mfa-button');
+        mfaDisableTitle.textContent = 'Disable MFA';
+        container.appendChild(mfaDisableTitle);
+        container.appendChild(mfaDisableButton);
     }
 
 
@@ -72,7 +70,6 @@ async function fetchUserProfile() {
         if (!response.ok) throw new Error('Network response was not ok');
         
         const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
-        console.log('User data:', userData);
         // Populate the profile info
         
         return userData;
@@ -82,6 +79,9 @@ async function fetchUserProfile() {
 }
 
 function displayProfile(userData) {
+    // console.log(`email: ${userData.email}`);
+    // console.log(`first_name: ${userData.first_name}`);
+    // console.log(`last_name: ${userData.last_name}`);
     document.getElementById('email').querySelector('span').textContent = userData.email;
 
     const firstName = document.getElementById('first-name').querySelector('span');
@@ -97,10 +97,6 @@ function displayProfile(userData) {
     } else {
         lastName.textContent = userData.last_name;
     }
-}
-
-function generate2fa() {
-    if 
 }
 
 export default new LoginPage();

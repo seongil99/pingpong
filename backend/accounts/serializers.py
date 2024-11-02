@@ -12,7 +12,6 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
     # bio = serializers.CharField(source='profile.bio', read_only=True)
     # Add any additional fields you want here
 
-    mfa_enabled = serializers.SerializerMethodField()
     class Meta(UserDetailsSerializer.Meta):
         model = User
         fields = [
@@ -21,13 +20,8 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
             'last_name',
             'email',
             'is_verified',
-            'otp_required',
             'mfa_enabled',
         ]  # Include new fields
-    
-    @extend_schema_field(OpenApiTypes.BOOL)
-    def get_mfa_enabled(self, obj):
-        return bool(obj.mfa_secret)
     
 class CustomRegisterSerializer(RegisterSerializer):
     # Add custom fields

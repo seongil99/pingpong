@@ -10,7 +10,8 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     is_verified = models.BooleanField(default=False)
     mfa_secret = models.CharField(max_length=255, blank=True, null=True)
-    otp_required = models.BooleanField(default=False)
+    mfa_enabled = models.BooleanField(default=False)
+    is_2fa_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
