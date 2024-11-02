@@ -6,13 +6,11 @@ from rest_framework.decorators import (
     api_view,
     permission_classes,
     )
-from rest_framework_simplejwt.views import TokenVerifyView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from dj_rest_auth.jwt_auth import JWTCookieAuthentication
 from dj_rest_auth.views import LoginView
 from drf_spectacular.utils import extend_schema
-import logging
 from allauth.socialaccount.providers.oauth2.views import OAuth2LoginView, OAuth2CallbackView
 from .adapter import FortyTwoAdapter
 from django.conf import settings
@@ -21,14 +19,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.error import Error
 from accounts.detail import Detail
 from datetime import timedelta
-from accounts.serializers import CustomUserDetailsSerializer
-from django.utils.module_loading import import_string
 from .models import User
 
 import pyotp
 import qrcode
-import io
-import logging
 
 
 @extend_schema(tags=['accounts'])

@@ -3,19 +3,11 @@ from accounts.provider import FortyTwoProvider
 from allauth.socialaccount.providers.oauth2.urls import default_urlpatterns
 from accounts.views import (
     HelloView,
-    get_user_otp_qrcode,
-    CustomTokenVerifyView,
     mfaStatus,
     verifyMFAview,
     CustomLoginView
 )
-from rest_framework_simplejwt.views import (
-    TokenBlacklistView,
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
-from .views import get_user_otp_qrcode, CustomTokenVerifyView, verify_2fa_otp
+from .views import get_user_otp_qrcode, CustomTokenVerifyView
 
 
 urlpatterns = [
