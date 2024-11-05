@@ -23,6 +23,9 @@ from .models import User
 
 import pyotp
 import qrcode
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=['accounts'])
@@ -156,7 +159,7 @@ def verify_2fa_otp(user, otp):
     if totp.verify(otp):
         if user.mfa_enabled:
             return True
-        user.mfa_enabled = True;
+        user.mfa_enabled = True
         user.save()
         return True
     return False
@@ -184,7 +187,7 @@ class CustomLoginView(LoginView):
             )
             return response
         else:
-            super().get_response()
+            return super().get_response()
             
     def get_user_from_serializer(self, data):
         serializer = self.get_serializer(data=data)
@@ -192,6 +195,57 @@ class CustomLoginView(LoginView):
             return serializer.validated_data['user']
         return None
 
+import requests
+import urllib
+from django.shortcuts import redirect
+
+def set_cookie(response):
+    acces_token = response.data['access_token']
+    refresh = response.data['refresh_token']
+    response.set_cookie(
+        key=settings.REST_AUTH['JWT_AUTH_COOKIE'], 
+        value=access_token, 
+        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
+        samesite=settings.JWT_AUTH_COOKIE_SAMESITE
+    )
+    response.set_cookie(
+        key=settings.REST_AUTH['JWT_AUTH_REFRESH_COOKIE'], 
+        value=str(refresh), 
+        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        secure=settings.JWT_AUTH_REFRESH_COOKIE_SECURE, 
+        samesite=settings.JWT_AUTH_REFRESH_COOKIE_SAMESITE
+    )
+
+@api_view(['GET'])
+def callback(request):
+    code = request.GET.get('code')
+    # decoded_code = urllib.parse.unquote(code)
+    # response = redirect('/')
+    response = requests.post('http://backend:8000/api/v1/accounts/test/', data={'code': code})
+    response_data = response.json()
+    logger.info(f"Response: {response.json()}")
+    return_response = redirect('/')
+    
+    return_response.set_cookie(
+        key=settings.REST_AUTH['JWT_AUTH_COOKIE'], 
+        value=response_data.get('access'), 
+        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
+        samesite=settings.JWT_AUTH_COOKIE_SAMESITE
+    )
+    
+    
+    return return_response
+
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+
+class Test(SocialLoginView):
+    adapter_class = FortyTwoAdapter
+    client_class = OAuth2Client
+    callback_url = 'http://localhost/api/v1/accounts/callback/'
+    
 
 oauth2_login = OAuth2LoginView.adapter_view(FortyTwoAdapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(FortyTwoAdapter)
