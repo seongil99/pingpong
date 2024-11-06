@@ -7,6 +7,7 @@ from accounts.views import (
     verifyMFAview,
     CustomLoginView,
     Test,
+    FortyTwoLogin,
 )
 from .views import get_user_otp_qrcode, CustomTokenVerifyView
 
