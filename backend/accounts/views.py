@@ -1,3 +1,5 @@
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -195,3 +197,9 @@ class CustomLoginView(LoginView):
 
 oauth2_login = OAuth2LoginView.adapter_view(FortyTwoAdapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(FortyTwoAdapter)
+
+
+class FortyTwoLogin(SocialLoginView): # if you want to use Authorization Code Grant, use this
+    adapter_class = FortyTwoAdapter
+    callback_url = "http://localhost/api/v1/accounts/oauth2/fortytwo/login/callback/"
+    client_class = OAuth2Client
