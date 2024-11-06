@@ -25,6 +25,9 @@ from .models import User
 
 import pyotp
 import qrcode
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=['accounts'])
@@ -158,7 +161,7 @@ def verify_2fa_otp(user, otp):
     if totp.verify(otp):
         if user.mfa_enabled:
             return True
-        user.mfa_enabled = True;
+        user.mfa_enabled = True
         user.save()
         return True
     return False
@@ -186,7 +189,7 @@ class CustomLoginView(LoginView):
             )
             return response
         else:
-            super().get_response()
+            return super().get_response()
             
     def get_user_from_serializer(self, data):
         serializer = self.get_serializer(data=data)
@@ -194,6 +197,18 @@ class CustomLoginView(LoginView):
             return serializer.validated_data['user']
         return None
 
+import requests
+import urllib
+from django.shortcuts import redirect
+
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+
+class Test(SocialLoginView):
+    adapter_class = FortyTwoAdapter
+    client_class = OAuth2Client
+    callback_url = 'http://localhost/api/v1/accounts/callback/'
+    
 
 oauth2_login = OAuth2LoginView.adapter_view(FortyTwoAdapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(FortyTwoAdapter)

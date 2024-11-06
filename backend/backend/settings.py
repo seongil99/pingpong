@@ -11,7 +11,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+import environ
 
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+# Take environment variables from .env file
+environ.Env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,7 +32,7 @@ SECRET_KEY = 'django-insecure-@e^i8h4!7nvuw(p5=$mvf!j0jali=twlh4*^%=0a82kz+o-p9a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -164,6 +172,7 @@ JWT_AUTH_REFRESH_COOKIE_SAMESITE = 'None'  # Same for refresh token
 JWT_AUTH_COOKIE_SECURE = True  # True if using HTTPS, False for local development over HTTP
 JWT_AUTH_REFRESH_COOKIE_SECURE = True  # Same for refresh token
 
+REST_USE_JWT = True
 REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'ft_transcendence-app-auth',
@@ -206,13 +215,38 @@ SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에�
 SOCIALACCOUNT_PROVIDERS = {
     'fortytwo': {
         'APP': {
-            'client_id': 'u-s4t2ud-80c35252b5c6defa03f294f295f7bc83623a37a929b5ade66bed0dbafce4f667',
-            'secret': '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',
+            'client_id': env('MINSEPAR_CLIENT_ID'),
+            'secret': env('MINSEPAR_SECRET'),
             'key': ''
         }
-    }
+    },
 }
 
+# SOCIALACCOUNT_ADAPTER = 'accounts.adapter.FortyTwoAdapter'
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'fortytwo': {
+#         'APP': {
+#             'SCOPE': ['public'],  # Define the scopes needed (if applicable)
+#             'AUTH_PARAMS': {},
+#             'OAUTH2_ACCESS_TOKEN_URL': 'https://api.intra.42.fr/oauth/token',
+#             'OAUTH2_AUTHORIZE_URL': 'https://api.intra.42.fr/oauth/authorize',
+#             'OAUTH2_PROFILE_URL': 'https://api.intra.42.fr/v2/me',
+#             'OAUTH2_CLIENT_ID': 'u-s4t2ud-f3c794a53848db3b102519cb5cd7123e14dae487ccdb02741f5ef3b8781504ef',
+#             'OAUTH2_CLIENT_SECRET': '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',
+#         }
+#     }
+# }
+        # 'SCOPE': ['profile', 'email'],  # Define the scopes needed (if applicable)
+
+        # 'OAUTH2_ACCESS_TOKEN_URL': 'https://api.intra.42.fr/oauth/token',
+        # 'OAUTH2_AUTHORIZE_URL': 'https://api.intra.42.fr/oauth/authorize',
+        # 'OAUTH2_PROFILE_URL': 'https://api.intra.42.fr/v2/me',
+        # 'OAUTH2_CLIENT_ID': '<your-client-id>',
+        # 'OAUTH2_CLIENT_SECRET': '<your-client-secret>',
+
+# ACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -254,6 +288,60 @@ SPECTACULAR_SETTINGS = {
                     },
                 },
             },
+        },
+    },
+}
+
+#logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # Disable existing loggers set by Django
+
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Set the log level for this handler
+            'class': 'logging.StreamHandler',  # Output to the console
+            'formatter': 'simple',  # Use the simple formatter
+        },
+        'file': {
+            'level': 'ERROR',  # Log error messages and above to file
+            'class': 'logging.FileHandler',  # Write logs to a file
+            'filename': 'django_errors.log',  # Log file location
+            'formatter': 'verbose',  # Use the verbose formatter
+        },
+    },
+
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],  # Use both console and file handlers
+            'level': 'INFO',  # Log messages of level INFO and above
+            'propagate': True,  # Propagate messages to higher level loggers
+        },
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',  # Only log errors in request processing
+            'propagate': False,  # Don't propagate to the 'django' logger
+        },
+        'django.security': {
+            'handlers': ['file'],
+            'level': 'WARNING',  # Log warnings related to security
+            'propagate': False,  # Don't propagate to the 'django' logger
+        },
+        'accounts': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # You can adjust the log level for specific apps
+            'propagate': False,
         },
     },
 }

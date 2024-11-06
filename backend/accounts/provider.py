@@ -1,5 +1,5 @@
 from allauth.socialaccount.providers.oauth2.provider import OAuth2Provider
-from .adapter import FortyTwoAdapter
+# from .adapter import FortyTwoAdapter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class FortyTwoProvider(OAuth2Provider):
     id = "fortytwo"
     name = "42 OAuth"
-    oauth2_adapter_class = FortyTwoAdapter
+    # oauth2_adapter_class = FortyTwoAdapter
 
     package = 'allauth.socialaccount.providers.oauth2'
 
