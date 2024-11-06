@@ -199,26 +199,6 @@ import requests
 import urllib
 from django.shortcuts import redirect
 
-def set_cookie(response, return_response):
-    access_token = response.data['access']
-    refresh = response.data['refresh']
-    return_response.set_cookie(
-        key=settings.REST_AUTH['JWT_AUTH_COOKIE'], 
-        value=access_token, 
-        # httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
-        httponly=True,
-        secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
-        samesite=settings.JWT_AUTH_COOKIE_SAMESITE
-    )
-    return_response.set_cookie(
-        key=settings.REST_AUTH['JWT_AUTH_REFRESH_COOKIE'], 
-        value=str(refresh), 
-        # httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'],
-        httponly=True, 
-        secure=settings.JWT_AUTH_REFRESH_COOKIE_SECURE, 
-        samesite=settings.JWT_AUTH_REFRESH_COOKIE_SAMESITE
-    )
-
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 
