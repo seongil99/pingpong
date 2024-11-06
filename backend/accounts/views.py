@@ -204,17 +204,10 @@ from django.shortcuts import redirect
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 
-class Test(SocialLoginView):
-    adapter_class = FortyTwoAdapter
-    client_class = OAuth2Client
-    callback_url = 'http://localhost/api/v1/accounts/callback/'
-    
-
 oauth2_login = OAuth2LoginView.adapter_view(FortyTwoAdapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(FortyTwoAdapter)
 
-
 class FortyTwoLogin(SocialLoginView): # if you want to use Authorization Code Grant, use this
     adapter_class = FortyTwoAdapter
-    callback_url = "http://localhost/api/v1/accounts/oauth2/fortytwo/login/callback/"
+    callback_url = "https://localhost/oauth2/redirect"
     client_class = OAuth2Client
