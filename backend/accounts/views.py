@@ -199,44 +199,25 @@ import requests
 import urllib
 from django.shortcuts import redirect
 
-def set_cookie(response):
-    acces_token = response.data['access_token']
-    refresh = response.data['refresh_token']
-    response.set_cookie(
+def set_cookie(response, return_response):
+    access_token = response.data['access']
+    refresh = response.data['refresh']
+    return_response.set_cookie(
         key=settings.REST_AUTH['JWT_AUTH_COOKIE'], 
         value=access_token, 
-        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        # httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        httponly=True,
         secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
         samesite=settings.JWT_AUTH_COOKIE_SAMESITE
     )
-    response.set_cookie(
+    return_response.set_cookie(
         key=settings.REST_AUTH['JWT_AUTH_REFRESH_COOKIE'], 
         value=str(refresh), 
-        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
+        # httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'],
+        httponly=True, 
         secure=settings.JWT_AUTH_REFRESH_COOKIE_SECURE, 
         samesite=settings.JWT_AUTH_REFRESH_COOKIE_SAMESITE
     )
-
-@api_view(['GET'])
-def callback(request):
-    code = request.GET.get('code')
-    # decoded_code = urllib.parse.unquote(code)
-    # response = redirect('/')
-    response = requests.post('http://backend:8000/api/v1/accounts/test/', data={'code': code})
-    response_data = response.json()
-    logger.info(f"Response: {response.json()}")
-    return_response = redirect('/')
-    
-    return_response.set_cookie(
-        key=settings.REST_AUTH['JWT_AUTH_COOKIE'], 
-        value=response_data.get('access'), 
-        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'], 
-        secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
-        samesite=settings.JWT_AUTH_COOKIE_SAMESITE
-    )
-    
-    
-    return return_response
 
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client

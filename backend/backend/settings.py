@@ -11,7 +11,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+import environ
 
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+# Take environment variables from .env file
+environ.Env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -208,8 +216,8 @@ SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에�
 SOCIALACCOUNT_PROVIDERS = {
     'fortytwo': {
         'APP': {
-            'client_id': '',
-            'secret': '',
+            'client_id': env('MINSEPAR_CLIENT_ID'),
+            'secret': env('MINSEPAR_SECRET'),
             'key': ''
         }
     },
