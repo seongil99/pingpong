@@ -18,10 +18,10 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Take environment variables from .env file
-environ.Env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Take environment variables from .env file
+environ.Env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -222,30 +222,6 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-# SOCIALACCOUNT_ADAPTER = 'accounts.adapter.FortyTwoAdapter'
-
-# SOCIALACCOUNT_PROVIDERS = {
-#     'fortytwo': {
-#         'APP': {
-#             'SCOPE': ['public'],  # Define the scopes needed (if applicable)
-#             'AUTH_PARAMS': {},
-#             'OAUTH2_ACCESS_TOKEN_URL': 'https://api.intra.42.fr/oauth/token',
-#             'OAUTH2_AUTHORIZE_URL': 'https://api.intra.42.fr/oauth/authorize',
-#             'OAUTH2_PROFILE_URL': 'https://api.intra.42.fr/v2/me',
-#             'OAUTH2_CLIENT_ID': 'u-s4t2ud-f3c794a53848db3b102519cb5cd7123e14dae487ccdb02741f5ef3b8781504ef',
-#             'OAUTH2_CLIENT_SECRET': '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',
-#         }
-#     }
-# }
-        # 'SCOPE': ['profile', 'email'],  # Define the scopes needed (if applicable)
-
-        # 'OAUTH2_ACCESS_TOKEN_URL': 'https://api.intra.42.fr/oauth/token',
-        # 'OAUTH2_AUTHORIZE_URL': 'https://api.intra.42.fr/oauth/authorize',
-        # 'OAUTH2_PROFILE_URL': 'https://api.intra.42.fr/v2/me',
-        # 'OAUTH2_CLIENT_ID': '<your-client-id>',
-        # 'OAUTH2_CLIENT_SECRET': '<your-client-secret>',
-
-# ACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
 
 # Internationalization
@@ -275,16 +251,30 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
     'APPEND_PATHS': {
-        '/api/v1/accounts/oauth2/fortytwo/login/': {
+        '/api/v1/accounts/oauth2/fortytwo/login/callback/': {
             'post': {
                 'operationId': 'fortytwo_oauth2_login',
-                'description': '42 OAuth2 로그인 엔드포인트입니다.'
-                               '42 OAuth2 인증 URL로 리다이렉트합니다.'
-                               'csrf token이 필요합니다.',
+                'description': '42 OAuth2 로그인 엔드포인트입니다.',
+                'requestBody': {
+                    'content': {
+                        'application/json': {
+                            'schema': {
+                                'type': 'object',
+                                'properties': {
+                                    'code': {
+                                        'type': 'string',
+                                        'description': '42 OAuth2 authorization code.',
+                                    },
+                                },
+                                'required': ['code'],
+                            },
+                        },
+                    },
+                },
                 'tags': ['Authentication'],
                 'responses': {
-                    '302': {
-                        'description': 'Redirects to the 42 OAuth2 authorization URL.',
+                    '200': {
+                        'description': '로그인 성공',
                     },
                 },
             },
