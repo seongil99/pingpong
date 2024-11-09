@@ -1,5 +1,3 @@
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -197,9 +195,6 @@ class CustomLoginView(LoginView):
             return serializer.validated_data['user']
         return None
 
-import requests
-import urllib
-from django.shortcuts import redirect
 
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
