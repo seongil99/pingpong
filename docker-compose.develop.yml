@@ -14,16 +14,16 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_dev:/var/lib/postgresql/data
     restart: always
     networks:
-      - ft_transcendence
+      - ft_transcendence_dev
 
   frontend:
     image: frontend:0.0.1
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.develop
     container_name: frontend
     ports:
       - "3000:3000"
@@ -32,13 +32,17 @@ services:
         condition: service_healthy
     restart: always
     networks:
-      - ft_transcendence
+      - ft_transcendence_dev
+    volumes:
+      - ./frontend/src:/usr/share/nginx/html/src
+      - ./frontend/index.html:/usr/share/nginx/html/index.html
+      - ./frontend/login.html:/usr/share/nginx/html/login.html
 
   backend:
     image: backend:0.0.1
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.develop
     container_name: backend
     ports:
       - "8000:8000"
@@ -47,13 +51,15 @@ services:
         condition: service_healthy
     restart: always
     networks:
-      - ft_transcendence
+      - ft_transcendence_dev
+    volumes:
+      - "./backend:/app"
 
   load_balancer:
     image: load_balancer:0.0.1
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.develop
     container_name: load_balancer
     ports:
       - "80:80"
@@ -63,10 +69,10 @@ services:
       - backend
     restart: always
     networks:
-      - ft_transcendence
+      - ft_transcendence_dev
 
 volumes:
-  db_data:
+  db_data_dev:
 
 networks:
-  ft_transcendence:
+  ft_transcendence_dev:
