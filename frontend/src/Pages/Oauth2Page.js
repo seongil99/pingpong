@@ -9,7 +9,7 @@ class Oauth2Page {
 
     const callCallback = async () => {
       const callBackUri =
-        "https://localhost/api/v1/accounts/oauth2/fortytwo/login/finish/";
+        "https://localhost/api/v1/accounts/oauth2/fortytwo/login/callback/";
       const queryParam = new URLSearchParams(window.location.search);
       const code = queryParam.get("code");
       console.log(code);
