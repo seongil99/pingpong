@@ -1,8 +1,9 @@
 all:
-	docker compose up -d
+	docker compose up -d --build
 
 dev:
-	docker compose up --build --force-recreate
+	docker compose -f docker-compose.develop.yml down
+	docker compose -f docker-compose.develop.yml up -d --build
 
 re:
 	docker compose down
@@ -11,4 +12,9 @@ re:
 clean:
 	docker compose down
 
-.PHONY: all debug re clean
+fclean:
+	docker compose down
+	docker volume prune -f
+	docker network prune -f
+
+.PHONY: all debug re clean fclean
