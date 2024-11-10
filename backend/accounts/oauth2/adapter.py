@@ -1,9 +1,10 @@
 from allauth.socialaccount.providers.oauth2.views import OAuth2LoginView, OAuth2CallbackView, OAuth2Adapter
-from .provider import FortyTwoProvider
+from accounts.oauth2.provider import FortyTwoProvider
 import requests
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class FortyTwoAdapter(OAuth2Adapter):
     provider_id = 'fortytwo'
@@ -20,6 +21,7 @@ class FortyTwoAdapter(OAuth2Adapter):
         resp.raise_for_status()
         extra_data = resp.json()
         return self.get_provider().sociallogin_from_response(request, extra_data)
-    
+
+
 oauth2_login = OAuth2LoginView.adapter_view(FortyTwoAdapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(FortyTwoAdapter)

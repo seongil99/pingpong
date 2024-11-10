@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class FortyTwoProvider(OAuth2Provider):
     id = "fortytwo"
     name = "42 OAuth"
@@ -28,5 +29,6 @@ class FortyTwoProvider(OAuth2Provider):
             email=data.get("email"),
             name=data.get("login"),
         )
+
 
 provider_classes = [FortyTwoProvider]
