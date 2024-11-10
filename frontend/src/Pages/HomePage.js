@@ -31,25 +31,25 @@ class HomePage {
           method: "GET",
           credentials: "include", // 쿠키 전송 허용
         });
-        const data = await response.json();
-        return data;
+        return response;
       } catch (error) {
         console.error("Error:", error);
       }
     };
 
     const displayHello = async () => {
-      const hello = await getHello();
-      if (hello) {
+      const response = await getHello();
+      if (response.ok) {
+        const hello = await response.json();
         document.getElementById("h2").textContent =
           hello.message + " login success";
       } else {
-        document.getElementById("h2").textContent = " login fail";
+        document.getElementById("h2").textContent = "does not login";
       }
     };
 
     const setHelloButton = document.createElement("button");
-    setHelloButton.textContent = "Set Hello";
+    setHelloButton.textContent = "is login?";
     setHelloButton.onclick = displayHello;
 
     const logout = async () => {
@@ -64,9 +64,7 @@ class HomePage {
           credentials: "include", // 쿠키 전송 허용
           "X-CSRFToken": csrftoken, // CSRF 토큰을 헤더에 포함
         });
-        const data = await response.json();
-        window.location.href = "/login.html";
-        return data;
+        return response;
       } catch (error) {
         console.error("Error:", error);
       }
@@ -75,8 +73,8 @@ class HomePage {
     const logoutButton = document.createElement("button");
     logoutButton.textContent = "Logout";
     logoutButton.onclick = async () => {
-      const logoutData = await logout();
-      if (logoutData) {
+      const response = await logout();
+      if (response.ok) {
         document.getElementById("h2").textContent = " logout success";
       } else {
         document.getElementById("h2").textContent = " logout fail";
