@@ -34,7 +34,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'accounts',
+    'accounts.users',
+    'accounts.oauth2',
+    'accounts.two_factor_auth',
     'rest_framework',
     'rest_framework.authtoken',
     'dj_rest_auth',
@@ -91,7 +93,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -109,7 +110,6 @@ DATABASES = {
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -129,16 +129,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'users.User'
 
 # django-allauth
-SITE_ID = 1 # 해당 도메인 id
-ACCOUNT_UNIQUE_EMAIL = True # User email unique 사용 여부
-ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username' # 사용자 이름 필드 지정
-ACCOUNT_USERNAME_REQUIRED = True # User username 필수 여부
-ACCOUNT_EMAIL_REQUIRED = True # User email 필수 여부
-ACCOUNT_AUTHENTICATION_METHOD = 'email' # 로그인 인증 수단
-ACCOUNT_EMAIL_VERIFICATION = 'none' # email 인증 필수 여부
+SITE_ID = 1  # 해당 도메인 id
+ACCOUNT_UNIQUE_EMAIL = True  # User email unique 사용 여부
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'  # 사용자 이름 필드 지정
+ACCOUNT_USERNAME_REQUIRED = True  # User username 필수 여부
+ACCOUNT_EMAIL_REQUIRED = True  # User email 필수 여부
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # 로그인 인증 수단
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # email 인증 필수 여부
 
 # Simple JWT 설정
 SIMPLE_JWT = {
@@ -161,7 +161,7 @@ REST_FRAMEWORK = {
 
 REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
-    
+
 }
 
 # Set SameSite to 'None' (for cross-origin requests) or 'Lax'/'Strict' as needed
@@ -179,8 +179,8 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'ft_transcendence-app-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
     'TOKEN_MODEL': None,
-    'USER_DETAILS_SERIALIZER': 'accounts.serializers.CustomUserDetailsSerializer',
-    'REGISTER_SERIALIZER': 'accounts.serializers.CustomRegisterSerializer',
+    'USER_DETAILS_SERIALIZER': 'accounts.users.serializers.CustomUserDetailsSerializer',
+    'REGISTER_SERIALIZER': 'accounts.users.serializers.CustomRegisterSerializer',
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -235,7 +235,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -282,7 +281,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-#logging
+# logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,  # Disable existing loggers set by Django
