@@ -29,3 +29,5 @@
 
 #venv
 **/venv
+
+**/.devcontainer
