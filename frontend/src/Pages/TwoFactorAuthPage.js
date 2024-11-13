@@ -41,7 +41,7 @@ class TwoFactorAuthPage {
         const otp = document.getElementById('otp').value;
 
         try {
-            const response = await fetch('/api/v1/accounts/two-factor-auth/verifications/', {
+            const response = await fetch('/api/v1/accounts/mfa/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ class TwoFactorAuthPage {
             if (response.ok) {
                 // Redirect to the main app or dashboard
                 alert('2FA verification successful!');
-                // window.location.href = '/';
+                window.location.href = '/';
             } else {
                 this.showErrorMessage(data.error || 'Verification failed. Please try again.');
             }

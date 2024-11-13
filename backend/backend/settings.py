@@ -37,28 +37,45 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    # django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    # DRF
+    'rest_framework',
+    'rest_framework.authtoken',
+    # custom
     'api',
     'accounts',
     'accounts.users',
     'accounts.oauth2',
     'accounts.two_factor_auth',
-    'rest_framework',
-    'rest_framework.authtoken',
+    # dj_rest_auth
     'dj_rest_auth',
-    'django.contrib.sites',
+    'dj_rest_auth.registration',
+    # all-auth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'dj_rest_auth.registration',
+    'allauth.mfa',
+    # simple-jwt
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    # docs
     'drf_spectacular',
+    # 2fa
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    ## 2fa
+    'two_factor',
+    'pyotp',
+    # 'django_otp.plugins.otp_email',  # <- if you want email capability.
+    # 'two_factor.plugins.email',  # <- if you want email capability.
 ]
 
 MIDDLEWARE = [
@@ -71,6 +88,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # 2fa
+    'django_otp.middleware.OTPMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -155,6 +174,7 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # JWT 토큰 인증.
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -179,19 +199,22 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'ft_transcendence-app-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
     'TOKEN_MODEL': None,
-    'USER_DETAILS_SERIALIZER': 'accounts.users.serializers.CustomUserDetailsSerializer',
-    'REGISTER_SERIALIZER': 'accounts.users.serializers.CustomRegisterSerializer',
 }
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # 기본 백엔드
     # 추가적인 백엔드를 여기에 정의할 수 있습니다.
+    # 'django_otp.backends.OTPBackend',  # For OTP-based logins    
 ]
+
+
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:5173",
     "http://localhost:8000",
+    "https://localhost:443",
+    "https://localhost:3000",
     'https://localhost',
     'https://127.0.0.1',
 ]
@@ -200,6 +223,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # front-end origin
     "http://localhost:8000",  # back-end origin
     "http://localhost:3000",  # front-end origin
+    "https://localhost:443",
+    "https://localhost:3000",
     'https://localhost',
     'https://127.0.0.1',
 ]
@@ -223,6 +248,20 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
+
+#2fa
+
+TWO_FACTOR_AUTHENTICATION_METHODS = (
+    'django_otp.plugins.otp_totp.models.TOTP',
+)
+
+TWO_FACTOR_SMS_GATEWAY = None
+
+# LOGIN_URL = '/login'
+
+# OTP_LOGIN_URL = '/2fa/verify/'
+# this one is optional
+# LOGIN_REDIRECT_URL = 'two_factor:profile'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

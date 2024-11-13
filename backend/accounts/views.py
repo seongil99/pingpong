@@ -11,8 +11,6 @@ from accounts.detail import Detail
 
 import logging
 
-from accounts.two_factor_auth.views import TwoFactorToken
-
 logger = logging.getLogger(__name__)
 
 
@@ -45,34 +43,3 @@ class CustomTokenVerifyView(APIView):
 
         return Response({"detail": Detail.TOKEN_IS_VALID.value}, status=status.HTTP_200_OK)
 
-
-class CustomLoginView(LoginView):
-    def post(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
-        user = self.get_user_from_serializer(request.data)
-
-        if not user:
-            return self.get_response()
-
-        if user.mfa_enabled:
-            two_factor_token = TwoFactorToken.for_user(user)
-            response = JsonResponse({
-                'message': 'Password verified. Proceed with 2FA.',
-                'mfa_enabled': user.mfa_enabled,
-            })
-            response.set_cookie(
-                '2fa_token',
-                str(two_factor_token),
-                max_age=300,  # 5 minutes
-                httponly=True,
-                secure=True
-            )
-            return response
-        else:
-            return super().get_response()
-
-    def get_user_from_serializer(self, data):
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            return serializer.validated_data['user']
-        return None

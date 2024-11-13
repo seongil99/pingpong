@@ -30,7 +30,7 @@ class DisableMFAbutton extends HTMLElement {
     }
 
     async handleDisableMFA() {
-        const url = "https://localhost/api/v1/accounts/two-factor-auth/"; // MFA 비활성화 API 서버 URL
+        const url = "https://localhost/api/v1/accounts/mfa/status/"; // MFA 비활성화 API 서버 URL
 
         try {
             const response = await fetch(url, {

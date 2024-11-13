@@ -1,134 +1,119 @@
+import qrcode
+from django.http import JsonResponse
+from allauth.mfa.forms import AuthenticateForm, ActivateTOTPForm #, ReauthenticateForm
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from io import BytesIO
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+from django.shortcuts import redirect
+from django.conf import settings
 import pyotp
 import qrcode
-from django.contrib.auth.mixins import LoginRequiredMixin
-from drf_spectacular.utils import extend_schema
-from rest_framework.decorators import permission_classes, api_view
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from django.http import JsonResponse
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from accounts.error import Error
-from datetime import timedelta
-from django.conf import settings
+import logging
 
-from accounts.detail import Detail
-from accounts.users.models import User
+logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
-@extend_schema(tags=['2fa'])
-class get_user_otp_qrcode(LoginRequiredMixin, APIView):
+class mfa(APIView):
     def get(self, request):
+        if self.otp_enabled(request.user):
+            return JsonResponse({'status': 'enabled'})
+        return JsonResponse({'status': 'disabled'})
+        
+    def put(self, request):
         user = request.user
-        if not user.mfa_secret:
-            return Response({'error': Error.MFA_NOT_ENABLED.value}, status=status.HTTP_400_BAD_REQUEST)
-
-        userDB = User.objects.get(email=user.email)
-        otp_uri = pyotp.totp.TOTP(userDB.mfa_secret).provisioning_uri(
-            name=userDB.email,
-            issuer_name="Django",
-        )
-
-        qr = qrcode.make(otp_uri)
-
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='image/png')
-        qr.save(response, format='PNG')
-
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response['Pragma'] = 'no-cache'
-        response['Expires'] = '0'
-
-        return response
-
-
-@extend_schema(tags=['2fa'])
-@permission_classes([IsAuthenticated])
-class mfaStatus(APIView):
-    def post(self, request, *args, **kwargs):
-        """
-            Enable 2FA for the user
-        """
-        otp = request.data.get('otp')
-        user_email = request.user.email
-        if not user_email:
-            return JsonResponse({"success": False, "message": Error.USER_NOT_FOUND.value},
-                                status=status.HTTP_400_BAD_REQUEST)
-        if verify_2fa_otp(request.user, otp):
-            return JsonResponse({"success": True, "message": Detail.MFA_ENABLED.value}, status=status.HTTP_200_OK)
-        else:
-            return JsonResponse({"success": False, "message": Error.INVALID_OTP.value},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, *args, **kwargs):
-        """
-            Disable 2FA for the user
-        """
+        otp_code = request.data.get('otp_code')
+        
+        logger.info(f'otp_code: {otp_code}')
+        device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+        if device and device.verify_token(otp_code):
+            device.confirmed = True
+            device.save()
+            return JsonResponse({'status': '2FA enabled successfully'})
+        return JsonResponse({'status': 'Invalid OTP code'}, status=400)
+    
+    def delete(self, request):
         user = request.user
-        user.mfa_enabled = False
-        user.save()
-        return JsonResponse({"success": True, "message": Detail.MFA_DISABLED.value}, status=status.HTTP_200_OK)
+        device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+        
+        if device:
+            device.delete()
+            return JsonResponse({'status': '2FA disabled successfully'})
+    
 
-
-@extend_schema(tags=['2fa'])
-@api_view(['POST'])
-def verifyMFAview(request):
-    """
-        Verify 2FA for the user
-    """
-    if request.method == 'POST':
-        token_str = request.COOKIES.get('2fa_token')
-        if not token_str:
-            return JsonResponse({'error': '2FA token missing or expired'}, status=403)
-        two_factor_token = AccessToken(token_str)
-        user_id = two_factor_token['user_id']
-        user = User.objects.get(id=user_id)
-        otp = request.data.get('otp')
-        if verify_2fa_otp(user, otp):
-            return setTokenCookie2fa(user)
-        else:
-            return JsonResponse({"success": False, "message": Error.INVALID_OTP.value},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-
-class TwoFactorToken(AccessToken):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Set a custom expiration for 2FA tokens (e.g., 5 minutes)
-        self.set_exp(lifetime=timedelta(minutes=5))
-
-
-def setTokenCookie2fa(user):
-    refresh = RefreshToken.for_user(user)
-    access_token = str(refresh.access_token)
-
-    # Create response and set tokens as HttpOnly cookies
-    response = JsonResponse({'message': '2FA verified successfully!'}, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        User = get_user_model()
+        userId = request.session.get('userId')
+        user = User.objects.get(id=userId)
+        device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+        otp_code = request.data.get('otp')
+        logger.info(f'otp_code: {otp_code}')
+        if device.verify_token(otp_code):
+            return self.setJWTToken(request)
+        return JsonResponse({'status': 'Invalid OTP code'}, status=400)
+        
+    
+    def otp_enabled(self, user: User) -> bool:
+        return user.totpdevice_set.filter(confirmed=True).exists() # confirmed = True means the device is enabled
+    
+    def setJWTToken(self, request):
+        content = {
+            'status': 'redirect',
+            'url': '/'
+        }
+        access = request.session.get('access')
+        refresh = request.session.get('refresh')
+        response = JsonResponse(content, status=200)
+        return setAccessToken(request, response, access, refresh)
+   
+from datetime import timedelta
+     
+def setAccessToken(request, response, access, refresh):
     response.set_cookie(
-        key=settings.REST_AUTH['JWT_AUTH_COOKIE'],
-        value=access_token,
-        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'],
-        secure=settings.JWT_AUTH_COOKIE_SECURE,  # Set to True in production
-        samesite=settings.JWT_AUTH_COOKIE_SAMESITE
+        settings.REST_AUTH['JWT_AUTH_COOKIE'], 
+        access,
+        max_age = timedelta(days=1),
+        httponly = True    
     )
     response.set_cookie(
-        key=settings.REST_AUTH['JWT_AUTH_REFRESH_COOKIE'],
-        value=str(refresh),
-        httponly=settings.REST_AUTH['JWT_AUTH_HTTPONLY'],
-        secure=settings.JWT_AUTH_REFRESH_COOKIE_SECURE,
-        samesite=settings.JWT_AUTH_REFRESH_COOKIE_SAMESITE
+        settings.REST_AUTH['JWT_AUTH_REFRESH_COOKIE'],
+        refresh,
+        max_age = timedelta(days=1),
+        httponly = True
     )
-
     return response
+    
+import base64
+from django.http import HttpResponse
+    
+@api_view(['GET'])
+def qrcode_display(request):
+    user = request.user
+    device = TOTPDevice.objects.filter(user=user).first()
+    
+    if not device:
+        device = TOTPDevice.objects.create(user=user, name='default device', confirmed=False)
+    
+    base32_key = convert_hex_to_base32(device.key)
+    
+    totp = pyotp.TOTP(base32_key)
+    totp_url = totp.provisioning_uri(user.email, issuer_name='transcendence')
+    
+    img = qrcode.make(totp_url)
+    
+    img_io = BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    img_base64 = base64.b64encode(img_io.getvalue()).decode('utf-8')
+    
+    return JsonResponse({'qrcode': f"data:image/png;base64,{img_base64}"})
 
-
-def verify_2fa_otp(user, otp):
-    totp = pyotp.TOTP(user.mfa_secret)
-    if totp.verify(otp):
-        if user.mfa_enabled:
-            return True
-        user.mfa_enabled = True
-        user.save()
-        return True
-    return False
+def convert_hex_to_base32(hex_key):
+    key_bytes = bytes.fromhex(hex_key)
+    base32_key = base64.b32encode(key_bytes).decode('utf-8')
+    return base32_key

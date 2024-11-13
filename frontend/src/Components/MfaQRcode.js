@@ -12,16 +12,17 @@ class mfaQRcode extends HTMLElement {
 
 	fetchQRcode() {
 		// URL to your QR code API endpoint
-		const apiUrl = "/api/v1/accounts/two-factor-auth/qrcode";
+		const apiUrl = "/api/v1/accounts/mfa/qrcode/";
 
 		fetch(apiUrl, {
 			method: "GET",
 			credentials: "include"  // Include cookies if needed
 		})
-			.then(response => response.blob())
-			.then(blob => {
+			.then(response => response.json())
+			.then(data => {
+				const imageData = data.qrcode;
 				const img = this.shadowRoot.querySelector("img");
-				img.src = URL.createObjectURL(blob);
+				img.src = imageData;
 			})
 			.catch(error => console.error("Error fetching QR code:", error));
 	}
