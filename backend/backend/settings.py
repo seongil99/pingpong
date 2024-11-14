@@ -257,7 +257,7 @@ TWO_FACTOR_AUTHENTICATION_METHODS = (
 
 TWO_FACTOR_SMS_GATEWAY = None
 
-# LOGIN_URL = '/login'
+LOGIN_URL = '/'
 
 # OTP_LOGIN_URL = '/2fa/verify/'
 # this one is optional

@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from django.shortcuts import redirect
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 import pyotp
 import qrcode
 import logging
@@ -18,6 +20,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+@method_decorator(login_required, name='dispatch')
 class mfa(APIView):
     def get(self, request):
         if self.otp_enabled(request.user):
@@ -91,7 +94,9 @@ def setAccessToken(request, response, access, refresh):
 import base64
 from django.http import HttpResponse
     
+
 @api_view(['GET'])
+@login_required
 def qrcode_display(request):
     user = request.user
     device = TOTPDevice.objects.filter(user=user).first()
