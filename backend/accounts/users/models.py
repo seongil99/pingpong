@@ -5,11 +5,6 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.users.manages import UserManager
 
-from django.contrib.auth import get_user_model
-from django_otp.plugins.otp_totp.models import TOTPDevice
-from django.dispatch import receiver
-from django.db.models.signals import post_save
-
 # Create your models here.
 class User(AbstractUser):
     username = models.CharField(max_length=255, blank=True, null=True)

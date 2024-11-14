@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -9,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from io import BytesIO
 from datetime import timedelta
+from drf_spectacular.utils import extend_schema
 
 import base64
 import pyotp
@@ -19,14 +19,15 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+@extend_schema(tags=['accounts'])
 @method_decorator(login_required, name='dispatch')
 class mfa(APIView):
-    def get(self, request):
+    def get(self, request) -> JsonResponse:
         if self.otp_enabled(request.user):
             return JsonResponse({'status': 'enabled'})
         return JsonResponse({'status': 'disabled'})
         
-    def put(self, request):
+    def put(self, request) -> JsonResponse:
         user = request.user
         otp_code = request.data.get('otp_code')
         
@@ -38,7 +39,7 @@ class mfa(APIView):
             return JsonResponse({'status': '2FA enabled successfully'})
         return JsonResponse({'status': 'Invalid OTP code'}, status=400)
     
-    def delete(self, request):
+    def delete(self, request) -> JsonResponse:
         user = request.user
         device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
         
@@ -46,7 +47,7 @@ class mfa(APIView):
             device.delete()
             return JsonResponse({'status': '2FA disabled successfully'})
     
-    def post(self, request):
+    def post(self, request) -> JsonResponse:
         User = get_user_model()
         userId = request.session.get('userId')
         user = User.objects.get(id=userId)
@@ -71,7 +72,7 @@ class mfa(APIView):
         response = JsonResponse(content, status=200)
         return setAccessToken(request, response, access, refresh)
 
-def setAccessToken(request, response, access, refresh):
+def setAccessToken(request, response, access: str, refresh: str):
     response.set_cookie(
         settings.REST_AUTH['JWT_AUTH_COOKIE'], 
         access,
@@ -88,6 +89,7 @@ def setAccessToken(request, response, access, refresh):
 
 @api_view(['GET'])
 @login_required
+@extend_schema(tags=['accounts'])
 def qrcode_display(request):
     user = request.user
     device = TOTPDevice.objects.filter(user=user).first()
@@ -109,7 +111,7 @@ def qrcode_display(request):
     
     return JsonResponse({'qrcode': f"data:image/png;base64,{img_base64}"})
 
-def convert_hex_to_base32(hex_key):
+def convert_hex_to_base32(hex_key: str) -> str:
     key_bytes = bytes.fromhex(hex_key)
     base32_key = base64.b32encode(key_bytes).decode('utf-8')
     return base32_key
