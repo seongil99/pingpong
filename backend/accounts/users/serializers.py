@@ -1,10 +1,9 @@
-from dj_rest_auth.serializers import UserDetailsSerializer
-from dj_rest_auth.registration.serializers import RegisterSerializer
-from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.types import OpenApiTypes
-from rest_framework import serializers
 import pyotp
-from .models import User
+from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.serializers import UserDetailsSerializer
+
+from accounts.users.models import User
+
 
 class CustomUserDetailsSerializer(UserDetailsSerializer):
     # Add custom fields
@@ -22,7 +21,8 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
             'is_verified',
             'mfa_enabled',
         ]  # Include new fields
-    
+
+
 class CustomRegisterSerializer(RegisterSerializer):
     # Add custom fields
     # profile_picture = serializers.ImageField(write_only=True)

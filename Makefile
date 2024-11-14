@@ -13,8 +13,6 @@ clean:
 	docker compose down
 
 fclean:
-	docker compose down
-	docker volume prune -f
-	docker network prune -f
+	docker compose down -v
 
 .PHONY: all debug re clean fclean

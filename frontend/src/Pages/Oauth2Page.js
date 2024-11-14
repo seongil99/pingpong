@@ -34,10 +34,11 @@ class Oauth2Page {
       const data = await response.json();
       console.log(data);
 
-      if (data.access_token) {
-        document.getElementById("h2").textContent = " login success";
+      if (response.ok) {
+        window.router.navigate("/");
       } else {
-        document.getElementById("h2").textContent = " login fail";
+        alert("Failed to login");
+        window.router.navigate("/login");
       }
     };
 
