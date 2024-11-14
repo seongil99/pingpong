@@ -4,9 +4,6 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from accounts.oauth2.adapter import FortyTwoAdapter
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django_otp.plugins.otp_totp.models import TOTPDevice
-from django.shortcuts import redirect
-from django.http import HttpResponse
 
 import logging
 

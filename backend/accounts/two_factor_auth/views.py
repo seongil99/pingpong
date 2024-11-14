@@ -11,7 +11,6 @@ from io import BytesIO
 from datetime import timedelta
 
 import base64
-import qrcode
 import pyotp
 import qrcode
 import logging
