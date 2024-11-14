@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
     ## 2fa
-    'two_factor',
+    # 'two_factor',
     'pyotp',
     # 'django_otp.plugins.otp_email',  # <- if you want email capability.
     # 'two_factor.plugins.email',  # <- if you want email capability.
@@ -257,7 +257,7 @@ TWO_FACTOR_AUTHENTICATION_METHODS = (
 
 TWO_FACTOR_SMS_GATEWAY = None
 
-LOGIN_URL = '/'
+# LOGIN_URL = '/'
 
 # OTP_LOGIN_URL = '/2fa/verify/'
 # this one is optional
