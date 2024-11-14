@@ -1,22 +1,22 @@
-import qrcode
 from django.http import JsonResponse
-from allauth.mfa.forms import AuthenticateForm, ActivateTOTPForm #, ReauthenticateForm
 from django.contrib.auth.models import User
-from django.http import HttpResponse
-from django_otp.plugins.otp_totp.models import TOTPDevice
-from io import BytesIO
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from django.shortcuts import redirect
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view
+from io import BytesIO
+from datetime import timedelta
+
+import base64
+import qrcode
 import pyotp
 import qrcode
 import logging
 
 logger = logging.getLogger(__name__)
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -47,8 +47,6 @@ class mfa(APIView):
             device.delete()
             return JsonResponse({'status': '2FA disabled successfully'})
     
-
-    
     def post(self, request):
         User = get_user_model()
         userId = request.session.get('userId')
@@ -73,9 +71,7 @@ class mfa(APIView):
         refresh = request.session.get('refresh')
         response = JsonResponse(content, status=200)
         return setAccessToken(request, response, access, refresh)
-   
-from datetime import timedelta
-     
+
 def setAccessToken(request, response, access, refresh):
     response.set_cookie(
         settings.REST_AUTH['JWT_AUTH_COOKIE'], 
@@ -90,10 +86,6 @@ def setAccessToken(request, response, access, refresh):
         httponly = True
     )
     return response
-    
-import base64
-from django.http import HttpResponse
-    
 
 @api_view(['GET'])
 @login_required
