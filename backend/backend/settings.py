@@ -71,9 +71,9 @@ INSTALLED_APPS = [
     'django_otp',
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
-    ## 2fa
-    # 'two_factor',
     'pyotp',
+    # friends
+    'friends',
     # 'django_otp.plugins.otp_email',  # <- if you want email capability.
     # 'two_factor.plugins.email',  # <- if you want email capability.
 ]
@@ -288,6 +288,8 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Your Project API',
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
+    'SCHEMA_PATH_PREFIX': '/api/v1',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
     'APPEND_PATHS': {
         '/api/v1/accounts/oauth2/fortytwo/login/callback/': {
             'post': {
