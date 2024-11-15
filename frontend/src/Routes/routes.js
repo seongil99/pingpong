@@ -12,7 +12,7 @@ const routes = {
   "/login": LoginPage,
   "/404": NotFoundPage,
   "/profile": ProfilePage,
-  "/mfa-verify": TwoFactorAuthPage,
+  "/otp": TwoFactorAuthPage,
   "/oauth2/redirect": Oauth2Page,
 };
 

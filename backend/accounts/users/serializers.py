@@ -1,4 +1,3 @@
-import pyotp
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import UserDetailsSerializer
 
@@ -19,7 +18,6 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
             'last_name',
             'email',
             'is_verified',
-            'mfa_enabled',
         ]  # Include new fields
 
 
@@ -30,9 +28,10 @@ class CustomRegisterSerializer(RegisterSerializer):
     # Add any additional fields you want here
 
     def custom_signup(self, request, user):
+        pass
         # user.profile.profile_picture = self.validated_data.get('profile_picture')
         # user.profile.bio = self.validated_data.get('bio')
         # user.profile.save()
         # Add any additional fields you want here
-        user.mfa_secret = pyotp.random_base32()
-        user.save()
+        # user.mfa_secret = pyotp.random_base32()
+        # user.save()

@@ -2,7 +2,7 @@ function createFormComponent() {
     // Create the form element
     const form = document.createElement('form');
     form.innerHTML = `
-      <input name="otp" placeholder="OTP" required />
+      <input name="otp_code" placeholder="OTP" required />
       <button type="submit">Enable 2fa</button>
     `;
   
@@ -16,8 +16,9 @@ function createFormComponent() {
   
       // Send data with Fetch
       try {
-        const response = await fetch('/api/v1/accounts/two-factor-auth/', {
-          method: 'POST',
+        const response = await fetch('/api/v1/accounts/mfa/', {
+          method: 'PUT',
+          include: 'credentials',
           headers: {
             'Content-Type': 'application/json',
           },
