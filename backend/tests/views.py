@@ -1,4 +1,4 @@
-from backend.decorators import spa_login_required
+from common.decorators import spa_login_required
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
