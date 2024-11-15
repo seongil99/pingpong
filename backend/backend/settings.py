@@ -11,10 +11,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+import environ
+
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+# Take environment variables from .env file
+environ.Env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -25,8 +32,7 @@ SECRET_KEY = 'django-insecure-@e^i8h4!7nvuw(p5=$mvf!j0jali=twlh4*^%=0a82kz+o-p9a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -39,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'accounts',
+    'accounts.users',
+    'accounts.oauth2',
+    'accounts.two_factor_auth',
     'rest_framework',
     'rest_framework.authtoken',
     'dj_rest_auth',
@@ -49,6 +58,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -83,7 +93,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -95,9 +104,12 @@ DATABASES = {
         'PASSWORD': 'postgres',
         'HOST': 'db',
         'PORT': 5432,
-    }
+    },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -117,16 +129,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'users.User'
 
 # django-allauth
-SITE_ID = 1 # 해당 도메인 id
-ACCOUNT_UNIQUE_EMAIL = True # User email unique 사용 여부
-ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username' # 사용자 이름 필드 지정
-ACCOUNT_USERNAME_REQUIRED = True # User username 필수 여부
-ACCOUNT_EMAIL_REQUIRED = True # User email 필수 여부
-ACCOUNT_AUTHENTICATION_METHOD = 'email' # 로그인 인증 수단
-ACCOUNT_EMAIL_VERIFICATION = 'none' # email 인증 필수 여부
+SITE_ID = 1  # 해당 도메인 id
+ACCOUNT_UNIQUE_EMAIL = True  # User email unique 사용 여부
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'  # 사용자 이름 필드 지정
+ACCOUNT_USERNAME_REQUIRED = True  # User username 필수 여부
+ACCOUNT_EMAIL_REQUIRED = True  # User email 필수 여부
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # 로그인 인증 수단
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # email 인증 필수 여부
 
 # Simple JWT 설정
 SIMPLE_JWT = {
@@ -144,35 +156,73 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+
 }
 
+# Set SameSite to 'None' (for cross-origin requests) or 'Lax'/'Strict' as needed
+JWT_AUTH_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-origin requests
+JWT_AUTH_REFRESH_COOKIE_SAMESITE = 'None'  # Same for refresh token
+
+# Ensure the cookie is secure (for HTTPS) if SameSite=None is used
+JWT_AUTH_COOKIE_SECURE = True  # True if using HTTPS, False for local development over HTTP
+JWT_AUTH_REFRESH_COOKIE_SECURE = True  # Same for refresh token
+
+REST_USE_JWT = True
 REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'ft_transcendence-app-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'ft_transcendence-app-refresh-token',
     'JWT_AUTH_HTTPONLY': True,
     'TOKEN_MODEL': None,
+    'USER_DETAILS_SERIALIZER': 'accounts.users.serializers.CustomUserDetailsSerializer',
+    'REGISTER_SERIALIZER': 'accounts.users.serializers.CustomRegisterSerializer',
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # 기본 백엔드
+    # 추가적인 백엔드를 여기에 정의할 수 있습니다.
+]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:5173",
     "http://localhost:8000",
+    'https://localhost',
+    'https://127.0.0.1',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # front-end origin
     "http://localhost:8000",  # back-end origin
+    "http://localhost:3000",  # front-end origin
+    'https://localhost',
+    'https://127.0.0.1',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost',
+    'https://127.0.0.1',
 ]
 
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
 
+SOCIALACCOUNT_PROVIDERS = {
+    'fortytwo': {
+        'APP': {
+            'client_id': env('MINSEPAR_CLIENT_ID'),
+            'secret': env('MINSEPAR_SECRET'),
+            'key': ''
+        }
+    },
+}
+
+ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -185,7 +235,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -195,3 +244,93 @@ STATIC_URL = 'api/static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Your Project API',
+    'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'APPEND_PATHS': {
+        '/api/v1/accounts/oauth2/fortytwo/login/callback/': {
+            'post': {
+                'operationId': 'fortytwo_oauth2_login',
+                'description': '42 OAuth2 로그인 엔드포인트입니다.',
+                'requestBody': {
+                    'content': {
+                        'application/json': {
+                            'schema': {
+                                'type': 'object',
+                                'properties': {
+                                    'code': {
+                                        'type': 'string',
+                                        'description': '42 OAuth2 authorization code.',
+                                    },
+                                },
+                                'required': ['code'],
+                            },
+                        },
+                    },
+                },
+                'tags': ['Authentication'],
+                'responses': {
+                    '200': {
+                        'description': '로그인 성공',
+                    },
+                },
+            },
+        },
+    },
+}
+
+# logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # Disable existing loggers set by Django
+
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Set the log level for this handler
+            'class': 'logging.StreamHandler',  # Output to the console
+            'formatter': 'simple',  # Use the simple formatter
+        },
+        'file': {
+            'level': 'ERROR',  # Log error messages and above to file
+            'class': 'logging.FileHandler',  # Write logs to a file
+            'filename': 'django_errors.log',  # Log file location
+            'formatter': 'verbose',  # Use the verbose formatter
+        },
+    },
+
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],  # Use both console and file handlers
+            'level': 'INFO',  # Log messages of level INFO and above
+            'propagate': True,  # Propagate messages to higher level loggers
+        },
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',  # Only log errors in request processing
+            'propagate': False,  # Don't propagate to the 'django' logger
+        },
+        'django.security': {
+            'handlers': ['file'],
+            'level': 'WARNING',  # Log warnings related to security
+            'propagate': False,  # Don't propagate to the 'django' logger
+        },
+        'accounts': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # You can adjust the log level for specific apps
+            'propagate': False,
+        },
+    },
+}

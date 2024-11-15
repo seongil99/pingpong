@@ -2,6 +2,7 @@ FROM nginx:1.27.2
 
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY index.html /usr/share/nginx/html/index.html
+COPY login.html /usr/share/nginx/html/login.html
 COPY ./src /usr/share/nginx/html/src
 
 EXPOSE 3000
