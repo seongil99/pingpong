@@ -5,7 +5,7 @@ class AuthenticatorPage {
 
     createElement() {
         // Create the HTML structure for the 2FA verification page
-        const container = document.createElement('div');
+        const container = document.createElement("div");
         const innerHtml = `
             <h2>2FA Verification</h2>
             <p>Please enter the OTP sent to your device.</p>
@@ -29,8 +29,8 @@ class AuthenticatorPage {
 
     bindEvents() {
         // Add event listener for the form submission
-        document.addEventListener('submit', (event) => {
-            if (event.target.id === '2fa-form') {
+        document.addEventListener("submit", (event) => {
+            if (event.target.id === "2fa-form") {
                 event.preventDefault();
                 this.verifyOTP(); // Call the method to verify OTP
             }
@@ -38,35 +38,40 @@ class AuthenticatorPage {
     }
 
     async verifyOTP() {
-        const otp = document.getElementById('otp').value;
+        const otp = document.getElementById("otp").value;
 
         try {
-            const response = await fetch('/api/v1/accounts/two-factor-auth/verifications/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ otp }),
-            });
+            const response = await fetch(
+                "/api/v1/accounts/two-factor-auth/verifications/",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ otp }),
+                }
+            );
             const data = await response.json();
 
             if (response.ok) {
                 // Redirect to the main app or dashboard
-                alert('2FA verification successful!');
+                alert("2FA verification successful!");
                 // window.location.href = '/';
             } else {
-                this.showErrorMessage(data.error || 'Verification failed. Please try again.');
+                this.showErrorMessage(
+                    data.error || "Verification failed. Please try again."
+                );
             }
         } catch (error) {
-            console.error('Error:', error);
-            this.showErrorMessage('An error occurred. Please try again.');
+            console.error("Error:", error);
+            this.showErrorMessage("An error occurred. Please try again.");
         }
     }
 
     showErrorMessage(message) {
-        const errorMessage = document.getElementById('error-message');
+        const errorMessage = document.getElementById("error-message");
         errorMessage.innerText = message;
-        errorMessage.style.display = 'block';
+        errorMessage.style.display = "block";
     }
 }
 

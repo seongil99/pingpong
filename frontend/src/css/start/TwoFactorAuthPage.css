@@ -1,0 +1,62 @@
+.two-factor-auth {
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.two-factor-auth > h1 {
+    font-size: 26px;
+    margin-bottom: 30px;
+}
+
+.verification-btn {
+    width: 240px;
+    margin: 7px 0px;
+    padding: 8px 0px;
+    font-size: 21px;
+    border: 1px solid black;
+}
+
+.verification-btn:last-child {
+    margin-bottom: 50px;
+}
+
+/* 스마트폰 세로 */
+@media only screen and (min-width: 320px) {
+    .two-factor-auto > h1 {
+    }
+}
+
+/* 스마트폰 세로 */
+@media only screen and (min-width: 480px) {
+    .two-factor-auto > h1 {
+    }
+}
+
+/* iPhone4와 같은 높은 해상도 가로 */
+@media only screen and (min-width: 640px) {
+    .two-factor-auto > h1 {
+    }
+}
+
+/* iPad 가로+세로 */
+@media only screen and (min-width: 768px) {
+    .two-factor-auto > h1 {
+    }
+}
+
+/* 데스크탑 브라우저 가로 */
+@media only screen and (min-width: 1224px) {
+    .start > h1 {
+        font-size: 76px;
+    }
+}
+
+/* 큰 모니터 */
+@media only screen and (min-width: 1824px) {
+    .start > h1 {
+        font-size: 90px;
+    }
+}

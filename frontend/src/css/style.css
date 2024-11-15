@@ -1,3 +1,4 @@
 @import "reset.css";
 
-@import "start/start.css";
+@import "start/StartPage.css";
+@import "start/TwoFactorAuthPage.css";

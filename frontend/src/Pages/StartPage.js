@@ -9,7 +9,7 @@ class StartPage {
         // go to Login Page or 2FA Page or Main Page
         const startButton = document.createElement("button");
         // flag = detectLoginStatus();
-        let flag = 1;
+        let flag = 2;
         let correctPath;
         if (flag === 0) correctPath = "/home";
         else if (flag === 1) correctPath = "/login";
