@@ -1,5 +1,5 @@
 # my_app/decorators.py
-from django.http import JsonResponse
+from rest_framework.response import Response
 
 def spa_login_required(view_func):
     """
@@ -8,6 +8,6 @@ def spa_login_required(view_func):
     """
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return JsonResponse({"detail": "Authentication required"}, status=401)
+            return Response({"detail": "Authentication required"}, status=401)
         return view_func(request, *args, **kwargs)
     return _wrapped_view
