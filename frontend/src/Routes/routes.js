@@ -5,9 +5,11 @@ import NotFoundPage from "../Pages/NotFoundPage.js";
 import Oauth2Page from "../Pages/Oauth2Page.js";
 import ProfilePage from "../Pages/ProfilePage.js";
 import TwoFactorAuthPage from "../Pages/TwoFactorAuthPage.js";
+import StartPage from "../Pages/StartPage.js";
 
 const routes = {
-  "/": HomePage,
+  "/": StartPage,
+  "/home": HomePage,
   "/about": AboutPage,
   "/login": LoginPage,
   "/404": NotFoundPage,
