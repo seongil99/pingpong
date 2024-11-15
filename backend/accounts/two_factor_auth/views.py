@@ -10,6 +10,8 @@ from io import BytesIO
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema
 
+from .serializers import MFAStatusSerializer
+
 import base64
 import pyotp
 import qrcode
@@ -19,13 +21,15 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-@extend_schema(tags=['accounts'])
+@extend_schema(
+    tags=['accounts'],
+    responses=MFAStatusSerializer)
 @method_decorator(login_required, name='dispatch')
 class mfa(APIView):
     def get(self, request) -> JsonResponse:
         if self.otp_enabled(request.user):
-            return JsonResponse({'status': 'enabled'})
-        return JsonResponse({'status': 'disabled'})
+            return JsonResponse(MFAStatusSerializer({'status': 'enabled'}).data, status=200)
+        return JsonResponse(MFAStatusSerializer({'status': 'disabled'}).data, status=200)
         
     def put(self, request) -> JsonResponse:
         user = request.user
