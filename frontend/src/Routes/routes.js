@@ -5,6 +5,7 @@ import NotFoundPage from "../Pages/NotFoundPage.js";
 import Oauth2Page from "../Pages/Oauth2Page.js";
 import ProfilePage from "../Pages/ProfilePage.js";
 import TwoFactorAuthPage from "../Pages/TwoFactorAuthPage.js";
+import AuthenticatorPage from "../Pages/AuthenticatorPage.js";
 import StartPage from "../Pages/StartPage.js";
 
 const routes = {
@@ -14,7 +15,8 @@ const routes = {
   "/login": LoginPage,
   "/404": NotFoundPage,
   "/profile": ProfilePage,
-  "/mfa-verify": TwoFactorAuthPage,
+  "/verification": TwoFactorAuthPage,
+  "/verification/authenticator": AuthenticatorPage,
   "/oauth2/redirect": Oauth2Page,
 };
 

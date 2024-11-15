@@ -13,7 +13,7 @@ class StartPage {
         let correctPath;
         if (flag === 0) correctPath = "/home";
         else if (flag === 1) correctPath = "/login";
-        else if (flag === 2) correctPath = "/mfa-verify";
+        else if (flag === 2) correctPath = "/verification";
 
         startButton.classList.add("navigate");
         startButton.setAttribute("path", correctPath);

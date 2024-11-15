@@ -42,7 +42,7 @@ class LoginButton extends HTMLElement {
       console.dir(response);
       console.dir(data);
       if (data.is_2fa_required) {
-        window.location.href = "/mfa-verify"; // 2FA 활성화 시 2FA 페이지로 이동
+        window.location.href = "/verification"; // 2FA 활성화 시 2FA 페이지로 이동
         return;
       }
       window.location.href = "/"; // 로그인 성공 시 홈

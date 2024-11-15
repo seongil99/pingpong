@@ -1,5 +1,3 @@
-import HomeButton from "../Components/HomeButton.js";
-
 class AboutPage {
   template() {
     // 컨테이너 div 생성
