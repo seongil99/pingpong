@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.conf import settings
 from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
+from backend.decorators import spa_login_required
 from django.contrib.auth import get_user_model
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.views import APIView
@@ -24,7 +24,7 @@ User = get_user_model()
 @extend_schema(
     tags=['accounts'],
     responses=MFAStatusSerializer)
-@method_decorator(login_required, name='dispatch')
+@method_decorator(spa_login_required, name='dispatch')
 class mfa(APIView):
     def get(self, request) -> JsonResponse:
         if self.otp_enabled(request.user):
@@ -92,7 +92,7 @@ def setAccessToken(request, response, access: str, refresh: str):
     return response
 
 @api_view(['GET'])
-@login_required
+@spa_login_required
 @extend_schema(tags=['accounts'])
 def qrcode_display(request):
     user = request.user
