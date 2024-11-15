@@ -1,17 +1,9 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .decorators import spa_login_required
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from django.urls import reverse
-
-@api_view(['GET'])
-@spa_login_required
-def spaLoginRequiredView(request):
-    return Response({'message': 'Success'}, status = 200)
-
+from tests.views import spaLoginRequiredView
 
 User = get_user_model()
 
