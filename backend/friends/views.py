@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -17,8 +17,9 @@ from .serializer import (
 )
 from .error import FriendError
 from .detail import FriendDetail
-from common.error import Error
 
+from common.error import Error
+from common.pagination import StandardLimitOffsetPagination
 
 User = get_user_model()
 # Create your views here.
@@ -188,11 +189,27 @@ class FriendRequestActionView(APIView):
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
 
+
 @extend_schema(
     tags=["Friends"],
 )
-class FriendsView(APIView):
-    authentication_classes = [IsAuthenticated]
+class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    A viewset to list friends for the authenticated user.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Return a list of friends for the authenticated user.
+        Friends are determined by the Friend model where the status is 'ACCEPTED'.
+        """
+        friends = Friend.objects.filter(
+            Q(user1=self.request.user) | Q(user2=self.request.user),
+            status=Friend.ACCEPTED,
+        )
+        return friends
 
     @extend_schema(
         summary="Retrieve Friend List",
@@ -208,13 +225,15 @@ class FriendsView(APIView):
             ),
         },
     )
-    def get(self, request):
-        friends = Friend.objects.filter(
-            Q(user1=request.user) | Q(user2=request.user), status=Friend.ACCEPTED
-        )
-        friend_user = [
-            friends.user2 if friends.user1 == request.user else friends.user1
-            for friends in friends
-        ]
-        serializer = UserSerializer(friend_user, many=True)
-        return Response(serializer.data, status=200)
+    def list(self, request, *args, **kwargs):
+        # Get the list of friends based on the queryset
+        queryset = self.get_queryset()
+
+        # Paginate the results
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            return self.get_paginated_response(UserSerializer(page, many=True).data)
+
+        # If no pagination applied (e.g., no query parameters), return all results
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
