@@ -27,7 +27,7 @@ class FriendRequestTests(APITestCase):
 
     def test_send_friend_request(self):
         """Test sending a valid friend request."""
-        url = reverse("friends")  # Assuming FriendsView's URL is named 'friends'
+        url = reverse("friend-request")  # Assuming FriendsView's URL is named 'friends'
         data = {"target_user": self.user2.id}
 
         response = self.client.post(url, data)
@@ -39,7 +39,7 @@ class FriendRequestTests(APITestCase):
 
     def test_send_friend_request_invalid_user(self):
         """Test sending a friend request to an invalid user."""
-        url = reverse("friends")
+        url = reverse("friend-request")
         data = {"target_user": 9999}  # Non-existent user ID
 
         response = self.client.post(url, data)
@@ -56,7 +56,7 @@ class FriendRequestTests(APITestCase):
             status=Friend.PENDING,
         )
 
-        url = reverse("friends")
+        url = reverse("friend-request")
         data = {"target_user": self.user2.id}
 
         response = self.client.post(url, data)
@@ -73,7 +73,7 @@ class FriendRequestTests(APITestCase):
             status=Friend.ACCEPTED,
         )
 
-        url = reverse("friends")
+        url = reverse("friend-request")
         data = {"target_user": self.user2.id}
 
         response = self.client.post(url, data)
