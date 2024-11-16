@@ -6,8 +6,6 @@ from drf_spectacular.utils import extend_schema
 
 import logging
 
-from accounts.two_factor_auth.views import TwoFactorToken
-
 logger = logging.getLogger(__name__)
 
 @extend_schema(tags=['accounts'])

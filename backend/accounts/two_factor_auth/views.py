@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-@extend_schema(tags=['accounts'])
+@extend_schema(tags=['2fa'])
 @method_decorator(login_required, name='dispatch')
 class mfa(APIView):
     def get(self, request) -> JsonResponse:
@@ -89,7 +89,7 @@ def setAccessToken(request, response, access: str, refresh: str):
 
 @api_view(['GET'])
 @login_required
-@extend_schema(tags=['accounts'])
+@extend_schema(tags=['2fa'])
 def qrcode_display(request):
     user = request.user
     device = TOTPDevice.objects.filter(user=user).first()
