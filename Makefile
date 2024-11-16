@@ -5,6 +5,10 @@ dev:
 	docker compose -f docker-compose.develop.yml down
 	docker compose -f docker-compose.develop.yml up -d --build
 
+debug:
+	docker compose -f docker-compose.develop.yml down
+	docker compose -f docker-compose.develop.yml up --build
+
 re:
 	docker compose down
 	docker compose up -d --build
