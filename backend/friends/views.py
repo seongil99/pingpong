@@ -9,6 +9,8 @@ from rest_framework import status
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
+from accounts.users.serializers import UserSerializer
+
 from .models import Friend
 from .serializer import (
     FriendSerializer,
@@ -186,3 +188,34 @@ class FriendRequestActionView(APIView):
 
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
+
+@extend_schema(
+    tags=["Friends"],
+)
+class FriendsView(APIView):
+    authentication_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Retrieve Friend List",
+        description="Get a list of friends for the authenticated user. "
+        "Friends are determined by the Friend model where the status is 'ACCEPTED'.",
+        responses={
+            200: OpenApiResponse(
+                response=UserSerializer(many=True),
+                description="List of friends successfully retrieved.",
+            ),
+            401: OpenApiResponse(
+                description="Unauthorized. The user must be authenticated to access this endpoint."
+            ),
+        },
+    )
+    def get(self, request):
+        friends = Friend.objects.filter(
+            Q(user1=request.user) | Q(user2=request.user), status=Friend.ACCEPTED
+        )
+        friend_user = [
+            friends.user2 if friends.user1 == request.user else friends.user1
+            for friends in friends
+        ]
+        serializer = UserSerializer(friend_user, many=True)
+        return Response(serializer.data, status=200)

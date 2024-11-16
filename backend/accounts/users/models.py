@@ -9,7 +9,6 @@ from accounts.users.manages import UserManager
 class User(AbstractUser):
     username = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(_('email address'), unique=True)
-    is_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
