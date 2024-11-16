@@ -16,11 +16,10 @@ function createFormComponent() {
   
       // Send data with Fetch
       try {
-        const response = await fetch('/api/v1/accounts/two-factor-auth/verifications', {
+        const response = await fetch('/api/v1/accounts/mfa/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            credentials: 'include',
           },
           body: JSON.stringify(data),
         });
@@ -28,7 +27,7 @@ function createFormComponent() {
         if (response.ok) {
           const result = await response.json();
           console.log('Success:', result);
-          location.reload();
+          window.location.href = '/';
         } else {
           console.error('Error:', response.statusText);
         }

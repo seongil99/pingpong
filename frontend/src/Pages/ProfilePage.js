@@ -6,19 +6,19 @@ import createFormComponent from "../Components/MfaForm.js";
 import DisableMFAbutton from "../Components/DiableMFAbutton.js";
 
 class LoginPage {
-  async template() {
+    async template() {
 
-    const navBar = document.createElement("div");
-    navBar.innerHTML = NavBar;
-    const title = document.createElement("h2");
+        const navBar = document.createElement("div");
+        navBar.innerHTML = NavBar;
+        const title = document.createElement("h2");
 
-    const container = document.createElement('div');
-    container.id = 'profile-page';
-    container.appendChild(navBar);
-    container.appendChild(title);
+        const container = document.createElement('div');
+        container.id = 'profile-page';
+        container.appendChild(navBar);
+        container.appendChild(title);
 
-    const mainDiv = document.createElement('div');
-    mainDiv.innerHTML = `
+        const mainDiv = document.createElement('div');
+        mainDiv.innerHTML = `
         <div id="profile-info">
         <p id="email">Email: <span></span></p>
         <p id="first-name">First Name: <span></span></p>
@@ -33,45 +33,54 @@ class LoginPage {
             <button id="save-changes">Save Changes</button>
             <button id="cancel-edit">Cancel</button>
         </div>
+        <div id="mfa-section">
+            <!-- Display the MFA status here -->
+        </div>
     `;
-    
-    container.appendChild(mainDiv);
 
-    document.getElementById('app').innerHTML = ''; // Clear previous content
-    document.getElementById('app').appendChild(container); // Append the profile page
-    
-    const userData = await fetchUserProfile();
-    displayProfile(userData);
+        container.appendChild(mainDiv);
 
-    if (!userData.mfa_enabled) {
-        const mfaEnableTitle = document.createElement('h2');
-        mfaEnableTitle.textContent = 'Enable MFA';
-        const mfaQRcode = document.createElement('mfa-qr-display');
-        container.appendChild(mfaEnableTitle);
-        container.appendChild(mfaQRcode);
-        const mfaForm = createFormComponent();
-        container.appendChild(mfaForm);
-    } else {
-        const mfaDisableTitle = document.createElement('h2');
-        const mfaDisableButton = document.createElement('disable-mfa-button');
-        mfaDisableTitle.textContent = 'Disable MFA';
-        container.appendChild(mfaDisableTitle);
-        container.appendChild(mfaDisableButton);
+        document.getElementById('app').innerHTML = ''; // Clear previous content
+        document.getElementById('app').appendChild(container); // Append the profile page
+
+        const userData = await fetchUserProfile();
+        displayProfile(userData);
+        const mfaStatus = await fetchMFAStatus();
+        console.log(mfaStatus);
+        const mfaSection = document.getElementById('mfa-section');
+        if (mfaStatus == 'enabled') {
+            const mfaDisableTitle = document.createElement('h2');
+            const mfaDisableButton = document.createElement('disable-mfa-button');
+            mfaDisableTitle.textContent = 'Disable MFA';
+            mfaSection.appendChild(mfaDisableTitle);
+            mfaSection.appendChild(mfaDisableButton);
+        } else {
+            const mfaEnableTitle = document.createElement('h2');
+            mfaEnableTitle.textContent = 'Enable MFA';
+            const mfaQRcode = document.createElement('mfa-qr-display');
+            mfaSection.appendChild(mfaEnableTitle);
+            mfaSection.appendChild(mfaQRcode);
+            const mfaForm = createFormComponent();
+            mfaSection.appendChild(mfaForm);
+        }
+
+        return container; // 최종 DOM 반환
     }
-
-
-    return container; // 최종 DOM 반환
-  }
 }
 
 async function fetchUserProfile() {
     try {
-        const response = await fetch('/api/v1/accounts/user');
+        const response = await fetch('/api/v1/accounts/user',
+            {
+                method: 'GET',
+                credentials: 'include'
+            }
+        );
         if (!response.ok) throw new Error('Network response was not ok');
-        
+
         const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
         // Populate the profile info
-        
+
         return userData;
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -97,6 +106,20 @@ function displayProfile(userData) {
     } else {
         lastName.textContent = userData.last_name;
     }
+}
+
+async function fetchMFAStatus() {
+    return await fetch('/api/v1/accounts/mfa/',
+        {
+            method: 'GET',
+            credentials: 'include'
+        }
+    )
+        .then(response => response.json())
+        .then(data => {
+            return data.status;
+        })
+        .catch(error => console.error('Error fetching MFA status:', error));
 }
 
 export default new LoginPage();
