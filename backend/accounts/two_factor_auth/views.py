@@ -1,12 +1,11 @@
 from django.http import JsonResponse
 from django.conf import settings
-from django.utils.decorators import method_decorator
-from common.decorators import spa_login_required
 from django.contrib.auth import get_user_model
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from io import BytesIO
 from datetime import timedelta
@@ -24,6 +23,7 @@ from .serializers import (
     OTPVerificationSerializer,
 )
 
+
 import base64
 import pyotp
 import qrcode
@@ -36,8 +36,9 @@ User = get_user_model()
 @extend_schema(
     tags=['accounts']
     )
-@method_decorator(spa_login_required, name='dispatch')
 class mfa(APIView):
+    
+    permission_classes = [IsAuthenticated]
     
     @extend_schema(
         description="Get MFA status",
@@ -175,7 +176,6 @@ def setAccessToken(request, response, access: str, refresh: str):
     return response
 
 @api_view(['GET'])
-@spa_login_required
 @extend_schema(
     description="Display QR code for MFA setup",
     tags=['accounts'],
@@ -190,6 +190,7 @@ def setAccessToken(request, response, access: str, refresh: str):
         ),
     }
     )
+@permission_classes([IsAuthenticated])
 def qrcode_display(request):
     user = request.user
     device = TOTPDevice.objects.filter(user=user).first()
