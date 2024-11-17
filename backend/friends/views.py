@@ -29,8 +29,8 @@ User = get_user_model()
     tags=["Friends"],
 )
 class SendFriendRequestView(APIView):
-
-    authentication_classes = [IsAuthenticated]
+    
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Send a Friend Request",
@@ -104,7 +104,7 @@ class SendFriendRequestView(APIView):
     tags=["Friends"],
 )
 class FriendRequestActionView(APIView):
-    authentication_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Accept a Friend Request",

@@ -7,12 +7,13 @@ from friends.views import (
 )
 
 router = DefaultRouter()
-router.register(r"friends", FriendsViewSet, basename="friends")
+router.register(r"users/friends", FriendsViewSet, basename="friends")
 
 urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("users/friends/requests", SendFriendRequestView.as_view(), name="friend-request"),
     path("users/friends/requests/<int:id>/", FriendRequestActionView.as_view(), name="friend-request-action"),
+    # path("users/search/", )
 ]
 
 urlpatterns += router.urls
