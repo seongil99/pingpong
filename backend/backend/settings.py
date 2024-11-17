@@ -73,7 +73,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_totp',
     'pyotp',
     # friends
-    'friends',
+    # 'friends',
     # 'django_otp.plugins.otp_email',  # <- if you want email capability.
     # 'two_factor.plugins.email',  # <- if you want email capability.
 ]

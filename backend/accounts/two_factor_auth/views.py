@@ -1,14 +1,28 @@
 from django.http import JsonResponse
 from django.conf import settings
-from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 from io import BytesIO
 from datetime import timedelta
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiResponse,
+    )
+from .detail import Details
+from .error import Errors
+
+from common.serializers import SimpleResponseSerializer
+from common.error import Error
+from .serializers import (
+    MFAStatusSerializer,
+    OTPVerificationSerializer,
+)
+
 
 import base64
 import pyotp
@@ -19,45 +33,119 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-@extend_schema(tags=['accounts'])
-@method_decorator(login_required, name='dispatch')
+@extend_schema(
+    tags=['accounts']
+    )
 class mfa(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        description="Get MFA status",
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="MFA status",
+                response=MFAStatusSerializer
+                ),
+            })
     def get(self, request) -> JsonResponse:
         if self.otp_enabled(request.user):
-            return JsonResponse({'status': 'enabled'})
-        return JsonResponse({'status': 'disabled'})
+            return JsonResponse(MFAStatusSerializer({'status': 'enabled'}).data, status=200)
+        return JsonResponse(MFAStatusSerializer({'status': 'disabled'}).data, status=200)
         
+    @extend_schema(
+        description="Enable MFA",
+        request=OTPVerificationSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="OTP verified successfully",
+                response=SimpleResponseSerializer,
+            ),
+            400: OpenApiResponse(
+                description="Invalid OTP or missing device",
+                response=SimpleResponseSerializer,
+            ),
+        }
+        )
     def put(self, request) -> JsonResponse:
         user = request.user
-        otp_code = request.data.get('otp_code')
+        serializer = OTPVerificationSerializer(data=request.data, context={'user': user})
         
-        logger.info(f'otp_code: {otp_code}')
-        device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
-        if device and device.verify_token(otp_code):
-            device.confirmed = True
-            device.save()
-            return JsonResponse({'status': '2FA enabled successfully'})
-        return JsonResponse({'status': 'Invalid OTP code'}, status=400)
+        if serializer.is_valid():
+            device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+            if device:
+                device.confirmed = True
+                device.save()
+                return Response(
+                    SimpleResponseSerializer({'detail': Details.MFA_ENABLED.value}).data, 
+                    status=status.HTTP_200_OK
+                    )
+        
+        # If validation fails, return error response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
     
+    @extend_schema(
+        description="Disable MFA",
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="MFA disabled successfully",
+                response=SimpleResponseSerializer
+            ),
+            400: OpenApiResponse(
+                description="No device found",
+                response=SimpleResponseSerializer)
+        },
+        )
     def delete(self, request) -> JsonResponse:
         user = request.user
         device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
         
         if device:
             device.delete()
-            return JsonResponse({'status': '2FA disabled successfully'})
+            return JsonResponse(
+                SimpleResponseSerializer({'detail': Details.MFA_DISABLED.value}).data,
+                status=200
+                )
+        return JsonResponse(SimpleResponseSerializer({'detail': Errors.NO_DEVICE.value}).data, status=400)
     
+    @extend_schema(
+        description="Verify OTP",
+        request=OTPVerificationSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="OTP verified successfully",
+                response=SimpleResponseSerializer
+            ),
+            400: OpenApiResponse(
+                description="Invalid OTP or missing device",
+                response=SimpleResponseSerializer
+            ),
+        }
+    )
     def post(self, request) -> JsonResponse:
-        User = get_user_model()
-        userId = request.session.get('userId')
-        user = User.objects.get(id=userId)
-        device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
-        otp_code = request.data.get('otp')
-        logger.info(f'otp_code: {otp_code}')
-        if device.verify_token(otp_code):
-            return self.setJWTToken(request)
-        return JsonResponse({'status': 'Invalid OTP code'}, status=400)
         
+        serializer = OTPVerificationSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            otp_code = request.data.get('otp')
+            
+            User = get_user_model()
+            userId = request.session.get('userId')
+            try:
+                user = User.objects.get(id=userId)
+            except User.DoesNotExist:
+                return JsonResponse({'detail': Error.USER_NOT_FOUND.value}, status=404)
+
+            device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+            if not device:
+                return JsonResponse({'status': Errors.NO_DEVICE.value}, status=404)
+            
+            if device.verify_token(otp_code):
+                return self.setJWTToken(request)
+            return JsonResponse({'status': Errors.INVALID_OTP.value}, status=400)
+        return JsonResponse(serializer.errors, status=400)
     
     def otp_enabled(self, user: User) -> bool:
         return user.totpdevice_set.filter(confirmed=True).exists() # confirmed = True means the device is enabled
@@ -88,8 +176,21 @@ def setAccessToken(request, response, access: str, refresh: str):
     return response
 
 @api_view(['GET'])
-@login_required
-@extend_schema(tags=['accounts'])
+@extend_schema(
+    description="Display QR code for MFA setup",
+    tags=['accounts'],
+    request=None,
+    responses={
+        200: OpenApiResponse(
+            description="QR code for MFA",
+            ),
+        401: OpenApiResponse(
+            description="User not authenticated",
+            response=SimpleResponseSerializer,
+        ),
+    }
+    )
+@permission_classes([IsAuthenticated])
 def qrcode_display(request):
     user = request.user
     device = TOTPDevice.objects.filter(user=user).first()
