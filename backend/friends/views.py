@@ -10,7 +10,7 @@ from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .models import Friend
-from .serializer import (
+from .serializers import (
     FriendSerializer,
     FriendRequestSerializer,
 )
