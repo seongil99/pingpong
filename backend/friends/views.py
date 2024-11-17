@@ -187,6 +187,8 @@ class FriendRequestActionView(APIView):
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
 
+from django.db.models import Case, When, F, ForeignKey
+from django.db import models
 
 @extend_schema(
     tags=["Friends"],
@@ -195,7 +197,7 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
     """
     A viewset to list friends for the authenticated user.
     """
-
+    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -204,10 +206,20 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
         Friends are determined by the Friend model where the status is 'ACCEPTED'.
         """
         friends = Friend.objects.filter(
-            Q(user1=self.request.user) | Q(user2=self.request.user),
-            status=Friend.ACCEPTED,
+            Q(user1=self.request.user) | Q(user2=self.request.user), status=Friend.ACCEPTED
         )
-        return friends
+        # Annotate the queryset with the other user (user1 or user2) based on who the authenticated user is
+        friends = friends.annotate(
+            other_user=Case(
+                When(user1=self.request.user, then=F("user2")),
+                When(user2=self.request.user, then=F("user1")),
+                output_field=ForeignKey(User, on_delete=models.CASCADE),
+            )
+        )
+        other_user_ids = friends.values_list("other_user", flat=True)
+        # Query the User model for the friend users (excluding the authenticated user)
+        users = User.objects.filter(id__in=other_user_ids)
+        return users
 
     @extend_schema(
         summary="Retrieve Friend List",
@@ -225,15 +237,14 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         # Get the list of friends based on the queryset
-        queryset = self.get_queryset()
-
-        # Paginate the results
-        page = self.paginate_queryset(queryset)
+        users = self.get_queryset()
+        page = self.paginate_queryset(users)
         if page is not None:
-            return self.get_paginated_response(UserSerializer(page, many=True).data)
+            serializer = self.get_serializer(users, many=True)
+            return self.get_paginated_response(serializer.data)
 
-        # If no pagination applied (e.g., no query parameters), return all results
-        serializer = UserSerializer(queryset, many=True)
+        # Use the UserSerializer to serialize the "other_user" entries
+        serializer = self.get_serializer(users, many=True)
         return Response(serializer.data)
 
 
@@ -264,8 +275,8 @@ class UserSearchView(ListAPIView):
         ).exclude(
             id=self.request.user.id
         )  # Exclude the currently authenticated user
-        
+
         if exclude_me:
             queryset = queryset.exclude(id=self.request.user.id)
-        
+
         return queryset

@@ -2,9 +2,9 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from .models import Friend
-from .error import FriendError
-from .detail import FriendDetail
+from ..models import Friend
+from ..error import FriendError
+from ..detail import FriendDetail
 from common.error import Error
 
 User = get_user_model()
@@ -203,7 +203,7 @@ class FriendListViewTest(APITestCase):
         )
 
         # URL for the API endpoint
-        self.url = reverse("friends")  # Assuming the URL is named 'friend-list'
+        self.url = reverse("friends-list")  # Assuming the URL is named 'friend-list'
 
     def test_get_friends_with_accepted_status_user1(self):
         # Force authenticate the client as user1
@@ -211,12 +211,11 @@ class FriendListViewTest(APITestCase):
 
         # Make a GET request
         response = self.client.get(self.url)
-
         # Check the response status code
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that the correct friends are returned
-        friends_data = response.json()
+        friends_data = response.data['results']
         self.assertEqual(len(friends_data), 2)  # Should return 2 friends
         friend_usernames = [friend["username"] for friend in friends_data]
         self.assertIn("user2", friend_usernames)
@@ -233,7 +232,7 @@ class FriendListViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that the correct friends are returned
-        friends_data = response.json()
+        friends_data = response.data['results']
         self.assertEqual(len(friends_data), 1)  # Should return 2 friends
         friend_usernames = [friend["username"] for friend in friends_data]
         self.assertIn("user1", friend_usernames)
@@ -249,7 +248,7 @@ class FriendListViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that the correct friends are returned
-        friends_data = response.json()
+        friends_data = response.data['results']
         self.assertEqual(len(friends_data), 1)  # Should return 2 friends
         friend_usernames = [friend["username"] for friend in friends_data]
         self.assertIn("user1", friend_usernames)
@@ -275,5 +274,5 @@ class FriendListViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that no friends are returned
-        friends_data = response.json()
+        friends_data = response.data['results']
         self.assertEqual(len(friends_data), 0)  # No friends should be returned
