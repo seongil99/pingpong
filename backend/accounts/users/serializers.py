@@ -1,5 +1,6 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import UserDetailsSerializer
+from rest_framework import serializers
 
 from accounts.users.models import User
 
@@ -35,3 +36,17 @@ class CustomRegisterSerializer(RegisterSerializer):
         # Add any additional fields you want here
         # user.mfa_secret = pyotp.random_base32()
         # user.save()
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(use_url=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'email',
+            'username',
+            'avatar',
+            'is_verified',
+        ]
