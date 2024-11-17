@@ -1,19 +1,20 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework import status
-
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from rest_framework import filters
 
 from accounts.users.serializers import UserSerializer
 
 from .models import Friend
-from .serializer import (
+from .serializers import (
     FriendSerializer,
     FriendRequestSerializer,
+    UserSearchSerializer,
 )
 from .error import FriendError
 from .detail import FriendDetail
@@ -29,7 +30,6 @@ User = get_user_model()
     tags=["Friends"],
 )
 class SendFriendRequestView(APIView):
-    
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -172,9 +172,7 @@ class FriendRequestActionView(APIView):
             # Attempt to get the friend request (pending status and requester must match)
             friend_request = Friend.objects.get(id=id)
             if friend_request.user1 != user and friend_request.user2 != user:
-                return Response(
-                    {"error": Error.PERMISSION_DENIED.value}, status=401
-                )
+                return Response({"error": Error.PERMISSION_DENIED.value}, status=401)
             if friend_request.status != Friend.PENDING:
                 return Response(
                     {"error": FriendError.INVALID_REQUEST.value}, status=400
@@ -237,3 +235,37 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
         # If no pagination applied (e.g., no query parameters), return all results
         serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["Users"],
+)
+class UserSearchView(ListAPIView):
+    permission_classes = [IsAuthenticated]  # Only allow authenticated users to search
+    serializer_class = UserSearchSerializer
+    queryset = (
+        User.objects.all()
+    )  # Base queryset, we'll filter it further in the `get_queryset` method
+    filter_backends = [filters.SearchFilter]  # Use the search filter backend
+    search_fields = ["email", "username"]  # Fields to search in
+
+    def get_queryset(self):
+        request = self.request
+        query = request.query_params.get("q", "").strip()  # Get the search query
+        exclude_me = (
+            request.query_params.get("exclude_me", "false") == "true"
+        )  # Param to exclude the authenticated user
+
+        if not query:
+            # Return an empty queryset if no query is provided
+            return User.objects.none()
+        queryset = User.objects.filter(
+            Q(email__icontains=query) | Q(username__icontains=query)
+        ).exclude(
+            id=self.request.user.id
+        )  # Exclude the currently authenticated user
+        
+        if exclude_me:
+            queryset = queryset.exclude(id=self.request.user.id)
+        
+        return queryset
