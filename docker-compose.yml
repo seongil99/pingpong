@@ -46,6 +46,8 @@ services:
       db:
         condition: service_healthy
     restart: always
+    volumes:
+      - profile_images_data:/app/media
     networks:
       - ft_transcendence
 
@@ -67,6 +69,7 @@ services:
 
 volumes:
   db_data:
+  profile_images_data:
 
 networks:
   ft_transcendence:
