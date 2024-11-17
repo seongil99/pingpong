@@ -23,6 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
+# Media files (User-uploaded files)
+MEDIA_URL = '/api/media/'
+MEDIA_DIR = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -174,7 +179,7 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # JWT 토큰 인증.
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT 토큰 인증.
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -207,7 +212,6 @@ AUTHENTICATION_BACKENDS = [
     # 'django_otp.backends.OTPBackend',  # For OTP-based logins    
 ]
 
-
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
@@ -237,6 +241,8 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
 
+SOCIALACCOUNT_ADAPTER = 'accounts.oauth2.provider.CustomSocialAccountAdapter'
+
 SOCIALACCOUNT_PROVIDERS = {
     'fortytwo': {
         'APP': {
@@ -249,7 +255,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
 
-#2fa
+# 2fa
 
 TWO_FACTOR_AUTHENTICATION_METHODS = (
     'django_otp.plugins.otp_totp.models.TOTP',
