@@ -1,8 +1,8 @@
 import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
 import mfaQRcode from "../Components/MfaQRcode.js";
-import mfaForm from "../Components/MfaForm.js";
-import createFormComponent from "../Components/MfaForm.js";
+import mfaForm from "../Components/AuthenticatorForm.js";
+import createFormComponent from "../Components/AuthenticatorForm.js";
 import DisableMFAbutton from "../Components/DiableMFAbutton.js";
 
 class LoginPage {
