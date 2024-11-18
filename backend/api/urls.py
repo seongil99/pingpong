@@ -4,12 +4,12 @@ from friends.views import (
     FriendRequestActionView,
     FriendRequestView,
     UserSearchView,
-    FriendsListView,
+    FriendsView,
 )
 
 urlpatterns = [
     path("accounts/", include("accounts.urls")),
-    path("users/friends/", FriendsListView.as_view(), name="friends-list"),
+    path("users/friends/", FriendsView.as_view(), name="friends-list"),
     path("users/search/", UserSearchView.as_view(), name="user-search"),
     path("users/friend-requests", FriendRequestView.as_view(), name="friend-request"),
     path(

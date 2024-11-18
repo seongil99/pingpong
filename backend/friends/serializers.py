@@ -49,6 +49,7 @@ class FriendRequestWithOtherUserSerializer(serializers.ModelSerializer):
             "other_user",
         )
 
+    @extend_schema_field(UserSerializer)
     def get_other_user(self, obj):
         """
         This method returns the User instance for the other_user.

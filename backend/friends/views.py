@@ -43,7 +43,7 @@ class FriendRequestActionView(APIView):
         responses={
             200: OpenApiResponse(
                 description="Friend request accepted successfully.",
-                response=FriendSerializer,
+                response=FriendRequestWithOtherUserSerializer,
             ),
             404: OpenApiResponse(
                 description="User or friend request not found.", response=str
@@ -70,7 +70,7 @@ class FriendRequestActionView(APIView):
 
         friend_request.status = Friend.ACCEPTED
         friend_request.save()
-        serializer = FriendSerializer(friend_request)
+        serializer = FriendRequestWithOtherUserSerializer(friend_request, context={"request": request})
         return Response(serializer.data, status=200)
 
     @extend_schema(
@@ -122,12 +122,11 @@ class FriendRequestActionView(APIView):
     description="List friends for the authenticated user.",
     tags=["Friends"],
 )
-class FriendsListView(ListAPIView):
+class FriendsView(GenericAPIView):
     """
     A viewset to list friends for the authenticated user.
     """
 
-    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -137,15 +136,25 @@ class FriendsListView(ListAPIView):
         friends = Friend.objects.filter(
             Q(user1=self.request.user) | Q(user2=self.request.user),
             status=Friend.ACCEPTED,
-        ).annotate(
-            other_user=Case(
-                When(user1=self.request.user, then=F("user2")),
-                When(user2=self.request.user, then=F("user1")),
-                output_field=models.IntegerField(),
-            )
         )
-        user_ids = friends.values_list("other_user", flat=True)
-        return User.objects.filter(id__in=user_ids)
+        return friends
+
+    @extend_schema(
+        request=None,
+        responses={200: FriendRequestWithOtherUserSerializer},
+    )
+    def get(self, request):
+        """
+        Return the list of friends for the authenticated user.
+        """
+        friends = self.get_queryset()
+        print(friends)
+        paginator = StandardLimitOffsetPagination()
+        paginated_friends = paginator.paginate_queryset(friends, request)
+        serializer = FriendRequestWithOtherUserSerializer(
+            paginated_friends, many=True, context={"request": request}
+        )
+        return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(

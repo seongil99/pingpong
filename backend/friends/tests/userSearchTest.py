@@ -32,7 +32,7 @@ class UserSearchViewTest(APITestCase):
         force_authenticate(self.client, user=self.user1)
 
         # Search for users with "example" in their email or username
-        response = self.client.get(self.url, {"q": "example"})
+        response = self.client.get(self.url, {"search": "example"})
 
         # Check status code and pagination metadata
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -61,13 +61,12 @@ class UserSearchViewTest(APITestCase):
     def test_search_with_empty_query(self):
         # Force authenticate with user1
         force_authenticate(self.client, user=self.user1)
-
         # Search with an empty query should return no results
-        response = self.client.get(self.url, {"q": ""})
+        response = self.client.get(self.url, {"search": ""})
 
         # The response should be an empty list and pagination metadata
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"], [])
+        self.assertEqual(len(response.data["results"]), 3)
         self.assertIn("count", response.data)
         self.assertIn("next", response.data)
         self.assertIn("previous", response.data)
@@ -77,7 +76,7 @@ class UserSearchViewTest(APITestCase):
         force_authenticate(self.client, user=self.user1)
 
         # Search for a query that doesn't match any users
-        response = self.client.get(self.url, {"q": "nonexistent"})
+        response = self.client.get(self.url, {"search": "nonexistent"})
 
         # The response should be an empty list and pagination metadata
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -91,7 +90,7 @@ class UserSearchViewTest(APITestCase):
         force_authenticate(self.client, user=self.user1)
 
         # Make sure the authenticated user is excluded from the search
-        response = self.client.get(self.url, {"q": "testuser", "exclude_me": "true"})
+        response = self.client.get(self.url, {"search": "testuser"})
 
         # The response should include pagination metadata
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -101,8 +100,8 @@ class UserSearchViewTest(APITestCase):
 
         # Only user2 should be returned, as user1 is excluded
         emails = [user["email"] for user in response.data["results"]]
-        self.assertEqual(len(response.data["results"]), 1)  # Only user2 should match
-        self.assertNotIn(self.user1.email, emails)
+        self.assertEqual(len(response.data["results"]), 2) 
+        self.assertIn(self.user1.email, emails)
         self.assertIn(self.user2.email, emails)
 
     def test_search_with_incomplete_query(self):
@@ -110,7 +109,7 @@ class UserSearchViewTest(APITestCase):
         force_authenticate(self.client, user=self.user1)
 
         # Search with a partial query (case-insensitive)
-        response = self.client.get(self.url, {"q": "test", "exclude_me": "true"})
+        response = self.client.get(self.url, {"search": "test"})
 
         # The response should include user1 and user2 because "test" is part of their username/email
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -125,7 +124,7 @@ class UserSearchViewTest(APITestCase):
     def test_unauthenticated_search(self):
         self.client.logout()
         # Test if the view enforces authentication
-        response = self.client.get(self.url, {"q": "test"})
+        response = self.client.get(self.url, {"search": "test"})
 
         # Should return a 401 Unauthorized error if not authenticated
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -217,10 +217,10 @@ class FriendListViewTest(APITestCase):
         # Check that the correct friends are returned
         friends_data = response.data['results']
         self.assertEqual(len(friends_data), 2)  # Should return 2 friends
-        friend_usernames = [friend["username"] for friend in friends_data]
+        friend_usernames = [friend["other_user"]["username"] for friend in friends_data]
         self.assertIn("user2", friend_usernames)
         self.assertIn("user3", friend_usernames)
-    
+
     def test_get_friends_with_accepted_status_user2(self):
         # Force authenticate the client as user1
         self.client.force_authenticate(user=self.user2)
@@ -234,9 +234,9 @@ class FriendListViewTest(APITestCase):
         # Check that the correct friends are returned
         friends_data = response.data['results']
         self.assertEqual(len(friends_data), 1)  # Should return 2 friends
-        friend_usernames = [friend["username"] for friend in friends_data]
+        friend_usernames = [friend["other_user"]["username"] for friend in friends_data]
         self.assertIn("user1", friend_usernames)
-    
+
     def test_get_friends_with_accepted_status_user3(self):
         # Force authenticate the client as user1
         self.client.force_authenticate(user=self.user3)
@@ -250,7 +250,7 @@ class FriendListViewTest(APITestCase):
         # Check that the correct friends are returned
         friends_data = response.data['results']
         self.assertEqual(len(friends_data), 1)  # Should return 2 friends
-        friend_usernames = [friend["username"] for friend in friends_data]
+        friend_usernames = [friend["other_user"]["username"] for friend in friends_data]
         self.assertIn("user1", friend_usernames)
 
     def test_requester_field_is_set_correctly(self):
