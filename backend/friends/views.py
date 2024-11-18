@@ -6,12 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from rest_framework import filters
-from django.db.models import Case, When, F
-from django.db import models
 from .serializers import FriendRequestWithOtherUserSerializer
 from rest_framework.generics import GenericAPIView
-
-from accounts.users.serializers import UserSerializer
 
 from .models import Friend
 from .serializers import (
@@ -70,7 +66,9 @@ class FriendRequestActionView(APIView):
 
         friend_request.status = Friend.ACCEPTED
         friend_request.save()
-        serializer = FriendRequestWithOtherUserSerializer(friend_request, context={"request": request})
+        serializer = FriendRequestWithOtherUserSerializer(
+            friend_request, context={"request": request}
+        )
         return Response(serializer.data, status=200)
 
     @extend_schema(
@@ -293,3 +291,41 @@ class FriendRequestView(GenericAPIView):
         serializer = FriendSerializer(friend)
 
         return Response(serializer.data, status=201)
+
+
+@extend_schema(
+    tags=["Users"],
+)
+class SearchFriendableView(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSearchSerializer
+    queryset = User.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["email", "username"]
+
+    def get_queryset(self):
+    # Get all friends for the current user (both as user1 and user2)
+        friends_users = Friend.objects.filter(
+            Q(user1=self.request.user) | Q(user2=self.request.user)
+        ).values_list("user1", "user2")  # Get both user1 and user2
+
+        # Flatten the result to a single list and exclude the current user's ID
+        friend_ids = [user for pair in friends_users for user in pair]  # Flattening pairs into a list
+
+        # Exclude users that are already in the friends list
+        queryset = User.objects.exclude(id__in=friend_ids).exclude(id=self.request.user.id)
+        return queryset
+
+    # @extend_schema(
+    #     summary="Search Users",
+    #     description="Search for users by email or username.",
+    #     responses={200: UserSearchSerializer},
+    # )
+    # def get(self, request):
+    #     """
+    #     Return a list of users that can be sent friend requests.
+    #     """
+    #     users = self.filter_queryset(self.get_queryset())
+    #     serializer = UserSearchSerializer(users, many=True)
+    #     return Response(serializer.data)

@@ -5,6 +5,7 @@ from friends.views import (
     FriendRequestView,
     UserSearchView,
     FriendsView,
+    SearchFriendableView,
 )
 
 urlpatterns = [
@@ -17,5 +18,5 @@ urlpatterns = [
         FriendRequestActionView.as_view(),
         name="friend-request-action",
     ),
-    # path("users/search/", )
+    path("users/search/friendable", SearchFriendableView.as_view(), name="search-friendable"),
 ]
