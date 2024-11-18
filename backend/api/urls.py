@@ -1,21 +1,21 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from friends.views import (
-    SendFriendRequestView,
     FriendRequestActionView,
-    FriendsViewSet,
+    FriendRequestView,
     UserSearchView,
+    FriendsListView,
 )
-
-router = DefaultRouter()
-router.register(r"users/friends", FriendsViewSet, basename="friends")
 
 urlpatterns = [
     path("accounts/", include("accounts.urls")),
+    path("users/friends/", FriendsListView.as_view(), name="friends-list"),
     path("users/search/", UserSearchView.as_view(), name="user-search"),
-    path("users/friends/requests", SendFriendRequestView.as_view(), name="friend-request"),
-    path("users/friends/requests/<int:id>/", FriendRequestActionView.as_view(), name="friend-request-action"),
+    path("users/friend-requests", FriendRequestView.as_view(), name="friend-request"),
+    path(
+        "users/friend-requests/<int:id>/",
+        FriendRequestActionView.as_view(),
+        name="friend-request-action",
+    ),
     # path("users/search/", )
 ]
-
-urlpatterns += router.urls

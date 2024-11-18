@@ -3,10 +3,13 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from rest_framework import filters
+from django.db.models import Case, When, F
+from django.db import models
+from .serializers import FriendRequestWithOtherUserSerializer
+from rest_framework.generics import GenericAPIView
 
 from accounts.users.serializers import UserSerializer
 
@@ -24,80 +27,6 @@ from common.pagination import StandardLimitOffsetPagination
 
 User = get_user_model()
 # Create your views here.
-
-
-@extend_schema(
-    tags=["Friends"],
-)
-class SendFriendRequestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="Send a Friend Request",
-        request=FriendRequestSerializer,
-        responses={
-            201: OpenApiResponse(
-                description="Friend request successfully sent.",
-                response=FriendSerializer,
-            ),
-            400: OpenApiResponse(
-                description="Bad request - Invalid data or friend request already sent.",
-                response={
-                    "application/json": {
-                        "type": "object",
-                        "properties": {"error": {"type": "string"}},
-                    }
-                },
-            ),
-            404: OpenApiResponse(
-                description="User not found.",
-                response={
-                    "application/json": {
-                        "type": "object",
-                        "properties": {"error": {"type": "string"}},
-                    }
-                },
-            ),
-        },
-    )
-    def post(self, request):
-        target_user_id = request.data.get("target_user")
-
-        if not FriendRequestSerializer(data=request.data).is_valid():
-            return Response({"error": FriendError.INVALID_REQUEST.value}, status=400)
-
-        if not target_user_id:
-            return Response({"error": FriendError.EMPTY_ID.value}, status=400)
-
-        target_user = User.objects.filter(id=target_user_id).first()
-        if not target_user:
-            return Response({"error": Error.USER_NOT_FOUND.value}, status=404)
-
-        # Ensure no duplicate friend requests
-        user1, user2 = sorted([request.user, target_user], key=lambda u: u.id)
-        existing_friendship = Friend.objects.filter(user1=user1, user2=user2).first()
-
-        if existing_friendship:
-            if existing_friendship.status == Friend.PENDING:
-                return Response(
-                    {"error": FriendError.REQUEST_ALREADY_SENT.value}, status=400
-                )
-            if existing_friendship.status == Friend.ACCEPTED:
-                return Response(
-                    {"error": FriendError.ALREADY_FRIENDS.value}, status=400
-                )
-            if existing_friendship.status == Friend.BLOCKED:
-                return Response(
-                    {"error": FriendError.INVALID_REQUEST.value}, status=400
-                )
-
-        # Create a new friend request
-        friend = Friend.objects.create(
-            user1=user1, user2=user2, requester=request.user, status=Friend.PENDING
-        )
-        serializer = FriendSerializer(friend)
-
-        return Response(serializer.data, status=201)
 
 
 @extend_schema(
@@ -187,96 +116,171 @@ class FriendRequestActionView(APIView):
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
 
-from django.db.models import Case, When, F, ForeignKey
-from django.db import models
 
 @extend_schema(
+    summary="List Friends",
+    description="List friends for the authenticated user.",
     tags=["Friends"],
 )
-class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
+class FriendsListView(ListAPIView):
     """
     A viewset to list friends for the authenticated user.
     """
+
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
         Return a list of friends for the authenticated user.
-        Friends are determined by the Friend model where the status is 'ACCEPTED'.
         """
         friends = Friend.objects.filter(
-            Q(user1=self.request.user) | Q(user2=self.request.user), status=Friend.ACCEPTED
-        )
-        # Annotate the queryset with the other user (user1 or user2) based on who the authenticated user is
-        friends = friends.annotate(
+            Q(user1=self.request.user) | Q(user2=self.request.user),
+            status=Friend.ACCEPTED,
+        ).annotate(
             other_user=Case(
                 When(user1=self.request.user, then=F("user2")),
                 When(user2=self.request.user, then=F("user1")),
-                output_field=ForeignKey(User, on_delete=models.CASCADE),
+                output_field=models.IntegerField(),
             )
         )
-        other_user_ids = friends.values_list("other_user", flat=True)
-        # Query the User model for the friend users (excluding the authenticated user)
-        users = User.objects.filter(id__in=other_user_ids)
-        return users
-
-    @extend_schema(
-        summary="Retrieve Friend List",
-        description="Get a list of friends for the authenticated user. "
-        "Friends are determined by the Friend model where the status is 'ACCEPTED'.",
-        responses={
-            200: OpenApiResponse(
-                response=UserSerializer(many=True),
-                description="List of friends successfully retrieved.",
-            ),
-            401: OpenApiResponse(
-                description="Unauthorized. The user must be authenticated to access this endpoint."
-            ),
-        },
-    )
-    def list(self, request, *args, **kwargs):
-        # Get the list of friends based on the queryset
-        users = self.get_queryset()
-        page = self.paginate_queryset(users)
-        if page is not None:
-            serializer = self.get_serializer(users, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        # Use the UserSerializer to serialize the "other_user" entries
-        serializer = self.get_serializer(users, many=True)
-        return Response(serializer.data)
+        user_ids = friends.values_list("other_user", flat=True)
+        return User.objects.filter(id__in=user_ids)
 
 
 @extend_schema(
+    summary="Search Users",
+    description="Search for users by email or username. 유저 검색",
     tags=["Users"],
 )
 class UserSearchView(ListAPIView):
     permission_classes = [IsAuthenticated]  # Only allow authenticated users to search
     serializer_class = UserSearchSerializer
-    queryset = (
-        User.objects.all()
-    )  # Base queryset, we'll filter it further in the `get_queryset` method
+    queryset = User.objects.all()
     filter_backends = [filters.SearchFilter]  # Use the search filter backend
     search_fields = ["email", "username"]  # Fields to search in
 
+
+class FriendRequestView(GenericAPIView):
+    """
+    A viewset to list friend requests for the authenticated user.
+    """
+
+    queryset = Friend.objects.all()
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
-        request = self.request
-        query = request.query_params.get("q", "").strip()  # Get the search query
-        exclude_me = (
-            request.query_params.get("exclude_me", "false") == "true"
-        )  # Param to exclude the authenticated user
+        """
+        Return a list of friends for the authenticated user.
+        """
+        friends = Friend.objects.filter(
+            Q(user1=self.request.user) | Q(user2=self.request.user),
+            status=Friend.PENDING,
+        )
+        return friends
 
-        if not query:
-            # Return an empty queryset if no query is provided
-            return User.objects.none()
-        queryset = User.objects.filter(
-            Q(email__icontains=query) | Q(username__icontains=query)
-        ).exclude(
-            id=self.request.user.id
-        )  # Exclude the currently authenticated user
+    @extend_schema(
+        summary="List Friend Requests",
+        description="List friend requests for the authenticated user. Type has to be specified to filter the requests.",
+        parameters=[
+            OpenApiParameter(
+                name="type",
+                type=str,
+                enum=["sent", "received"],
+                description="Filter by type of friend request: 'sent' or 'received'.",
+                required=False,
+            )
+        ],
+        responses={
+            200: FriendRequestWithOtherUserSerializer,
+        },
+    )
+    def get(self, request):
+        """
+        Return the list of pending friend requests, optionally filtered by 'sent' or 'received' type.
+        """
+        friends = self.get_queryset()
+        # Apply additional filtering based on the 'type' query parameter
+        type_filter = self.request.query_params.get("type", None)
 
-        if exclude_me:
-            queryset = queryset.exclude(id=self.request.user.id)
+        if type_filter == "sent":
+            # Filter for sent friend requests (requests where the authenticated user is the sender)
+            friends = friends.filter(requester=self.request.user)
+        elif type_filter == "received":
+            # Filter for received friend requests (requests where the authenticated user is the receiver)
+            friends = friends.exclude(requester=self.request.user)
 
-        return queryset
+        paginator = StandardLimitOffsetPagination()
+        paginated_friends = paginator.paginate_queryset(friends, request)
+        serializer = FriendRequestWithOtherUserSerializer(
+            paginated_friends, many=True, context={"request": request}
+        )
+        # Serialize the filtered queryset
+        return paginator.get_paginated_response(serializer.data)
+
+    @extend_schema(
+        summary="Send a Friend Request",
+        request=FriendRequestSerializer,
+        responses={
+            201: OpenApiResponse(
+                description="Friend request successfully sent.",
+                response=FriendSerializer,
+            ),
+            400: OpenApiResponse(
+                description="Bad request - Invalid data or friend request already sent.",
+                response={
+                    "application/json": {
+                        "type": "object",
+                        "properties": {"error": {"type": "string"}},
+                    }
+                },
+            ),
+            404: OpenApiResponse(
+                description="User not found.",
+                response={
+                    "application/json": {
+                        "type": "object",
+                        "properties": {"error": {"type": "string"}},
+                    }
+                },
+            ),
+        },
+    )
+    def post(self, request):
+        target_user_id = request.data.get("target_user")
+
+        if not FriendRequestSerializer(data=request.data).is_valid():
+            return Response({"error": FriendError.INVALID_REQUEST.value}, status=400)
+
+        if not target_user_id:
+            return Response({"error": FriendError.EMPTY_ID.value}, status=400)
+
+        target_user = User.objects.filter(id=target_user_id).first()
+        if not target_user:
+            return Response({"error": Error.USER_NOT_FOUND.value}, status=404)
+
+        # Ensure no duplicate friend requests
+        user1, user2 = sorted([request.user, target_user], key=lambda u: u.id)
+        existing_friendship = Friend.objects.filter(user1=user1, user2=user2).first()
+
+        if existing_friendship:
+            if existing_friendship.status == Friend.PENDING:
+                return Response(
+                    {"error": FriendError.REQUEST_ALREADY_SENT.value}, status=400
+                )
+            if existing_friendship.status == Friend.ACCEPTED:
+                return Response(
+                    {"error": FriendError.ALREADY_FRIENDS.value}, status=400
+                )
+            if existing_friendship.status == Friend.BLOCKED:
+                return Response(
+                    {"error": FriendError.INVALID_REQUEST.value}, status=400
+                )
+
+        # Create a new friend request
+        friend = Friend.objects.create(
+            user1=user1, user2=user2, requester=request.user, status=Friend.PENDING
+        )
+        serializer = FriendSerializer(friend)
+
+        return Response(serializer.data, status=201)

@@ -73,8 +73,8 @@ INSTALLED_APPS = [
     "pyotp",
     # friends
     "friends",
-    # 'django_otp.plugins.otp_email',  # <- if you want email capability.
-    # 'two_factor.plugins.email',  # <- if you want email capability.
+    # django-filter
+    "django_filters",    
 ]
 
 MIDDLEWARE = [
@@ -178,6 +178,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardLimitOffsetPagination",
     "PAGE_SIZE": 20,
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
 REST_AUTH_SERIALIZERS = {

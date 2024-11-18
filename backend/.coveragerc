@@ -1,9 +1,10 @@
 [run]
 branch = True
-source = */tests/*
+source = .
 omit =
     */venv/*
     */tests/*
     */staticfiles/*
     */migrations/*
     */__init__.py
+
