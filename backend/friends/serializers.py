@@ -5,14 +5,12 @@ from .models import Friend
 
 User = get_user_model()
 
-
 class FriendRequestSerializer(serializers.Serializer):
     target_user = serializers.IntegerField(
         help_text="The ID of the target user to send a friend request to.",
         required=True,
         validators=[MinValueValidator(0)],
     )
-
 
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,4 +56,4 @@ class FriendRequestWithOtherUserSerializer(serializers.ModelSerializer):
         if obj.user1 == self.context["request"].user:
             return UserSerializer(obj.user2).data
         return UserSerializer(obj.user1).data
-    
+

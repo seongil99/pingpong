@@ -21,6 +21,7 @@ from .detail import FriendDetail
 from common.error import Error
 from common.pagination import StandardLimitOffsetPagination
 
+
 User = get_user_model()
 # Create your views here.
 
@@ -28,8 +29,10 @@ User = get_user_model()
 @extend_schema(
     tags=["Friends"],
 )
+
 class FriendRequestActionView(APIView):
     permission_classes = [IsAuthenticated]
+
 
     @extend_schema(
         summary="Accept a Friend Request",
@@ -40,6 +43,7 @@ class FriendRequestActionView(APIView):
             200: OpenApiResponse(
                 description="Friend request accepted successfully.",
                 response=FriendRequestWithOtherUserSerializer,
+
             ),
             404: OpenApiResponse(
                 description="User or friend request not found.", response=str
@@ -100,6 +104,7 @@ class FriendRequestActionView(APIView):
             friend_request = Friend.objects.get(id=id)
             if friend_request.user1 != user and friend_request.user2 != user:
                 return Response({"error": Error.PERMISSION_DENIED.value}, status=401)
+
             if friend_request.status != Friend.PENDING:
                 return Response(
                     {"error": FriendError.INVALID_REQUEST.value}, status=400
@@ -113,7 +118,6 @@ class FriendRequestActionView(APIView):
 
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
-
 
 @extend_schema(
     summary="List Friends",
@@ -329,3 +333,4 @@ class SearchFriendableView(ListAPIView):
     #     users = self.filter_queryset(self.get_queryset())
     #     serializer = UserSearchSerializer(users, many=True)
     #     return Response(serializer.data)
+
