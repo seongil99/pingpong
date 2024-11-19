@@ -4,7 +4,12 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiResponse,
+    OpenApiParameter,
+)
 from rest_framework import filters
 from .serializers import FriendRequestWithOtherUserSerializer
 from rest_framework.generics import GenericAPIView
@@ -29,10 +34,8 @@ User = get_user_model()
 @extend_schema(
     tags=["Friends"],
 )
-
 class FriendRequestActionView(APIView):
     permission_classes = [IsAuthenticated]
-
 
     @extend_schema(
         summary="Accept a Friend Request",
@@ -43,7 +46,6 @@ class FriendRequestActionView(APIView):
             200: OpenApiResponse(
                 description="Friend request accepted successfully.",
                 response=FriendRequestWithOtherUserSerializer,
-
             ),
             404: OpenApiResponse(
                 description="User or friend request not found.", response=str
@@ -119,17 +121,25 @@ class FriendRequestActionView(APIView):
         # Return a success message
         return Response({"message": FriendDetail.REQUEST_REJECTED.value}, status=200)
 
-@extend_schema(
-    summary="List Friends",
-    description="List friends for the authenticated user.",
-    tags=["Friends"],
+
+from rest_framework import viewsets
+from rest_framework.decorators import action
+
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
+
+
+@extend_schema_view(
+    list=extend_schema(summary="List Friends", description="List friends for the authenticated user."),
+    retrieve=extend_schema(summary="Retrieve Friend", description="Retrieve a friend."),
+    destroy=extend_schema(summary="Unfriend or Unblock", description="Unfriend a user."),
 )
-class FriendsView(GenericAPIView):
+class FriendsViewSet(viewsets.ModelViewSet):
     """
     A viewset to list friends for the authenticated user.
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = FriendRequestWithOtherUserSerializer
 
     def get_queryset(self):
         """
@@ -140,23 +150,23 @@ class FriendsView(GenericAPIView):
             status=Friend.ACCEPTED,
         )
         return friends
-
-    @extend_schema(
-        request=None,
-        responses={200: FriendRequestWithOtherUserSerializer},
-    )
-    def get(self, request):
-        """
-        Return the list of friends for the authenticated user.
-        """
-        friends = self.get_queryset()
-        print(friends)
-        paginator = StandardLimitOffsetPagination()
-        paginated_friends = paginator.paginate_queryset(friends, request)
-        serializer = FriendRequestWithOtherUserSerializer(
-            paginated_friends, many=True, context={"request": request}
-        )
-        return paginator.get_paginated_response(serializer.data)
+    
+    # @extend_schema(
+    #     request=None,
+    #     responses={200: FriendRequestWithOtherUserSerializer},
+    # )
+    # def get(self, request):
+    #     """
+    #     Return the list of friends for the authenticated user.
+    #     """
+    #     friends = self.get_queryset()
+    #     print(friends)
+    #     paginator = StandardLimitOffsetPagination()
+    #     paginated_friends = paginator.paginate_queryset(friends, request)
+    #     serializer = FriendRequestWithOtherUserSerializer(
+    #         paginated_friends, many=True, context={"request": request}
+    #     )
+    #     return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(
@@ -311,16 +321,22 @@ class SearchFriendableView(ListAPIView):
     search_fields = ["email", "username"]
 
     def get_queryset(self):
-    # Get all friends for the current user (both as user1 and user2)
+        # Get all friends for the current user (both as user1 and user2)
         friends_users = Friend.objects.filter(
             Q(user1=self.request.user) | Q(user2=self.request.user)
-        ).values_list("user1", "user2")  # Get both user1 and user2
+        ).values_list(
+            "user1", "user2"
+        )  # Get both user1 and user2
 
         # Flatten the result to a single list and exclude the current user's ID
-        friend_ids = [user for pair in friends_users for user in pair]  # Flattening pairs into a list
+        friend_ids = [
+            user for pair in friends_users for user in pair
+        ]  # Flattening pairs into a list
 
         # Exclude users that are already in the friends list
-        queryset = User.objects.exclude(id__in=friend_ids).exclude(id=self.request.user.id)
+        queryset = User.objects.exclude(id__in=friend_ids).exclude(
+            id=self.request.user.id
+        )
         return queryset
 
     # @extend_schema(
@@ -335,4 +351,3 @@ class SearchFriendableView(ListAPIView):
     #     users = self.filter_queryset(self.get_queryset())
     #     serializer = UserSearchSerializer(users, many=True)
     #     return Response(serializer.data)
-
