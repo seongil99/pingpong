@@ -294,6 +294,8 @@ class FriendRequestView(GenericAPIView):
 
 
 @extend_schema(
+    summary="Search Users who are friendable",
+    description="Search for users by email or username who are not already friends with the current user. Excludes blocked users.",
     tags=["Users"],
 )
 class SearchFriendableView(ListAPIView):
