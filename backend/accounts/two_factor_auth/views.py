@@ -1,6 +1,8 @@
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils.decorators import method_decorator
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
