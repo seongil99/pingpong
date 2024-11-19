@@ -33,9 +33,8 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-@extend_schema(
-    tags=['accounts']
-    )
+@extend_schema(tags=['2fa'])
+@method_decorator(login_required, name='dispatch')
 class mfa(APIView):
     
     permission_classes = [IsAuthenticated]
