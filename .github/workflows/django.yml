@@ -21,6 +21,10 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Create .env File
+      run: |
+        echo "MINSEPAR_CLIENT_ID=${{ secrets.MINSEPAR_CLIENT_ID }}" >> backend/.env
+        echo "MINSEPAR_SECRET=${{ secrets.MINSEPAR_SECRET }}" >> backend/.env
     - name: Install Dependencies
       working-directory: backend
       run: |
