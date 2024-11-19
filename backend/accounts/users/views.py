@@ -11,13 +11,18 @@ from .serializers import UserProfileSerializer
 class MyProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=UserProfileSerializer)
+    @extend_schema(
+        responses=UserProfileSerializer,
+    )
     def get(self, request):
         user = request.user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
-    @extend_schema(responses=UserProfileSerializer)
+    @extend_schema(
+        request=UserProfileSerializer,
+        responses=UserProfileSerializer,
+    )
     def patch(self, request):
         user = request.user
         serializer = UserProfileSerializer(user, data=request.data)
