@@ -5,10 +5,13 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.users.manages import UserManager
 
+
 # Create your models here.
 class User(AbstractUser):
     username = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(_('email address'), unique=True)
+    is_verified = models.BooleanField(default=False)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -17,13 +20,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
-# User = get_user_model()
-
-# @receiver(post_save, sender=User)
-# def create_totp_device(sender, instance, created, **kwargs):
-#     if created:
-#         TOTPDevice.objects.create(user=instance, name="default device")
 
 
 admin.site.register(User)

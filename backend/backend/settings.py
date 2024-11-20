@@ -20,7 +20,12 @@ env = environ.Env(DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
-environ.Env.read_env(BASE_DIR / ".env")
+environ.Env.read_env(BASE_DIR / '.env')
+
+# Media files (User-uploaded files)
+MEDIA_URL = '/api/media/'
+MEDIA_DIR = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -210,7 +215,6 @@ AUTHENTICATION_BACKENDS = [
     # 'django_otp.backends.OTPBackend',  # For OTP-based logins
 ]
 
-
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = [
@@ -240,6 +244,8 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
 
+SOCIALACCOUNT_ADAPTER = 'accounts.oauth2.provider.CustomSocialAccountAdapter'
+
 SOCIALACCOUNT_PROVIDERS = {
     "fortytwo": {
         "APP": {
@@ -250,9 +256,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_AUTHENTICATED_REDIRECT_URL = (
-    "/"  # or wherever you want them to go after logging in
-)
+ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
 
 # 2fa
 
