@@ -18,7 +18,7 @@ class FriendSerializer(serializers.ModelSerializer):
         fields = ["id", "user1", "user2", "requester", "status", "created_at"]
 
 
-from drf_spectacular.utils import extend_schema_field, OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from accounts.users.serializers import UserSerializer
 from .models import Friend
 
