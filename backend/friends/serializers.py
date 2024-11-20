@@ -18,12 +18,6 @@ class FriendSerializer(serializers.ModelSerializer):
         fields = ["id", "user1", "user2", "requester", "status", "created_at"]
 
 
-class UserSearchSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email", "username"]
-
-
 from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from accounts.users.serializers import UserSerializer
 from .models import Friend
