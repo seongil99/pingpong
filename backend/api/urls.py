@@ -25,20 +25,8 @@ friend_detail = FriendsViewSet.as_view(
 
 urlpatterns = [
     path("accounts/", include("accounts.urls")),
-    path("users/friends/", friend_list, name="friends-list"),
-    path("users/friends/<int:pk>/", friend_detail, name="friends-detail"),
-    path("users/search/", UserSearchView.as_view(), name="user-search"),
-    path("users/friend-requests", FriendRequestView.as_view(), name="friend-request"),
-    path(
-        "users/friend-requests/<int:id>/",
-        FriendRequestActionView.as_view(),
-        name="friend-request-action",
-    ),
-    path(
-        "users/search/friendable",
-        SearchFriendableView.as_view(),
-        name="search-friendable",
-    ),
+    path("users/", include("friends.urls")),
+    path("users/", include("users.urls")),
 ]
 
 # urlpatterns += router.urls
