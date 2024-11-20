@@ -120,7 +120,7 @@ from drf_spectacular.utils import extend_schema_view
 @extend_schema_view(
     list=extend_schema(summary="List Friends", description="List friends for the authenticated user."),
     retrieve=extend_schema(summary="Retrieve Friend", description="Retrieve a friend."),
-    destroy=extend_schema(summary="Unfriend or Unblock", description="Unfriend a user."),
+    destroy=extend_schema(summary="Unfriend a friend", description="Unfriend a user."),
 )
 class FriendsViewSet(viewsets.ModelViewSet):
     """

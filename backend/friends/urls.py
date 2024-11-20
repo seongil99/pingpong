@@ -19,8 +19,8 @@ friend_detail = FriendsViewSet.as_view(
 )
 
 urlpatterns = [
-    path("friends/", friend_list, name="friend-list"),
-    path("friends/<int:pk>/", friend_detail, name="friend-detail"),
+    path("friends/", friend_list, name="friends-list"),
+    path("friends/<int:pk>/", friend_detail, name="friends-detail"),
     path(
         "friend-requests/<int:id>/",
         FriendRequestActionView.as_view(),

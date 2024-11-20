@@ -9,6 +9,7 @@ from common.error import Error
 
 User = get_user_model()
 
+
 class FriendListViewTest(APITestCase):
 
     def setUp(self):
@@ -117,7 +118,9 @@ class FriendsViewSetTestCase(APITestCase):
 
     def setUp(self):
         # Create test users
-        self.user1 = User.objects.create_user(username="user1", password="password", email="user1@test.com")
+        self.user1 = User.objects.create_user(
+            username="user1", password="password", email="user1@test.com"
+        )
         self.user2 = User.objects.create_user(
             username="user2", password="password", email="user2@test.com"
         )
@@ -143,7 +146,7 @@ class FriendsViewSetTestCase(APITestCase):
             requester=self.user1,
             status=Friend.ACCEPTED,
         )
-        
+
         self.friendship3 = Friend.objects.create(
             user1=self.user1,
             user2=self.user4,
