@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from friends.models import Friend
+from ..models import Friend
 from django.urls import reverse
 
 User = get_user_model()
@@ -79,7 +79,7 @@ class SearchFriendableViewTest(APITestCase):
         )  # Only user4 should be returned
         usernames = [user["username"] for user in response.data["results"]]
         self.assertIn("user4", usernames)
-        
+
     def test_search_friendable_users_with_blocked(self):
         """
         Test that pending and blocked users are excluded from search results.
@@ -95,7 +95,7 @@ class SearchFriendableViewTest(APITestCase):
         )  # Only user1 and user4 should be returned, not user3
         usernames = [user["username"] for user in response.data["results"]]
         self.assertIn("user1", usernames)
-        
+
     def test_search_friendable_users_with_blocked_reverse(self):
         """
         Test that pending and blocked users are excluded from search results.
@@ -116,7 +116,6 @@ class SearchFriendableViewTest(APITestCase):
             "user3", usernames
         )  # user3 should not be included due to pending status
 
-
     def test_search_friendable_users_with_search_param(self):
         """
         Test that the search parameter filters users based on email or username.
@@ -136,7 +135,9 @@ class SearchFriendableViewTest(APITestCase):
         response = self.client.get(self.url, {"search": "user4"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)  # Only user4 should be returned
+        self.assertEqual(
+            len(response.data["results"]), 1
+        )  # Only user4 should be returned
         self.assertEqual(response.data["results"][0]["username"], "user4")
 
     def test_search_friendable_users_unauthenticated(self):
@@ -156,7 +157,9 @@ class SearchFriendableViewTest(APITestCase):
         response = self.client.get(self.url, {"search": "nonexistentuser"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 0)  # No users should be returned
+        self.assertEqual(
+            len(response.data["results"]), 0
+        )  # No users should be returned
 
     def test_search_friendable_users_no_search_param(self):
         """
