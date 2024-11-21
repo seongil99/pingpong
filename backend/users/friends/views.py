@@ -10,7 +10,7 @@ from rest_framework.generics import GenericAPIView
 from .models import Friend
 from .serializers import (
     FriendSerializer,
-    FriendRequestSerializer,
+    UserRelationSerializer,
 )
 from .error import FriendError
 from .detail import FriendDetail
@@ -117,10 +117,19 @@ class FriendRequestActionView(APIView):
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema_view
 
+
 @extend_schema_view(
-    list=extend_schema(summary="List Friends", description="List friends for the authenticated user."),
-    retrieve=extend_schema(summary="Retrieve Friend", description="Retrieve a friend."),
-    destroy=extend_schema(summary="Unfriend a friend", description="Unfriend a user."),
+    list=extend_schema(
+        tags=["Friends"],
+        summary="List Friends",
+        description="List friends for the authenticated user.",
+    ),
+    retrieve=extend_schema(
+        tags=["Friends"], summary="Retrieve Friend", description="Retrieve a friend."
+    ),
+    destroy=extend_schema(
+        tags=["Friends"], summary="Unfriend a friend", description="Unfriend a user."
+    ),
 )
 class FriendsViewSet(viewsets.ModelViewSet):
     """
@@ -141,6 +150,9 @@ class FriendsViewSet(viewsets.ModelViewSet):
         return friends
 
 
+@extend_schema(
+    tags=["Friends"],
+)
 class FriendRequestView(GenericAPIView):
     """
     A viewset to list friend requests for the authenticated user.
@@ -200,7 +212,7 @@ class FriendRequestView(GenericAPIView):
 
     @extend_schema(
         summary="Send a Friend Request",
-        request=FriendRequestSerializer,
+        request=UserRelationSerializer,
         responses={
             201: OpenApiResponse(
                 description="Friend request successfully sent.",
@@ -229,7 +241,9 @@ class FriendRequestView(GenericAPIView):
     def post(self, request):
         target_user_id = request.data.get("target_user")
 
-        if not FriendRequestSerializer(data=request.data).is_valid():
+        if not UserRelationSerializer(
+            data=request.data, context={"request": request}
+        ).is_valid():
             return Response({"error": FriendError.INVALID_REQUEST.value}, status=400)
 
         if not target_user_id:
@@ -264,5 +278,3 @@ class FriendRequestView(GenericAPIView):
         serializer = FriendSerializer(friend)
 
         return Response(serializer.data, status=201)
-
-
