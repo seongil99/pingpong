@@ -25,7 +25,7 @@ class HomePage {
     loginButton.textContent = "Go to Login Page";
 
     const getHello = async () => {
-      const url = "https://localhost/api/v1/accounts/hello/";
+      const url = "https://localhost/api/v1/users/accounts/hello/";
       try {
         const response = await fetch(url, {
           method: "GET",

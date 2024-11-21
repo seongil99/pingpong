@@ -42,20 +42,22 @@ class FriendsPage {
         title.innerHTML = "Friends";
         friendList.appendChild(title);
         let data = response.results;
-        for (friends in data) {
-            for (friend in friends) {
-                friendList.innerHTML += `
+        console.log(data);
+        for (let friend of data) {
+            console.log(friend);
+            let friendUser = friend['other_user'];
+            friendList.innerHTML += `
                 <div class="friend">
                     <div class="friend-info">
-                        <img src="${friend.avatar}" alt="profile picture">
-                        <h3>${friend.username}</h3>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn">Remove</button>
-                    </div>
-                </div>
-                `;
-            }
+                        <img src="${friendUser.avatar}" alt="profile picture">
+                        <h3>${friendUser.email}</h3>
+                        <p>Status: ${friendUser.is_online ? '✅' : '❌'}</p >
+                    </div >
+            <div class="friend-actions">
+                <button class="btn">Remove</button>
+            </div>
+                </div >
+            `;
         }
         page.appendChild(friendList);
     }
