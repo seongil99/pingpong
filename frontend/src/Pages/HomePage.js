@@ -53,7 +53,7 @@ class HomePage {
     setHelloButton.onclick = displayHello;
 
     const logout = async () => {
-      const url = "https://localhost/api/v1/accounts/logout/";
+      const url = "https://localhost/api/v1/users/accounts/logout/";
       const csrftoken = document.cookie
         .split("; ")
         .find((row) => row.startsWith("csrftoken="))

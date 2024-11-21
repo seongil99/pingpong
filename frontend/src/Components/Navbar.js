@@ -13,6 +13,9 @@ const NavBar = `
           <li class="nav-item nav-profile">
             <button class="nav-link navigate" path="/profile">Profile</button>
           </li>
+          <li class="nav-item nav-friends">
+            <button class="nav-link navigate" path="/friends">Friends</button>
+          </li>
         </ul>
       </div>
     </div>
