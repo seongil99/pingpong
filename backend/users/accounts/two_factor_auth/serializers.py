@@ -10,7 +10,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from .error import Errors
 
 class OTPVerificationSerializer(serializers.Serializer):
-    otp_code = serializers.CharField(
+    otp = serializers.CharField(
         max_length=6,  # Maximum length of the OTP code
         min_length=6,  # Minimum length of the OTP code
         required=True,  # Ensure this field is mandatory

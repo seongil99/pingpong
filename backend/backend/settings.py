@@ -41,6 +41,9 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    # channel for ws
+    "channels",
+    "daphne",
     # django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -79,6 +82,7 @@ INSTALLED_APPS = [
     "users.accounts.oauth2",
     "users.accounts.two_factor_auth",
     "users.friends",
+    "users.status",
 ]
 
 MIDDLEWARE = [
@@ -114,6 +118,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "backend.wsgi.application"
+ASGI_APPLICATION = "backend.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -223,6 +228,7 @@ CORS_ORIGIN_WHITELIST = [
     "https://localhost:3000",
     "https://localhost",
     "https://127.0.0.1",
+    "ws://localhost",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -373,7 +379,7 @@ LOGGING = {
             "level": "WARNING",  # Log warnings related to security
             "propagate": False,  # Don't propagate to the 'django' logger
         },
-        "users.accounts": {
+        "users.status": {
             "handlers": ["console", "file"],
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,
