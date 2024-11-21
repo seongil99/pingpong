@@ -41,6 +41,7 @@ class mfa(APIView):
     permission_classes = [IsAuthenticated]
     
     @extend_schema(
+        summary="MFA Status",
         description="Get MFA status",
         request=None,
         responses={
@@ -55,7 +56,8 @@ class mfa(APIView):
         return JsonResponse(MFAStatusSerializer({'status': 'disabled'}).data, status=200)
         
     @extend_schema(
-        description="Enable MFA",
+        summary="Enable MFA",
+        description="Enable MFA by verifying OTP",
         request=OTPVerificationSerializer,
         responses={
             200: OpenApiResponse(
@@ -86,7 +88,8 @@ class mfa(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
     
     @extend_schema(
-        description="Disable MFA",
+        summary="Disable MFA",
+        description="Disable MFA after logging in",
         request=None,
         responses={
             200: OpenApiResponse(
@@ -111,7 +114,8 @@ class mfa(APIView):
         return JsonResponse(SimpleResponseSerializer({'detail': Errors.NO_DEVICE.value}).data, status=400)
     
     @extend_schema(
-        description="Verify OTP",
+        summary="Verify OTP",
+        description="Verify OTP code to login using MFA",
         request=OTPVerificationSerializer,
         responses={
             200: OpenApiResponse(
