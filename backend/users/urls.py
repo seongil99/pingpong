@@ -7,7 +7,7 @@ from users.views import (
 urlpatterns = [
     path("search/", UserSearchView.as_view(), name="user-search"),
     path(
-        "search/friendable",
+        "search/friendable/",
         SearchFriendableView.as_view(),
         name="search-friendable",
     ),
