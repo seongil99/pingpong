@@ -27,7 +27,7 @@ urlpatterns = [
     path("me/", MyProfileView.as_view(), name="my-profile"),
     path("", UserSearchView.as_view(), name="user-search"),
     path(
-        "friendable",
+        "friendable/",
         SearchFriendableView.as_view(),
         name="search-friendable",
     ),
