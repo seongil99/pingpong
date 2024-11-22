@@ -6,7 +6,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
-
 # Create your models here.
 class Friend(models.Model):
     PENDING = 1

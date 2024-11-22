@@ -1,5 +1,5 @@
 from allauth.socialaccount.providers.oauth2.views import OAuth2LoginView, OAuth2CallbackView, OAuth2Adapter
-from accounts.oauth2.provider import FortyTwoProvider
+from .provider import FortyTwoProvider
 import requests
 import logging
 

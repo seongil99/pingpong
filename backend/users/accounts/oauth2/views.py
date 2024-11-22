@@ -1,7 +1,7 @@
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from accounts.oauth2.adapter import FortyTwoAdapter
+from .adapter import FortyTwoAdapter
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -32,7 +32,7 @@ from django.http import JsonResponse
 # from two_factor_auth.models import PendingToken
 from django_otp import user_has_device
 from django.conf import settings
-from accounts.two_factor_auth.views import setAccessToken
+from ..two_factor_auth.views import setAccessToken
 
 class FortyTwoLogin(SocialLoginView): # if you want to use Authorization Code Grant, use this
     adapter_class = FortyTwoAdapter

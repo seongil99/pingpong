@@ -1,11 +1,12 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
-from friends.models import Friend  # Import your Friend model
+from ..models import Friend  # Import your Friend model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.urls import reverse  # Import reverse for URL resolution
 
 User = get_user_model()  # Get the user model
+
 
 class FriendRequestListViewTest(APITestCase):
     def setUp(self):

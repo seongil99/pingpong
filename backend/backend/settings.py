@@ -20,12 +20,12 @@ env = environ.Env(DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
-environ.Env.read_env(BASE_DIR / '.env')
+environ.Env.read_env(BASE_DIR / ".env")
 
 # Media files (User-uploaded files)
-MEDIA_URL = '/api/media/'
-MEDIA_DIR = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/api/media/"
+MEDIA_DIR = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -52,12 +52,6 @@ INSTALLED_APPS = [
     # DRF
     "rest_framework",
     "rest_framework.authtoken",
-    # custom
-    "api",
-    "accounts",
-    "accounts.users",
-    "accounts.oauth2",
-    "accounts.two_factor_auth",
     # dj_rest_auth
     "dj_rest_auth",
     "dj_rest_auth.registration",
@@ -76,10 +70,15 @@ INSTALLED_APPS = [
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
     "pyotp",
-    # friends
-    "friends",
     # django-filter
-    "django_filters",    
+    "django_filters",
+    # custom
+    "api",
+    "users",
+    "users.accounts",
+    "users.accounts.oauth2",
+    "users.accounts.two_factor_auth",
+    "users.friends",
 ]
 
 MIDDLEWARE = [
@@ -183,7 +182,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardLimitOffsetPagination",
     "PAGE_SIZE": 20,
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
 }
 
 REST_AUTH_SERIALIZERS = {
@@ -244,7 +243,7 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True  # 로컬 환경에서는 False, 배포 환경에서는 True로 설정
 
-SOCIALACCOUNT_ADAPTER = 'accounts.oauth2.provider.CustomSocialAccountAdapter'
+SOCIALACCOUNT_ADAPTER = "users.accounts.oauth2.provider.CustomSocialAccountAdapter"
 
 SOCIALACCOUNT_PROVIDERS = {
     "fortytwo": {
@@ -256,7 +255,9 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_AUTHENTICATED_REDIRECT_URL = '/'  # or wherever you want them to go after logging in
+ACCOUNT_AUTHENTICATED_REDIRECT_URL = (
+    "/"  # or wherever you want them to go after logging in
+)
 
 # 2fa
 
@@ -372,7 +373,7 @@ LOGGING = {
             "level": "WARNING",  # Log warnings related to security
             "propagate": False,  # Don't propagate to the 'django' logger
         },
-        "accounts": {
+        "users.accounts": {
             "handlers": ["console", "file"],
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,

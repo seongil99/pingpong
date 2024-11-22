@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class TwoFactorAuthConfig(AppConfig):
+class Oauth2Config(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'accounts.two_factor_auth'
+    name = 'users.accounts.oauth2'
