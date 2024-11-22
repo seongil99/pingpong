@@ -26,5 +26,5 @@ urlpatterns = [
         FriendRequestActionView.as_view(),
         name="friend-request-action",
     ),
-    path("friend-requests", FriendRequestView.as_view(), name="friend-request"),
+    path("friend-requests/", FriendRequestView.as_view(), name="friend-request"),
 ]
