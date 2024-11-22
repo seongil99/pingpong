@@ -24,10 +24,10 @@ blocked_user_detail = UserBlockedViewset.as_view(
 urlpatterns = [
     path("accounts/", include("users.accounts.urls")),
     path("me/", MyProfileView.as_view(), name="my-profile"),
-    path("", include("users.friends.urls")),
+    path("friends/", include("users.friends.urls")),
     path("", UserSearchView.as_view(), name="user-search"),
     path(
-        "friendable",
+        "friendable/",
         SearchFriendableView.as_view(),
         name="search-friendable",
     ),
