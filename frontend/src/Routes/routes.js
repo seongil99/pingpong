@@ -1,4 +1,3 @@
-import AboutPage from "../Pages/AboutPage.js";
 import HomePage from "../Pages/HomePage.js";
 import LoginPage from "../Pages/LoginPage.js";
 import NotFoundPage from "../Pages/NotFoundPage.js";
@@ -11,7 +10,6 @@ import StartPage from "../Pages/StartPage.js";
 const routes = {
     "/": StartPage,
     "/home": HomePage,
-    "/about": AboutPage,
     "/login": LoginPage,
     "/404": NotFoundPage,
     "/profile": ProfilePage,
