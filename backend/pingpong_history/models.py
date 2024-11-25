@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.users.models import User
+from users.models import User
 
 
 class PingPongHistory(models.Model):
