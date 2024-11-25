@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "users.accounts.oauth2",
     "users.accounts.two_factor_auth",
     "users.friends",
+    "pingpong_history",
 ]
 
 MIDDLEWARE = [
