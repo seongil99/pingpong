@@ -25,7 +25,7 @@ class HomePage {
     loginButton.textContent = "Go to Login Page";
 
     const getHello = async () => {
-      const url = "https://localhost/api/v1/accounts/hello/";
+      const url = "https://localhost/api/v1/users/accounts/hello/";
       try {
         const response = await fetch(url, {
           method: "GET",
@@ -53,7 +53,7 @@ class HomePage {
     setHelloButton.onclick = displayHello;
 
     const logout = async () => {
-      const url = "https://localhost/api/v1/accounts/logout/";
+      const url = "https://localhost/api/v1/users/accounts/logout/";
       const csrftoken = document.cookie
         .split("; ")
         .find((row) => row.startsWith("csrftoken="))

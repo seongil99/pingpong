@@ -41,7 +41,7 @@ class TwoFactorAuthPage {
         const otp = document.getElementById('otp').value;
 
         try {
-            const response = await fetch('/api/v1/accounts/mfa/', {
+            const response = await fetch('/api/v1/users/accounts/mfa/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

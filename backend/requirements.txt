@@ -23,3 +23,5 @@ django-otp==1.5.4
 django-two-factor-auth[phonenumbers]==1.15.5
 django-filter==24.3
 pyotp==2.9.0
+channels==4.2.0
+daphne==4.1.2
