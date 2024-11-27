@@ -27,6 +27,13 @@ MEDIA_URL = "/api/media/"
 MEDIA_DIR = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+STATIC_URL = "/api/static/"
+STATIC_FILES_ROOT = BASE_DIR / "static"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -75,6 +82,8 @@ INSTALLED_APPS = [
     "pyotp",
     # django-filter
     "django_filters",
+    # socketio
+    'socketio',
     # custom
     "api",
     "users",
@@ -84,6 +93,7 @@ INSTALLED_APPS = [
     "users.friends",
     "users.status",
     "pingpong_history",
+    "ingame",
 ]
 
 MIDDLEWARE = [
@@ -137,6 +147,13 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
+}
+
+# django-channel
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis in production
+    },
 }
 
 # Password validation

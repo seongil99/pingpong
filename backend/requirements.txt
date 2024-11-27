@@ -25,3 +25,5 @@ django-filter==24.3
 pyotp==2.9.0
 channels==4.2.0
 daphne==4.1.2
+python-socketio[asyncio, asgi]==5.11.4
+uvicorn==0.31.1
