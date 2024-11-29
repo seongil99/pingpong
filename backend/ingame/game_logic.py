@@ -82,7 +82,8 @@ class InMemoryGameState:
             "score": {"playerOne": 0, "playerTwo": 0},
         }
 
-        self.is_single_player = True if not multiOption else {"A": False, "B": False}
+        self.is_single_player = multiOption == False 
+        self.ai_KeyState = { "A" : False , "D" : False}
         self.gameStart = False
         self.clients = {}
 
@@ -181,16 +182,16 @@ class PingPongServer:
         # serializer 는 고정된 타입만 변형 가능
 
         if ball_position[target].position["x"] < self.my_game_state["playerTwo"]["x"]:
-            # if self.game_state.is_single_player["B"]:
-            #     self.game_state.is_single_player["B"] = False
-            # if not self.game_state.is_single_player["A"]:
-            #     self.game_state.is_single_player["A"] = True
+            if self.game_state.ai_KeyState["D"]:
+                self.game_state.ai_KeyState["D"] = False
+            if not self.game_state.ai_KeyState["A"]:
+                self.game_state.ai_KeyState["A"] = True
             self.handle_player_input("ai", "A", True)
         else:
-            # if self.game_state.is_single_player["A"]:
-            #     self.game_state.is_single_player["A"] = False
-            # if not self.game_state.is_single_player["B"]:
-            #     self.game_state.is_single_player["B"] = True
+            if self.game_state.ai_KeyState["A"]:
+                self.game_state.ai_KeyState["A"] = False
+            if not self.game_state.ai_KeyState["D"]:
+                self.game_state.ai_KeyState["D"] = True
             self.handle_player_input("ai", "D", True)
 
     async def update_physics(self):
