@@ -83,7 +83,7 @@ INSTALLED_APPS = [
     # django-filter
     "django_filters",
     # socketio
-    'socketio',
+    "socketio",
     # custom
     "api",
     "users",
@@ -398,6 +398,11 @@ LOGGING = {
             "propagate": False,  # Don't propagate to the 'django' logger
         },
         "users.status": {
+            "handlers": ["console", "file"],
+            "level": "INFO",  # You can adjust the log level for specific apps
+            "propagate": False,
+        },
+        "ingame": {
             "handlers": ["console", "file"],
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,

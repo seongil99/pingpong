@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-const socket = io('https://localhost/api/game/', {
+const socket = io('/api/game', {
     transports: ['websocket'],
     debug: true,
     path: '/api/game/socket.io'
@@ -582,9 +582,14 @@ class PingPongClient {
 
 
     setupSocketListeners() {
-        socket.on('data', (gameState) => {
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
 
+        socket.on('data', (gameState) => {
+            console.log(gameState.type, gameState);
             if (gameState.type === 'gameState') {
+                console.log(gameState);
                 this.updateGameState(gameState);
             }
             else if (gameState.type === 'score') {
