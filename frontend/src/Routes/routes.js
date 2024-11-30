@@ -6,6 +6,7 @@ import Oauth2Page from "../Pages/Oauth2Page.js";
 import ProfilePage from "../Pages/ProfilePage.js";
 import TwoFactorAuthPage from "../Pages/TwoFactorAuthPage.js";
 import FriendsPage from "../Pages/FriendsPage.js";
+import MatchingPage from "../Pages/MatchingPage.js";
 
 const routes = {
   "/": HomePage,
@@ -15,7 +16,8 @@ const routes = {
   "/profile": ProfilePage,
   "/otp": TwoFactorAuthPage,
   "/oauth2/redirect": Oauth2Page,
-  '/friends': FriendsPage,
+  "/friends": FriendsPage,
+  "/matching": MatchingPage,
 };
 
 export default routes;
