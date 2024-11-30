@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "users.friends",
     "users.status",
     "pingpong_history",
+    "matchmaking",
 ]
 
 MIDDLEWARE = [
@@ -299,6 +300,7 @@ STATIC_URL = "api/static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+from .schema import *
 SPECTACULAR_SETTINGS = {
     "TITLE": "Your Project API",
     "DESCRIPTION": "Your project description",
@@ -306,34 +308,8 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SCHEMA_PATH_PREFIX_TRIM": False,
     "APPEND_PATHS": {
-        "/api/v1/accounts/oauth2/fortytwo/login/callback/": {
-            "post": {
-                "operationId": "fortytwo_oauth2_login",
-                "description": "42 OAuth2 로그인 엔드포인트입니다.",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "code": {
-                                        "type": "string",
-                                        "description": "42 OAuth2 authorization code.",
-                                    },
-                                },
-                                "required": ["code"],
-                            },
-                        },
-                    },
-                },
-                "tags": ["Authentication"],
-                "responses": {
-                    "200": {
-                        "description": "로그인 성공",
-                    },
-                },
-            },
-        },
+        **callback_schema,
+        **matchmaking_schema,
     },
 }
 
@@ -385,5 +361,11 @@ LOGGING = {
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,
         },
+    },
+}
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
