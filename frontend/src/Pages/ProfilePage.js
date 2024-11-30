@@ -79,7 +79,7 @@ class ProfilePage {
 
 async function fetchUserProfile() {
   try {
-    const response = await fetch("/api/v1/accounts/users/me/", {
+    const response = await fetch("/api/v1/users/me/", {
       method: "GET",
       credentials: "include",
     });
