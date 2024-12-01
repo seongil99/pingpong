@@ -1,7 +1,7 @@
 import NavBar from "../Components/Navbar.js";
 
 class HomePage {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
 
@@ -99,4 +99,4 @@ class HomePage {
   }
 }
 
-export default new HomePage();
+export default HomePage;
