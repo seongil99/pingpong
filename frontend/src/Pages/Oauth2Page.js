@@ -1,5 +1,5 @@
 class Oauth2Page {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
 
@@ -24,7 +24,7 @@ class Oauth2Page {
 
       const response = await fetch(callBackUri, {
         method: "POST",
-        redirect: 'manual',
+        redirect: "manual",
         headers: {
           "Content-Type": "application/json",
           // "X-CSRFToken": csrftoken,
@@ -58,4 +58,4 @@ class Oauth2Page {
   }
 }
 
-export default new Oauth2Page();
+export default Oauth2Page;

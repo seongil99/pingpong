@@ -10,7 +10,7 @@ class MatchingPage {
     this.statusDiv = null;
   }
 
-  template() {
+  async template() {
     this.container = document.createElement("div");
 
     // 네비게이션 바 추가
@@ -153,4 +153,4 @@ class MatchingPage {
   }
 }
 
-export default new MatchingPage();
+export default MatchingPage;

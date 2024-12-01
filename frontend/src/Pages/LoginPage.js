@@ -2,7 +2,7 @@ import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
 
 class LoginPage {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
     container.classList.add("login-container");
@@ -58,4 +58,4 @@ class LoginPage {
   }
 }
 
-export default new LoginPage();
+export default LoginPage;

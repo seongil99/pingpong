@@ -1,23 +1,13 @@
-import AboutPage from "../Pages/AboutPage.js";
-import HomePage from "../Pages/HomePage.js";
-import LoginPage from "../Pages/LoginPage.js";
-import NotFoundPage from "../Pages/NotFoundPage.js";
-import Oauth2Page from "../Pages/Oauth2Page.js";
-import ProfilePage from "../Pages/ProfilePage.js";
-import TwoFactorAuthPage from "../Pages/TwoFactorAuthPage.js";
-import FriendsPage from "../Pages/FriendsPage.js";
-import MatchingPage from "../Pages/MatchingPage.js";
-
 const routes = {
-  "/": HomePage,
-  "/about": AboutPage,
-  "/login": LoginPage,
-  "/404": NotFoundPage,
-  "/profile": ProfilePage,
-  "/otp": TwoFactorAuthPage,
-  "/oauth2/redirect": Oauth2Page,
-  "/friends": FriendsPage,
-  "/matching": MatchingPage,
+  "/": () => import("../Pages/HomePage.js"),
+  "/about": () => import("../Pages/AboutPage.js"),
+  "/login": () => import("../Pages/LoginPage.js"),
+  "/404": () => import("../Pages/NotFoundPage.js"),
+  "/profile": () => import("../Pages/ProfilePage.js"),
+  "/otp": () => import("../Pages/TwoFactorAuthPage.js"),
+  "/oauth2/redirect": () => import("../Pages/Oauth2Page.js"),
+  "/friends": () => import("../Pages/FriendsPage.js"),
+  "/matching": () => import("../Pages/MatchingPage.js"),
 };
 
 export default routes;

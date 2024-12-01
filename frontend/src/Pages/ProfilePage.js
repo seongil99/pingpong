@@ -135,4 +135,4 @@ async function fetchMFAStatus() {
     .catch((error) => console.error("Error fetching MFA status:", error));
 }
 
-export default new ProfilePage();
+export default ProfilePage;

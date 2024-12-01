@@ -19,12 +19,13 @@ class Router {
   }
 
   async render(pathname) {
-    const route = this.routes[pathname] || this.routes["/404"]; // 경로에 맞는 컴포넌트, 없으면 404 페이지
+    const routeLoader = this.routes[pathname] || this.routes["/404"];
+    const routeModule = await routeLoader();
+    const routeInstance = new routeModule.default(); // 동적으로 로드한 모듈 인스턴스화
+
     const $app = document.querySelector("#app");
     $app.innerHTML = "";
-    
-      // Render client-side component as usual
-      $app.appendChild(await route.template());
+    $app.appendChild(await routeInstance.template());
   }
 }
 
