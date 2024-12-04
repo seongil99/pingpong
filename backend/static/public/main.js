@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+const gameId = prompt('게임 아이디를 입력하세요'); // 임시 게임아이디 넘겨받는 로직
+const userName = prompt('사용자 이름을 입력하세요'); 
 const socket = io('/api/game', {
     transports: ['websocket'],
     debug: true,
-    path: '/api/game/socket.io'
+    path: '/api/game/socket.io',
+    query: {
+        gameId: gameId,
+        userName: userName,
+    }
 });
 const WAIT_GAME = 1;
 const START_GAME = 2;
@@ -34,7 +40,7 @@ class ImpactEffect {
 
     createImpact(position) {
         const rings = [];
-
+        console.log(position);
         // 각 링에 대해
         for (let r = 0; r < this.settings.rings; r++) {
             const geometry = new THREE.BufferGeometry();
@@ -43,6 +49,7 @@ class ImpactEffect {
             const particleCount = this.settings.particlesPerRing * (r + 1);
 
             // 링의 각 파티클 위치 계산
+
             for (let i = 0; i < particleCount; i++) {
                 const angle = (i / particleCount) * Math.PI * 2;
                 const x = Math.cos(angle) * baseRadius;
@@ -589,7 +596,7 @@ class PingPongClient {
         socket.on('data', (gameState) => {
             console.log(gameState.type, gameState);
             if (gameState.type === 'gameState') {
-                console.log(gameState);
+                // console.log(gameState);
                 this.updateGameState(gameState);
             }
             else if (gameState.type === 'score') {
@@ -599,6 +606,7 @@ class PingPongClient {
                 );
             }
             else if (gameState.type === 'gameStart') {
+                console.log("gameStart");
                 this.gameStart = START_GAME;
                 this.makeFont(!this.secondPlayer ?
                     `${gameState.oneName} ${gameState.score.playerOne} : ${gameState.score.playerTwo} ${gameState.twoName}` :
@@ -626,6 +634,7 @@ class PingPongClient {
                 }
             }
             else if (gameState.type === 'effect') {
+                console.log('effect');
                 this.effect.createImpact(gameState.op);
                 this.audio.play('power_ball');
             }
