@@ -40,7 +40,6 @@ class MyProfileTestCase(APITestCase):
             'avatar': avatar,
         }
         response = self.client.patch(self.url, data)
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], data['username'])
         self.assertEqual(response.data['is_verified'], data['is_verified'])

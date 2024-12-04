@@ -18,6 +18,10 @@ from .socketsend import socket_send
 import socketio
 
 import logging
+from django.urls import path
+
+from users.status.routing import websocket_urlpatterns as status_websocket_urlpatterns
+from matchmaking.routing import websocket_urlpatterns as matchmaking_websocket_urlpatterns
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 logger = logging.getLogger("django")
@@ -95,6 +99,11 @@ django_asgi_app = get_asgi_application()
 
 game_app = socketio.ASGIApp(sio, socketio_path="/api/game/socket.io")
 
+websocket_urlpatterns = (
+        status_websocket_urlpatterns
+        + matchmaking_websocket_urlpatterns
+)
+
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,  # Handle HTTP traffic
@@ -103,6 +112,7 @@ application = ProtocolTypeRouter(
         #     [  # WebSocket routing
         #         path("api/game/", game_app),
         #         path("api/game/socket.io/", game_app),
+        #         path("api/", URLRouter(websocket_urlpatterns)),
         #     ]
         # ),
     }
