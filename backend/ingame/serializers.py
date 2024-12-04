@@ -24,10 +24,10 @@ class gameStateSerializer(serializers.Serializer):
     balls = BallSerializer(many=True)
     score = serializers.DictField()
 
-
 class InMemoryGameStateSerializer(serializers.Serializer):
     game_id = serializers.CharField()
     game_state = gameStateSerializer()
     is_single_player = serializers.BooleanField()
+    ai_KeyState = serializers.DictField()
     gameStart = serializers.BooleanField()
     clients = serializers.DictField()

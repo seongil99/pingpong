@@ -1,10 +1,10 @@
 import environ
 import math
 import random
-import threading
 import time
 import asyncio
 from backend.socketsend import socket_send
+from ingame.data import user_to_game
 
 from .enums import Game
 import logging
@@ -70,24 +70,28 @@ class Ball:
 class InMemoryGameState:
     game_states = {}
 
-    def __init__(self, multiOption=False):
+    def __init__(self):
         # In-memory store for game states
-        self.game_id = self.generate_game_id()
-        self.game_state = {
-            "oneName": "sabyun",
-            "twoName": "ai",
-            "playerOne": {"x": 0, "y": 6, "z": 100},
-            "playerTwo": {"x": 0, "y": 6, "z": -100},
-            "balls": [],
-            "score": {"playerOne": 0, "playerTwo": 0},
+        pass
+
+    def new_game(self, game_id, userId, multiOption=False) -> dict:
+        game_state = {
+            "render_data": {
+                "oneName": userId,
+                "twoName": "ai",
+                "playerOne": {"x": 0, "y": 6, "z": 100},
+                "playerTwo": {"x": 0, "y": 6, "z": -100},
+                "balls": [],
+                "score": {"playerOne": 0, "playerTwo": 0},
+            },
+            "is_single_player": multiOption == False,
+            "ai_KeyState": {"A": False, "D": False},
+            "gameStart": False,
+            "clients": {},
+            "game_id": game_id,
         }
-
-        self.is_single_player = multiOption == False 
-        self.ai_KeyState = { "A" : False , "D" : False}
-        self.gameStart = False
-        self.clients = {}
-
-        self.save_game_state(self.game_id, self.game_state)
+        self.save_game_state(game_id, game_state)
+        return game_state
 
     def save_game_state(self, game_id, state):
         """Save the entire game state."""
@@ -100,7 +104,7 @@ class InMemoryGameState:
     def update_game_state(self, game_id, updates):
         """Update parts of the game state."""
         if game_id in self.game_states:
-            self.game_states[game_id].update(updates)
+            self.game_states[game_id] = updates
         else:
             raise KeyError(f"Game ID {game_id} not found.")
 
@@ -112,56 +116,65 @@ class InMemoryGameState:
             raise KeyError(f"Game ID {game_id} not found.")
 
     def generate_game_id(self):
-        return "game-" + str(len(self.game_states) + 1)
+        return "game_" + str(len(self.game_states) + 1)
 
 
 class PingPongServer:
-    def __init__(self, sio, ballCount=1):
+    def __init__(self, sio):
+        self.game_state = InMemoryGameState()
         self.sio = sio
-        self.game_state = InMemoryGameState(False)
-        self.my_game_state = self.game_state.game_state
-        self.gameId = self.game_state.game_id
 
-        for i in range(0, ballCount):
-            self.addBall()
+    def add_game(self, sid, game_id, user_id, ballCount=1):
+        # if game doesn't exist == User1
+        game_state = self.game_state.load_game_state(game_id)
+        if game_state == None:
+            game_state = self.game_state.new_game(game_id, user_id, True)
+            for i in range(0, ballCount):
+                self.addBall(game_state)
+        else:
+            game_state["render_data"]["twoName"] = user_id
+        game_state["clients"][sid] = sid
 
-        logger.info(f"Game ID: {self.game_state.game_id}")
-
-    def game_loop(self):
-        if self.game_state.is_single_player == True:
-            asyncio.create_task(set_interval(self.update_ai, Game.AI_INTERVAL.value))
+    def game_loop(self, game_state):
+        if game_state["is_single_player"] == True:
             asyncio.create_task(
-                set_interval(self.update_physics, Game.PHYSICS_INTERVAL.value)
+                set_interval(lambda: self.update_ai(game_state), Game.AI_INTERVAL.value)
             )
+            asyncio.create_task(
+                set_interval(
+                    lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
+                )
+            )
+            return
             # asyncio.create_task(set_interval(self.update_ai, 1))
             # asyncio.create_task(set_interval(self.update_physics, 1))
-
-        else:
-            asyncio.create_task(
-                set_interval(self.update_physics, Game.PHYSICS_INTERVAL.value)
+        asyncio.create_task(
+            set_interval(
+                lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
             )
+        )
 
-    def addBall(self) -> None:
-        ballNum = len(self.my_game_state["balls"])
+    def addBall(self, game_state) -> None:
+        ballNum = len(game_state["render_data"]["balls"])
         ball = Ball(ballNum)
-        self.set_ball_velocity(ball, 1, True)
-        self.my_game_state["balls"].append(ball)
+        self.set_ball_velocity(game_state, ball, 1, True)
+        game_state["render_data"]["balls"].append(ball)
 
-    def set_ball_velocity(self, ball, powerUp=1, strat=False):
+    def set_ball_velocity(self, game_state, ball, powerUp=1, strat=False):
         MAX_ANGLE = math.pi / 6
         ANGLE = (random.random() * 2 - 1) * MAX_ANGLE
         direction = 1 if ball.summon_direction else -1
         if strat:
-            direction = 1 if len(self.my_game_state["balls"]) == 1 else -1
+            direction = 1 if len(game_state["render_data"]["balls"]) == 1 else -1
         powerUp = 1 if ball.powerCounter > 1 else powerUp
         ball.powerCounter = 1 if powerUp == 2 else 0
         vx = math.sin(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp
         vz = math.cos(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp * direction
         ball.velocity = Vec3(vx, 0, vz)
 
-    async def update_ai(self):
-        logger.info("updating ai...")
-        ball_position = self.my_game_state["balls"]
+    async def update_ai(self, game_state):
+        # logger.info("updating ai...")
+        ball_position = game_state["render_data"]["balls"]
         target = 0
         if len(ball_position) != 1:
             target = min(
@@ -177,45 +190,51 @@ class PingPongServer:
         ):
             return  # ball is over half, or AI decides to not act based on AI_RATE
 
-        # 이게 무슨 코드인지 모르겠음
-        # is_single_player가 boolean 값과 dict / map 을 가질수 있게 설정해주셨는데 한가지 타입만 가질수 있도록 수정해야함
-        # serializer 는 고정된 타입만 변형 가능
-
-        if ball_position[target].position["x"] < self.my_game_state["playerTwo"]["x"]:
-            if self.game_state.ai_KeyState["D"]:
-                self.game_state.ai_KeyState["D"] = False
-            if not self.game_state.ai_KeyState["A"]:
-                self.game_state.ai_KeyState["A"] = True
-            self.handle_player_input("ai", "A", True)
+        if (
+            ball_position[target].position["x"]
+            < game_state["render_data"]["playerTwo"]["x"]
+        ):
+            if game_state["ai_KeyState"]["D"]:
+                game_state["ai_KeyState"]["D"] = False
+            if not game_state["ai_KeyState"]["A"]:
+                game_state["ai_KeyState"]["A"] = True
+            self.handle_player_input(game_state, "ai", "A", True)
         else:
-            if self.game_state.ai_KeyState["A"]:
-                self.game_state.ai_KeyState["A"] = False
-            if not self.game_state.ai_KeyState["D"]:
-                self.game_state.ai_KeyState["D"] = True
-            self.handle_player_input("ai", "D", True)
+            if game_state["ai_KeyState"]["A"]:
+                game_state["ai_KeyState"]["A"] = False
+            if not game_state["ai_KeyState"]["D"]:
+                game_state["ai_KeyState"]["D"] = True
+            self.handle_player_input(game_state, "ai", "D", True)
 
-    async def update_physics(self):
-        if not self.game_state.gameStart:
+    async def update_physics(self, game_state):
+        if not game_state["gameStart"]:
             return
-        logger.info("Updating physics...")
-
-        for ball in self.my_game_state["balls"]:
+        # logger.info("Updating physics...")
+        game_id = game_state["game_id"]
+        # logger.info(f"game_id: {game_id}")
+        for ball in game_state["render_data"]["balls"]:
             # Update ball position
             ball.position["x"] += ball.velocity.x * (1 / 60)
             ball.position["y"] += ball.velocity.y * (1 / 60)
             ball.position["z"] += ball.velocity.z * (1 / 60)
-            logger.info(
-                f"ball velocity: {ball.velocity.x} {ball.velocity.y} {ball.velocity.z}"
-            )
+            # logger.info(
+            #     f"ball velocity: {ball.velocity.x} {ball.velocity.y} {ball.velocity.z}"
+            # )
 
             # Check paddle collisions
-            await self.check_paddle_collision(ball, self.my_game_state["playerOne"])
-            await self.check_paddle_collision(ball, self.my_game_state["playerTwo"])
+            await self.check_paddle_collision(
+                ball, game_state["render_data"]["playerOne"], game_state
+            )
+            await self.check_paddle_collision(
+                ball, game_state["render_data"]["playerTwo"], game_state
+            )
 
             # Check wall collisions
             if abs(ball.position["x"]) > Game.GAME_WIDTH.value / 2 - 2:
                 ball.velocity.x *= -1
-                await socket_send(self.game_state, self.sio, "sound", "ballToWall")
+                await socket_send(
+                    game_state["render_data"], "sound", game_id, "ballToWall"
+                )
 
             # Check scoring
             if (
@@ -224,37 +243,40 @@ class PingPongServer:
                 or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
-                    self.my_game_state["score"]["playerTwo"] += 1
+                    game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = True
                 else:
-                    self.my_game_state["score"]["playerOne"] += 1
+                    game_state["render_data"]["score"]["playerOne"] += 1
                     ball.summon_direction = False
 
                 # Check if someone has won the set
                 if (
-                    self.my_game_state["score"]["playerOne"]
+                    game_state["render_data"]["score"]["playerOne"]
                     >= Game.GAME_SET_SCORE.value
-                    or self.my_game_state["score"]["playerTwo"]
+                    or game_state["render_data"]["score"]["playerTwo"]
                     >= Game.GAME_SET_SCORE.value
                 ):
                     winner = (
-                        self.my_game_state["oneName"]
-                        if self.my_game_state["score"]["playerOne"]
-                        > self.my_game_state["score"]["playerTwo"]
-                        else self.my_game_state["twoName"]
+                        game_state["render_data"]["oneName"]
+                        if game_state["render_data"]["score"]["playerOne"]
+                        > game_state["render_data"]["score"]["playerTwo"]
+                        else game_state["render_data"]["twoName"]
                     )
                     await socket_send(
-                        self.game_state, self.sio, "gameEnd", f"Winner is {winner}"
+                        game_state["render_data"],
+                        "gameEnd",
+                        game_id,
+                        f"Winner is {winner}",
                     )
-                    self.game_state.gameStart = False
+                    game_state["gameStart"] = False
 
-                if self.game_state.gameStart:
-                    await socket_send(self.game_state, self.sio, "score")
-                    self.reset_ball(ball)
+                if game_state["gameStart"]:
+                    await socket_send(game_state["render_data"], "score", game_id)
+                    self.reset_ball(game_state, ball)
 
-        await self.broadcast_game_state()
+        await self.broadcast_game_state(game_state)
 
-    async def check_paddle_collision(self, ball, paddle):
+    async def check_paddle_collision(self, ball, paddle, game_state):
         # 1. Find the closest point on the paddle to the ball
         closest_point = {
             "x": max(
@@ -280,7 +302,7 @@ class PingPongServer:
 
         # 3. If the distance is less than or equal to the ball's radius, it's a collision
         if distance <= Game.BALL_SIZE.value:
-            await socket_send(self.game_state, self.sio, "sound", "ballToWall")
+            await socket_send(game_state["render_data"], "sound", "ballToWall")
             hit_point_diff = ball.position["x"] - paddle["x"]
             max_bounce_angle = math.pi / 3
             bounce_angle = (hit_point_diff / 10) * max_bounce_angle
@@ -295,32 +317,32 @@ class PingPongServer:
     def is_in_range(self, number, target, range):
         return abs(number - target) <= range
 
-    def reset_ball(self, ball):
+    def reset_ball(self, game_state, ball):
         ball.position = {"x": 0, "y": 5, "z": 0}
         ball.powerCounter = 0
-        self.set_ball_velocity(ball)
+        self.set_ball_velocity(game_state, ball)
 
-    def reset_all_balls(self):
+    def reset_all_balls(self, game_state):
         for ball in self.game_state["balls"]:
-            self.reset_ball(ball)
+            self.reset_ball(game_state, ball)
 
-    async def broadcast_game_state(self):
-        logger.info("Broadcasting game state...")
-        await socket_send(self.game_state, self.sio, "gameState")
+    async def broadcast_game_state(self, game_state):
+        # logger.info("Broadcasting game state...")
+        game_id = game_state["game_id"]
+        await socket_send(game_state["render_data"], "gameState", game_id)
 
-    def handle_player_input(self, player_id, key, pressed):
-
-        logger.info(
-            f"player: {player_id}, key: {key}, pressed: {pressed}, singleplayer: {self.game_state.is_single_player}"
-        )
+    def handle_player_input(self, game_state, player_id, key, pressed):
+        # logger.info(
+        #     f"player: {player_id}, key: {key}, pressed: {pressed}, singleplayer: {game_state['is_single_player']}"
+        # )
         player = (
-            self.my_game_state["playerTwo"]
+            game_state["render_data"]["playerTwo"]
             if player_id == "ai"
             or (
-                self.game_state.is_single_player != True
-                and player_id == list(self.game_state.clients.keys())[1]
+                game_state["is_single_player"] != True
+                and player_id == list(game_state["clients"].keys())[1]
             )
-            else self.my_game_state["playerOne"]
+            else game_state["render_data"]["playerOne"]
         )
         move_speed = 2
 
