@@ -22,4 +22,4 @@ class AboutPage {
   }
 }
 
-export default new AboutPage();
+export default AboutPage;

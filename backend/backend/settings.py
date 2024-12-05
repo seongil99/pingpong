@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     "users.status",
     "pingpong_history",
     "ingame",
+    "matchmaking",
 ]
 
 MIDDLEWARE = [
@@ -147,13 +148,6 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
-}
-
-# django-channel
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis in production
-    },
 }
 
 # Password validation
@@ -309,12 +303,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "api/static/"
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+from .schema import *
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Your Project API",
@@ -323,34 +317,8 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SCHEMA_PATH_PREFIX_TRIM": False,
     "APPEND_PATHS": {
-        "/api/v1/accounts/oauth2/fortytwo/login/callback/": {
-            "post": {
-                "operationId": "fortytwo_oauth2_login",
-                "description": "42 OAuth2 로그인 엔드포인트입니다.",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "code": {
-                                        "type": "string",
-                                        "description": "42 OAuth2 authorization code.",
-                                    },
-                                },
-                                "required": ["code"],
-                            },
-                        },
-                    },
-                },
-                "tags": ["Authentication"],
-                "responses": {
-                    "200": {
-                        "description": "로그인 성공",
-                    },
-                },
-            },
-        },
+        **callback_schema,
+        **matchmaking_schema,
     },
 }
 
@@ -407,5 +375,16 @@ LOGGING = {
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,
         },
+        "matchmaking": {
+            "handlers": ["console", "file"],
+            "level": "INFO",  # You can adjust the log level for specific apps
+            "propagate": False,
+        },
+    },
+}
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }

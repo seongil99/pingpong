@@ -2,6 +2,7 @@ from ingame.game_logic import PingPongServer
 from backend.sio import sio
 from backend.socketsend import socket_send
 from ingame.data import user_to_game
+from urllib.parse import parse_qs
 
 import socketio
 import logging
@@ -12,18 +13,17 @@ logger = logging.getLogger("django")
 server = PingPongServer(sio)
 game_state_db = server.game_state
 
+
 # mock_game_id = str(uuid.uuid4())  # Example: 'e4d909c2-6b18-11ed-81ce-0242ac120002'
 
 
 class GameIO(socketio.AsyncNamespace):
     async def on_connect(self, sid, environ, auth):
         logger.info(f"Client connected: {sid}")
-        query = environ["QUERY_STRING"]
-        params = {
-            key: value for key, value in [pair.split("=") for pair in query.split("&")]
-        }
-        game_id = "room_" + params.get("gameId")
-        user_name = params.get("userName")
+        query = environ.get('QUERY_STRING', '')
+        params = parse_qs(query)
+        game_id = "room_" + params.get("gameId", [""])[0]
+        user_name = params.get("userName", [""])[0]
         # enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         logger.info(f"rooms: {sio.manager.rooms}")
@@ -31,6 +31,7 @@ class GameIO(socketio.AsyncNamespace):
         user_to_game[sid] = game_id
         server.add_game(sid, game_id, user_name)  # 유저이름 변경 필요 받아야 할듯
         game_state = game_state_db.load_game_state(game_id)
+        # game_state["is_single_player"] = True
         logger.info(f"game_state: {game_state}")
         if len(game_state["clients"]) > 1:
             logger.info("Two players are ready!")
@@ -66,7 +67,7 @@ class GameIO(socketio.AsyncNamespace):
                 ball
                 for ball in game_state["render_data"]["balls"]
                 if server.is_in_range(int(ball.position["x"]), int(player["x"]), 10)
-                and server.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
+                   and server.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
             ]
             if len(is_collision) == 1:
                 server.set_ball_velocity(game_state, is_collision[0], 2)

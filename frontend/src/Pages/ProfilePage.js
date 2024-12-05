@@ -79,7 +79,7 @@ class ProfilePage {
 
 async function fetchUserProfile() {
   try {
-    const response = await fetch("/api/v1/accounts/users/me/", {
+    const response = await fetch("/api/v1/users/me/", {
       method: "GET",
       credentials: "include",
     });
@@ -135,4 +135,4 @@ async function fetchMFAStatus() {
     .catch((error) => console.error("Error fetching MFA status:", error));
 }
 
-export default new ProfilePage();
+export default ProfilePage;

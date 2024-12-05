@@ -2,7 +2,7 @@ import LoginButton from "../Components/LoginButton.js";
 import NavBar from "../Components/Navbar.js";
 
 class LoginPage {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
     container.classList.add("login-container");
@@ -37,7 +37,7 @@ class LoginPage {
     fortytwoLoginButton.textContent = "42 Login";
     const fortytwoLogin = async () => {
       const clientId =
-        "u-s4t2ud-f3c794a53848db3b102519cb5cd7123e14dae487ccdb02741f5ef3b8781504ef";
+        "u-s4t2ud-80c35252b5c6defa03f294f295f7bc83623a37a929b5ade66bed0dbafce4f667";
       const redirectUri = "https%3A%2F%2Flocalhost%2Foauth2%2Fredirect";
 
       window.location.href = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
@@ -58,4 +58,4 @@ class LoginPage {
   }
 }
 
-export default new LoginPage();
+export default LoginPage;

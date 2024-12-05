@@ -21,8 +21,8 @@ async def set_interval(func, interval):
         start_time = time.perf_counter()
         await func()
         elapsed_time = (
-            time.perf_counter() - start_time
-        ) * 1_000_000  # Convert to microseconds
+                               time.perf_counter() - start_time
+                       ) * 1_000_000  # Convert to microseconds
         await asyncio.sleep(interval)
 
 
@@ -48,7 +48,7 @@ class Vec3:
         return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
 
     def __length__(self):
-        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
 
     def __normalize__(self):
         len = self.length()
@@ -185,14 +185,14 @@ class PingPongServer:
         if ball_position[target].position["x"] < ball_position[target].position["z"]:
             return
         if (
-            ball_position[target].position["z"] > 0
-            or random.randint(0, 99) < Game.AI_RATE.value
+                ball_position[target].position["z"] > 0
+                or random.randint(0, 99) < Game.AI_RATE.value
         ):
             return  # ball is over half, or AI decides to not act based on AI_RATE
 
         if (
-            ball_position[target].position["x"]
-            < game_state["render_data"]["playerTwo"]["x"]
+                ball_position[target].position["x"]
+                < game_state["render_data"]["playerTwo"]["x"]
         ):
             if game_state["ai_KeyState"]["D"]:
                 game_state["ai_KeyState"]["D"] = False
@@ -238,9 +238,9 @@ class PingPongServer:
 
             # Check scoring
             if (
-                abs(ball.position["z"]) > Game.GAME_LENGTH.value / 2
-                or ball.position["y"] < 0
-                or ball.position["y"] > 20
+                    abs(ball.position["z"]) > Game.GAME_LENGTH.value / 2
+                    or ball.position["y"] < 0
+                    or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
                     game_state["render_data"]["score"]["playerTwo"] += 1
@@ -251,15 +251,15 @@ class PingPongServer:
 
                 # Check if someone has won the set
                 if (
-                    game_state["render_data"]["score"]["playerOne"]
-                    >= Game.GAME_SET_SCORE.value
-                    or game_state["render_data"]["score"]["playerTwo"]
-                    >= Game.GAME_SET_SCORE.value
+                        game_state["render_data"]["score"]["playerOne"]
+                        >= Game.GAME_SET_SCORE.value
+                        or game_state["render_data"]["score"]["playerTwo"]
+                        >= Game.GAME_SET_SCORE.value
                 ):
                     winner = (
                         game_state["render_data"]["oneName"]
                         if game_state["render_data"]["score"]["playerOne"]
-                        > game_state["render_data"]["score"]["playerTwo"]
+                           > game_state["render_data"]["score"]["playerTwo"]
                         else game_state["render_data"]["twoName"]
                     )
                     await socket_send(
@@ -332,18 +332,21 @@ class PingPongServer:
         await socket_send(game_state["render_data"], "gameState", game_id)
 
     def handle_player_input(self, game_state, player_id, key, pressed):
-        # logger.info(
-        #     f"player: {player_id}, key: {key}, pressed: {pressed}, singleplayer: {game_state['is_single_player']}"
-        # )
-        player = (
-            game_state["render_data"]["playerTwo"]
-            if player_id == "ai"
-            or (
-                game_state["is_single_player"] != True
-                and player_id == list(game_state["clients"].keys())[1]
-            )
-            else game_state["render_data"]["playerOne"]
-        )
+        client_keys = list(game_state["clients"].keys())
+
+        if player_id == "ai":
+            # AI 플레이어의 입력 처리
+            player = game_state["render_data"]["playerTwo"]
+        elif player_id == client_keys[0]:
+            # 첫 번째 플레이어의 입력 처리
+            player = game_state["render_data"]["playerOne"]
+        elif len(client_keys) > 1 and player_id == client_keys[1]:
+            # 두 번째 플레이어의 입력 처리
+            player = game_state["render_data"]["playerTwo"]
+        else:
+            logger.warning(f"Unknown player ID: {player_id}")
+            return  # 플레이어 ID를 찾을 수 없으므로 처리하지 않음
+
         move_speed = 2
 
         if key == "A" and pressed:
@@ -351,7 +354,7 @@ class PingPongServer:
         elif key == "D" and pressed:
             player["x"] += move_speed
 
-        # Ensure player stays within boundaries
+        # 플레이어의 위치가 게임 영역을 벗어나지 않도록 제한
         player["x"] = max(
             -Game.GAME_WIDTH.value / 2 + 10,
             min(Game.GAME_WIDTH.value / 2 - 10, player["x"]),

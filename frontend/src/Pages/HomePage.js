@@ -1,7 +1,7 @@
 import NavBar from "../Components/Navbar.js";
 
 class HomePage {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
 
@@ -81,6 +81,11 @@ class HomePage {
       }
     };
 
+    const matchingButton = document.createElement("button");
+    matchingButton.classList.add("navigate");
+    matchingButton.setAttribute("path", "/matching");
+    matchingButton.textContent = "Go to Matching Page";
+
     // 컨테이너에 요소들 추가
     container.appendChild(navBar);
     container.appendChild(title);
@@ -88,9 +93,10 @@ class HomePage {
     container.appendChild(loginButton);
     container.appendChild(setHelloButton);
     container.appendChild(logoutButton);
+    container.appendChild(matchingButton);
 
     return container; // 컨테이너를 반환
   }
 }
 
-export default new HomePage();
+export default HomePage;
