@@ -303,14 +303,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "api/static/"
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 from .schema import *
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Your Project API",
     "DESCRIPTION": "Your project description",
@@ -372,6 +371,11 @@ LOGGING = {
             "propagate": False,
         },
         "ingame": {
+            "handlers": ["console", "file"],
+            "level": "INFO",  # You can adjust the log level for specific apps
+            "propagate": False,
+        },
+        "matchmaking": {
             "handlers": ["console", "file"],
             "level": "INFO",  # You can adjust the log level for specific apps
             "propagate": False,
