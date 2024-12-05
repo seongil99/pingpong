@@ -20,7 +20,9 @@ import logging
 from django.urls import path, re_path
 
 from users.status.routing import websocket_urlpatterns as status_websocket_urlpatterns
-from matchmaking.routing import websocket_urlpatterns as matchmaking_websocket_urlpatterns
+from matchmaking.routing import (
+    websocket_urlpatterns as matchmaking_websocket_urlpatterns,
+)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 logger = logging.getLogger("django")
@@ -31,14 +33,9 @@ django_asgi_app = get_asgi_application()
 
 game_app = socketio.ASGIApp(sio, socketio_path="/api/game/socket.io")
 
-websocket_urlpatterns = (
-        status_websocket_urlpatterns
-        + matchmaking_websocket_urlpatterns
-)
+websocket_urlpatterns = status_websocket_urlpatterns + matchmaking_websocket_urlpatterns
 
-websocket_urlpatterns_with_auth = AuthMiddlewareStack(
-    URLRouter(websocket_urlpatterns)
-)
+websocket_urlpatterns_with_auth = AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
 
 game_app_with_auth = AuthMiddlewareStack(game_app)
 

@@ -3,14 +3,15 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 const params = new URLSearchParams(window.location.search);
-const gameId = params.get("gameId");
-const userName = await fetch("/api/v1/users/me/")
+let gameId = params.get("gameId");
+let userName = await fetch("/api/v1/users/me/")
   .then((res) => res.json())
   .then((data) => data.username);
 if (!gameId) {
-  const gameId = prompt("게임 아이디를 입력하세요"); // 임시 게임아이디 넘겨받는 로직
-  const userName = prompt("사용자 이름을 입력하세요");
+  gameId = prompt("게임 아이디를 입력하세요"); // 임시 게임아이디 넘겨받는 로직
+  userName = prompt("사용자 이름을 입력하세요");
 }
+const gameType = ['AI', 'PVP'];
 const socket = io('/api/game', {
     transports: ['websocket'],
     debug: true,
@@ -18,6 +19,7 @@ const socket = io('/api/game', {
     query: {
         gameId: gameId,
         userName: userName,
+        gameType: gameType[1],
     }
 });
 const WAIT_GAME = 1;

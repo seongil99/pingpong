@@ -4,7 +4,8 @@ import random
 import time
 import asyncio
 from backend.socketsend import socket_send
-from ingame.data import user_to_game
+from ingame.data import user_to_game, gameid_to_task
+from backend.dbAsync import get_game_users
 
 from .enums import Game
 import logging
@@ -21,8 +22,8 @@ async def set_interval(func, interval):
         start_time = time.perf_counter()
         await func()
         elapsed_time = (
-                               time.perf_counter() - start_time
-                       ) * 1_000_000  # Convert to microseconds
+            time.perf_counter() - start_time
+        ) * 1_000_000  # Convert to microseconds
         await asyncio.sleep(interval)
 
 
@@ -48,7 +49,7 @@ class Vec3:
         return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
 
     def __length__(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
     def __normalize__(self):
         len = self.length()
@@ -74,10 +75,10 @@ class InMemoryGameState:
         # In-memory store for game states
         pass
 
-    def new_game(self, game_id, userId, multiOption=False) -> dict:
+    async def new_game(self, game_id, userId, playerId, multiOption=False) -> dict:
         game_state = {
             "render_data": {
-                "oneName": userId,
+                "oneName": "",
                 "twoName": "ai",
                 "playerOne": {"x": 0, "y": 6, "z": 100},
                 "playerTwo": {"x": 0, "y": 6, "z": -100},
@@ -87,9 +88,12 @@ class InMemoryGameState:
             "is_single_player": multiOption == False,
             "ai_KeyState": {"A": False, "D": False},
             "gameStart": False,
+            "playerOneId": "",
+            "playerTwoId": "",
             "clients": {},
             "game_id": game_id,
         }
+
         self.save_game_state(game_id, game_state)
         return game_state
 
@@ -124,35 +128,67 @@ class PingPongServer:
         self.game_state = InMemoryGameState()
         self.sio = sio
 
-    def add_game(self, sid, game_id, user_id, ballCount=1):
+    async def add_user(self, game_id, user, multiOption=False):
+        game_state = self.game_state.load_game_state(game_id)
+
+        logger.info(f"user: {user}")
+        if multiOption == True:
+            user1, user2 = await get_game_users(game_id)
+            if user1.id == user.id:
+                game_state["render_data"]["oneName"] = user1.username
+                game_state["playerOneId"] = user1.id
+            else:
+                game_state["render_data"]["twoName"] = user2.username
+                game_state["playerTwoId"] = user2.id
+
+    async def add_game(
+        self, sid, game_id, user_id, player_id, multi_option, ballCount=1
+    ):  # user_id == user_name, player_id == user.id -> pk
         # if game doesn't exist == User1
         game_state = self.game_state.load_game_state(game_id)
         if game_state == None:
-            game_state = self.game_state.new_game(game_id, user_id, True)
+            game_state = await self.game_state.new_game(
+                game_id, user_id, player_id, multi_option
+            )
             for i in range(0, ballCount):
                 self.addBall(game_state)
-        else:
-            game_state["render_data"]["twoName"] = user_id
         game_state["clients"][sid] = sid
+        if (
+            game_state["playerOneId"] == player_id
+            or game_state["playerTwoId"] == player_id
+        ):
+            return
+        game_state["playerTwoId"] = player_id
 
     def game_loop(self, game_state):
+        game_id = game_state["game_id"]
+        task_list = []
         if game_state["is_single_player"] == True:
-            asyncio.create_task(
-                set_interval(lambda: self.update_ai(game_state), Game.AI_INTERVAL.value)
+            task_list.append(
+                asyncio.create_task(
+                    set_interval(
+                        lambda: self.update_ai(game_state), Game.AI_INTERVAL.value
+                    )
+                )
             )
+            task_list.append(
+                asyncio.create_task(
+                    set_interval(
+                        lambda: self.update_physics(game_state),
+                        Game.PHYSICS_INTERVAL.value,
+                    )
+                )
+            )
+            gameid_to_task[game_id] = task_list
+            return
+        task_list.append(
             asyncio.create_task(
                 set_interval(
                     lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
                 )
             )
-            return
-            # asyncio.create_task(set_interval(self.update_ai, 1))
-            # asyncio.create_task(set_interval(self.update_physics, 1))
-        asyncio.create_task(
-            set_interval(
-                lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
-            )
         )
+        gameid_to_task[game_id] = task_list
 
     def addBall(self, game_state) -> None:
         ballNum = len(game_state["render_data"]["balls"])
@@ -185,14 +221,14 @@ class PingPongServer:
         if ball_position[target].position["x"] < ball_position[target].position["z"]:
             return
         if (
-                ball_position[target].position["z"] > 0
-                or random.randint(0, 99) < Game.AI_RATE.value
+            ball_position[target].position["z"] > 0
+            or random.randint(0, 99) < Game.AI_RATE.value
         ):
             return  # ball is over half, or AI decides to not act based on AI_RATE
 
         if (
-                ball_position[target].position["x"]
-                < game_state["render_data"]["playerTwo"]["x"]
+            ball_position[target].position["x"]
+            < game_state["render_data"]["playerTwo"]["x"]
         ):
             if game_state["ai_KeyState"]["D"]:
                 game_state["ai_KeyState"]["D"] = False
@@ -238,9 +274,9 @@ class PingPongServer:
 
             # Check scoring
             if (
-                    abs(ball.position["z"]) > Game.GAME_LENGTH.value / 2
-                    or ball.position["y"] < 0
-                    or ball.position["y"] > 20
+                abs(ball.position["z"]) > Game.GAME_LENGTH.value / 2
+                or ball.position["y"] < 0
+                or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
                     game_state["render_data"]["score"]["playerTwo"] += 1
@@ -251,15 +287,15 @@ class PingPongServer:
 
                 # Check if someone has won the set
                 if (
-                        game_state["render_data"]["score"]["playerOne"]
-                        >= Game.GAME_SET_SCORE.value
-                        or game_state["render_data"]["score"]["playerTwo"]
-                        >= Game.GAME_SET_SCORE.value
+                    game_state["render_data"]["score"]["playerOne"]
+                    >= Game.GAME_SET_SCORE.value
+                    or game_state["render_data"]["score"]["playerTwo"]
+                    >= Game.GAME_SET_SCORE.value
                 ):
                     winner = (
                         game_state["render_data"]["oneName"]
                         if game_state["render_data"]["score"]["playerOne"]
-                           > game_state["render_data"]["score"]["playerTwo"]
+                        > game_state["render_data"]["score"]["playerTwo"]
                         else game_state["render_data"]["twoName"]
                     )
                     await socket_send(
@@ -333,14 +369,17 @@ class PingPongServer:
 
     def handle_player_input(self, game_state, player_id, key, pressed):
         client_keys = list(game_state["clients"].keys())
+        logger.info(f"player_id: {player_id}")
+        logger.info(f"user1: {game_state['playerOneId']}")
+        logger.info(f"user2: {game_state['playerTwoId']}")
 
         if player_id == "ai":
             # AI 플레이어의 입력 처리
             player = game_state["render_data"]["playerTwo"]
-        elif player_id == client_keys[0]:
+        elif player_id == game_state["playerOneId"]:
             # 첫 번째 플레이어의 입력 처리
             player = game_state["render_data"]["playerOne"]
-        elif len(client_keys) > 1 and player_id == client_keys[1]:
+        elif player_id == game_state["playerTwoId"]:
             # 두 번째 플레이어의 입력 처리
             player = game_state["render_data"]["playerTwo"]
         else:

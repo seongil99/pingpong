@@ -3,8 +3,10 @@ import json
 from django.utils.timezone import now
 from channels.db import database_sync_to_async
 import logging
+import socketio
 
 logger = logging.getLogger(__name__)
+
 
 class OnlineStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):

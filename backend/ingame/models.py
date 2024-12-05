@@ -7,8 +7,12 @@ User = get_user_model()
 # Create your models here.
 class OneVersusOneGame(models.Model):
     game_id = models.AutoField(primary_key=True)
-    user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="player_one")
-    user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="player_two")
+    user_1 = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="player_one"
+    )
+    user_2 = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="player_two"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
