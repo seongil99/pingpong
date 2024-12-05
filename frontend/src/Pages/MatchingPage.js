@@ -101,6 +101,9 @@ class MatchingPage {
         this.isMatching = false;
         this.requestMatchButton.disabled = false;
         this.cancelMatchButton.disabled = true;
+        const gameUrl = "/api/static/public/index.html";
+        const gameId = data.game_id;
+        window.location.href = `${gameUrl}?gameId=${gameId}`;
       } else if (data.type === "match_canceled") {
         this.statusDiv.textContent = "매칭이 취소되었습니다.";
         this.isMatching = false;
