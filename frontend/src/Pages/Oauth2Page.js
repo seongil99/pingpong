@@ -1,5 +1,5 @@
 class Oauth2Page {
-  template() {
+  async template() {
     // 컨테이너 div 생성
     const container = document.createElement("div");
 
@@ -9,7 +9,7 @@ class Oauth2Page {
 
     const callCallback = async () => {
       const callBackUri =
-        "https://localhost/api/v1/accounts/oauth2/fortytwo/login/callback/";
+        "https://localhost/api/v1/users/accounts/oauth2/fortytwo/login/callback/";
       const queryParam = new URLSearchParams(window.location.search);
       const code = queryParam.get("code");
       console.log(code);
@@ -24,6 +24,7 @@ class Oauth2Page {
 
       const response = await fetch(callBackUri, {
         method: "POST",
+        redirect: "manual",
         headers: {
           "Content-Type": "application/json",
           // "X-CSRFToken": csrftoken,
@@ -33,9 +34,12 @@ class Oauth2Page {
 
       const data = await response.json();
       console.log(data);
-
+      console.log(data.status);
+      console.log(response.status);
       if (response.ok) {
         window.router.navigate("/");
+      } else if (data.status === "redirect") {
+        window.router.navigate(data.url);
       } else {
         alert("Failed to login");
         window.router.navigate("/login");
@@ -54,4 +58,4 @@ class Oauth2Page {
   }
 }
 
-export default new Oauth2Page();
+export default Oauth2Page;

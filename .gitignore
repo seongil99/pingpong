@@ -26,3 +26,9 @@
 
 # .env
 **/.env
+
+#venv
+**/venv
+
+**/.devcontainer
+**/.idea

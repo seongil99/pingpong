@@ -48,7 +48,7 @@ class AuthenticatorForm {
 
         try {
             const response = await fetch(
-                "/api/v1/accounts/two-factor-auth/verifications/",
+                "/api/v1/users/accounts/mfa/",
                 {
                     method: "POST",
                     headers: {
@@ -62,7 +62,7 @@ class AuthenticatorForm {
             if (response.ok) {
                 // Redirect to the main app or dashboard
                 alert("2FA verification successful!");
-                // window.location.href = "/home";
+                window.location.href = "/home";
                 // location.reload();
             } else {
                 this.#showErrorMessage(
