@@ -29,4 +29,4 @@ class MFAPage {
 }
 
 // Instantiate the 2FA verification page
-export default new MFAPage();
+export default MFAPage;

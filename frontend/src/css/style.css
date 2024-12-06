@@ -5,3 +5,5 @@
 @import "StartPage/StartPage.css";
 @import "StartPage/TwoFactorAuthPage.css";
 @import "StartPage/AuthenticatorPage.css";
+
+@import "MainPage/HomePage.css";

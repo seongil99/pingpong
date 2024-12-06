@@ -1,7 +1,6 @@
-import HomeButton from "../Components/HomeButton.js";
 import NavBar from "../Components/Navbar.js";
 
-class AboutPage {
+class NotFoundPage {
     template() {
         // 컨테이너 div 생성
         const container = document.createElement("div");
@@ -26,4 +25,4 @@ class AboutPage {
     }
 }
 
-export default AboutPage;
+export default NotFoundPage;

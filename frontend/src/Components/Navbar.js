@@ -1,5 +1,5 @@
 const logout = async () => {
-    const url = "https://localhost/api/v1/accounts/logout/";
+    const url = "https://localhost/api/v1/users/accounts/logout/";
     const csrftoken = document.cookie
         .split("; ")
         .find((row) => row.startsWith("csrftoken="))
@@ -20,7 +20,7 @@ function NavBarItem(text) {
     const li = document.createElement("li");
     li.classList.add("nav-item");
     const a = document.createElement("a");
-    a.classList.add("nav-link", "active");
+    a.classList.add("nav-link");
     a.textContent = text;
     li.appendChild(a);
     return li;
@@ -53,13 +53,7 @@ function NavBarList() {
 
 function NavBar() {
     const navBar = document.createElement("nav");
-    navBar.classList.add(
-        "navbar",
-        "navbar-expand-lg",
-        "navbar-light",
-        "bg-light",
-        "py-3"
-    );
+    navBar.classList.add("navbar", "navbar-expand-lg", "bg-body-tertiary");
 
     // Navigation Bar Frame Divider
     const navBarFrame = document.createElement("div");
@@ -75,8 +69,9 @@ function NavBar() {
     // Navigation Bar Toggle Button
     const navBarToggleBtn = document.createElement("button");
     navBarToggleBtn.classList.add("navbar-toggler");
-    navBarToggleBtn.setAttribute("data-toggle", "collapse");
-    navBarToggleBtn.setAttribute("data-target", "#navbarTogglerDemo02");
+    navBarToggleBtn.setAttribute("type", "button");
+    navBarToggleBtn.setAttribute("data-bs-toggle", "collapse");
+    navBarToggleBtn.setAttribute("data-bs-target", "#navbarTogglerDemo02");
     navBarToggleBtn.setAttribute("aria-controls", "navbarTogglerDemo02");
     navBarToggleBtn.setAttribute("aria-expanded", "false");
     navBarToggleBtn.setAttribute("aria-label", "Toggle navigation");

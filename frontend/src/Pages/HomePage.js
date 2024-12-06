@@ -1,4 +1,5 @@
 import NavBar from "../Components/Navbar.js";
+import FriendList from "../Components/FriendList.js"
 
 class HomePage {
     template() {
@@ -6,81 +7,36 @@ class HomePage {
         const container = document.createElement("div");
 
         const navBar = NavBar();
+        const main = document.createElement("main");
+        const friendToggle = document.createElement("div");
+        friendToggle.setAttribute("id", "friend-toggle");
+        const friendToggleBtn = document.createElement("button");
+        friendToggleBtn.textContent = "친구목록";
+        // 친구 목록 버튼 Div 안에 친구 목록 화면 활성화 버튼 추가
+        friendToggle.appendChild(friendToggleBtn);
 
-    // 컨테이너에 요소들 추가
-    container.appendChild(navBar);
-    container.appendChild(title);
-    container.appendChild(aboutButton);
-    container.appendChild(loginButton);
-    container.appendChild(setHelloButton);
-    container.appendChild(logoutButton);
-    container.appendChild(matchingButton);
+        const friendList = FriendList();
+
+        const matching = document.createElement("div");
+        matching.classList.add("match-div");
+        const matchingButton = document.createElement("button");
+        matchingButton.classList.add("match-btn", "navigate");
+        matchingButton.setAttribute("path", "/matching");
+        matchingButton.textContent = "Go to Matching Page";
+        // 게임시작 Div에 게임시작 버튼 추가
+        matching.appendChild(matchingButton);
+
+        // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가
+        main.appendChild(friendToggle);
+        main.appendChild(friendList);
+        main.appendChild(matching);
+
+        // 컨테이너에 네비게이션 바, main 요소
+        container.appendChild(navBar);
+        container.appendChild(main);
 
         return container; // 컨테이너를 반환
     }
 }
 
 export default HomePage;
-
-
-// const getHello = async () => {
-//   const url = "https://localhost/api/v1/users/accounts/hello/";
-//   try {
-//     const response = await fetch(url, {
-//       method: "GET",
-//       credentials: "include", // 쿠키 전송 허용
-//     });
-//     return response;
-//   } catch (error) {
-//     console.error("Error:", error);
-//   }
-// };
-
-// const displayHello = async () => {
-//   const response = await getHello();
-//   if (response.ok) {
-//     const hello = await response.json();
-//     document.getElementById("h2").textContent =
-//       hello.message + " login success";
-//   } else {
-//     document.getElementById("h2").textContent = "does not login";
-//   }
-// };
-
-// const setHelloButton = document.createElement("button");
-// setHelloButton.textContent = "is login?";
-// setHelloButton.onclick = displayHello;
-
-// const logout = async () => {
-//   const url = "https://localhost/api/v1/users/accounts/logout/";
-//   const csrftoken = document.cookie
-//     .split("; ")
-//     .find((row) => row.startsWith("csrftoken="))
-//     .split("=")[1];
-//   try {
-//     const response = await fetch(url, {
-//       method: "POST",
-//       credentials: "include", // 쿠키 전송 허용
-//       "X-CSRFToken": csrftoken, // CSRF 토큰을 헤더에 포함
-//     });
-//     return response;
-//   } catch (error) {
-//     console.error("Error:", error);
-//   }
-// };
-
-// const logoutButton = document.createElement("button");
-// logoutButton.textContent = "Logout";
-// logoutButton.onclick = async () => {
-//   const response = await logout();
-//   if (response.ok) {
-//     document.getElementById("h2").textContent = " logout success";
-//   } else {
-//     document.getElementById("h2").textContent = " logout fail";
-//   }
-// };
-
-// const matchingButton = document.createElement("button");
-// matchingButton.classList.add("navigate");
-// matchingButton.setAttribute("path", "/matching");
-// matchingButton.textContent = "Go to Matching Page";
