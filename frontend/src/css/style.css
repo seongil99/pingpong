@@ -1,6 +1,8 @@
 @import "reset.css";
 
 @import "Components/Navbar.module.css";
+@import "Components/Friends.module.css";
+@import "Components/Modal.module.css";
 
 @import "StartPage/StartPage.css";
 @import "StartPage/TwoFactorAuthPage.css";

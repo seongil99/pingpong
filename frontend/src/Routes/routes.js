@@ -7,7 +7,8 @@ const routes = {
     // "/oauth2/redirect": () => import("../Pages/Oauth2Page.js"),
     // "/verification": () => import("../Pages/TwoFactorAuthPage.js"),
     // "/verification/auth": import("../Pages/AuthenticatorPage.js"),
-    // "/profile": () => import("../Pages/ProfilePage.js"),
+    "/profile": () => import("../Pages/ProfilePage.js"),
+    "/settings": () => import("../Pages/SettingsPage.js"),
     // "/friends": () => import("../Pages/FriendsPage.js"),
     // "/matching": () => import("../Pages/MatchingPage.js"),
 };

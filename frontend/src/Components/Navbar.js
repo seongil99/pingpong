@@ -34,7 +34,7 @@ function NavBarList() {
     profileBtn.lastElementChild.setAttribute("path", "/profile");
     profileBtn.lastElementChild.classList.add("navigate");
     const settingBtn = NavBarItem("Setting");
-    settingBtn.lastElementChild.setAttribute("path", "/setting");
+    settingBtn.lastElementChild.setAttribute("path", "/settings");
     settingBtn.lastElementChild.classList.add("navigate");
     const logoutBtn = NavBarItem("Log out");
     logoutBtn.onClick = async () => {

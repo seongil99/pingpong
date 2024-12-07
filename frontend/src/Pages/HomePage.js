@@ -1,17 +1,27 @@
 import NavBar from "../Components/Navbar.js";
-import FriendList from "../Components/FriendList.js"
+import FriendList from "../Components/FriendList.js";
 
 class HomePage {
     template() {
         // 컨테이너 div 생성
         const container = document.createElement("div");
 
+        const modal = Modal();
         const navBar = NavBar();
         const main = document.createElement("main");
+
         const friendToggle = document.createElement("div");
         friendToggle.setAttribute("id", "friend-toggle");
         const friendToggleBtn = document.createElement("button");
         friendToggleBtn.textContent = "친구목록";
+        friendToggleBtn.addEventListener("click", () => {
+            const friends = document.querySelector("#friends");
+            const match = document.querySelector(".match-div");
+            friends.classList.toggle("hide");
+            match.classList.toggle("hide");
+            friendToggleBtn.textContent = (!friends.classList.contains("hide")) ? "X" : "친구목록";
+
+        });
         // 친구 목록 버튼 Div 안에 친구 목록 화면 활성화 버튼 추가
         friendToggle.appendChild(friendToggleBtn);
 
@@ -32,6 +42,7 @@ class HomePage {
         main.appendChild(matching);
 
         // 컨테이너에 네비게이션 바, main 요소
+        container.appendChild(modal);
         container.appendChild(navBar);
         container.appendChild(main);
 
