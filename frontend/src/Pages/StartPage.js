@@ -1,13 +1,9 @@
+import createElement from "../Utils/createElement.js";
+
 class StartPage {
     template() {
-        const container = document.createElement("div");
-        container.classList.add("start");
+        const transcendentTitle = createElement("h1", {}, "ft_transcendence");
 
-        const transcendentTitle = document.createElement("h1");
-        transcendentTitle.textContent = "ft_transcendence";
-
-        // go to Login Page or 2FA Page or Main Page
-        const startButton = document.createElement("button");
         // flag = detectLoginStatus();
         let flag = 0;
         let correctPath;
@@ -15,13 +11,18 @@ class StartPage {
         else if (flag === 1) correctPath = "/login";
         else if (flag === 2) correctPath = "/verification";
 
-        startButton.classList.add("navigate");
-        startButton.setAttribute("path", correctPath);
-        startButton.textContent = "시작하기";
-
-        container.appendChild(transcendentTitle);
-        container.appendChild(startButton);
-
+        // go to Login Page or 2FA Page or Main Page
+        const startButton = createElement(
+            "button",
+            { class: "navigate", path: correctPath },
+            "Sign In"
+        );
+        const container = createElement(
+            "div",
+            { class: "start" },
+            transcendentTitle,
+            startButton
+        );
         return container;
     }
 }

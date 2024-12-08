@@ -1,3 +1,5 @@
+import createElement from "../Utils/createElement.js";
+
 const logout = async () => {
     const url = "https://localhost/api/v1/users/accounts/logout/";
     const csrftoken = document.cookie
@@ -16,27 +18,21 @@ const logout = async () => {
     }
 };
 
-function NavBarItem(text) {
-    const li = document.createElement("li");
-    li.classList.add("nav-item");
-    const a = document.createElement("a");
-    a.classList.add("nav-link");
-    a.textContent = text;
-    li.appendChild(a);
+function NavBarItem(path, text) {
+    const a = createElement(
+        "a",
+        { class: "nav-link navigate", path: path },
+        text
+    );
+    const li = createElement("li", { class: "nav-item" }, a);
     return li;
 }
 
 function NavBarList() {
-    const ul = document.createElement("ul");
-    ul.classList.add("navbar-nav");
-
-    const profileBtn = NavBarItem("Profile");
-    profileBtn.lastElementChild.setAttribute("path", "/profile");
-    profileBtn.lastElementChild.classList.add("navigate");
-    const settingBtn = NavBarItem("Setting");
-    settingBtn.lastElementChild.setAttribute("path", "/settings");
-    settingBtn.lastElementChild.classList.add("navigate");
-    const logoutBtn = NavBarItem("Log out");
+    const profileBtn = NavBarItem("/profile", "Profile");
+    const settingBtn = NavBarItem("/settings", "Setting");
+    const logoutBtn = NavBarItem("", "Log out");
+    logoutBtn.lastElementChild.classList.remove("navigate");
     logoutBtn.onClick = async () => {
         const response = await logout();
         if (response.ok) {
@@ -45,62 +41,61 @@ function NavBarList() {
             document.getElementById("h2").textContent = " logout fail";
         }
     };
-    ul.appendChild(profileBtn);
-    ul.appendChild(settingBtn);
-    ul.appendChild(logoutBtn);
+    const ul = createElement(
+        "ul",
+        { class: "navbar-nav" },
+        profileBtn,
+        settingBtn,
+        logoutBtn
+    );
     return ul;
 }
 
 function NavBar() {
-    const navBar = document.createElement("nav");
-    navBar.classList.add("navbar", "navbar-expand-lg", "bg-body-tertiary");
-
-    // Navigation Bar Frame Divider
-    const navBarFrame = document.createElement("div");
-    navBarFrame.classList.add("container-fluid");
-
-    // Main Page Button
-    const homeTitle = document.createElement("a");
-    homeTitle.classList.add("navbar-title", "navbar-brand", "navigate");
-    const homePath = "/home";
-    homeTitle.setAttribute("path", homePath);
-    homeTitle.textContent = "ft_transcendence";
-
-    // Navigation Bar Toggle Button
-    const navBarToggleBtn = document.createElement("button");
-    navBarToggleBtn.classList.add("navbar-toggler");
-    navBarToggleBtn.setAttribute("type", "button");
-    navBarToggleBtn.setAttribute("data-bs-toggle", "collapse");
-    navBarToggleBtn.setAttribute("data-bs-target", "#navbarTogglerDemo02");
-    navBarToggleBtn.setAttribute("aria-controls", "navbarTogglerDemo02");
-    navBarToggleBtn.setAttribute("aria-expanded", "false");
-    navBarToggleBtn.setAttribute("aria-label", "Toggle navigation");
-
-    // Navigation Bar Toggle Button icon
-    const navBarIcon = document.createElement("span");
-    navBarIcon.classList.add("navbar-toggler-icon");
-
-    navBarToggleBtn.appendChild(navBarIcon);
-
-    // Navigation Bar Contents Group Divider
-    const navBarListBox = document.createElement("div");
-    navBarListBox.classList.add(
-        "justify-content-end",
-        "collapse",
-        "navbar-collapse"
+    const homeTitle = createElement(
+        "a",
+        { class: "navbar-title navbar-brand navigate", path: "/home" },
+        "ft_transcendence"
     );
-    navBarListBox.setAttribute("id", "navbarTogglerDemo02");
-
+    const navBarIcon = createElement(
+        "span",
+        { class: "navbar-toggler-icon" },
+        []
+    );
+    const navBarToggleBtn = createElement(
+        "button",
+        {
+            class: "navbar-toggler",
+            type: "button",
+            "data-bs-toggle": "collapse",
+            "data-bs-target": "#navbarTogglerDemo02",
+            "aria-controls": "navbarTogglerDemo02",
+            "aria-expanded": "false",
+            "aria-label": "Toggle navigation",
+        },
+        navBarIcon
+    );
     const navBarList = NavBarList();
-    navBarListBox.appendChild(navBarList);
-
-    // Append The Child Elements of Navigation Bar Frame
-    navBarFrame.appendChild(homeTitle);
-    navBarFrame.appendChild(navBarToggleBtn);
-    navBarFrame.appendChild(navBarListBox);
-
-    // Append The Child Element of Navigation Bar
-    navBar.appendChild(navBarFrame);
+    const navBarListBox = createElement(
+        "div",
+        {
+            class: "justify-content-end collapse navbar-collapse",
+            id: "navbarTogglerDemo02",
+        },
+        navBarList
+    );
+    const navBarFrame = createElement(
+        "div",
+        { class: "container-fluid" },
+        homeTitle,
+        navBarToggleBtn,
+        navBarListBox
+    );
+    const navBar = createElement(
+        "nav",
+        { class: "navbar navbar-expand-lg bg-body-tertiary" },
+        navBarFrame
+    );
     return navBar;
 }
 

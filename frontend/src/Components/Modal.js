@@ -19,7 +19,6 @@ const Modal = () => {
     modalContent.classList.add("model-content");
 
     const profileSummary = ProfileSummary();
-	
 
     modal.appendChild(modalContent);
     return modal;
