@@ -9,13 +9,13 @@ class PingPongHistory(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="pingpong_games_as_user1",
-        null=False,
+        null=True,
     )
     user2 = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="pingpong_games_as_user2",
-        null=False,
+        null=True,
     )
     winner = models.ForeignKey(
         User,

@@ -46,7 +46,7 @@ class GameIO(socketio.AsyncNamespace):
         # save user sid to game_id
         user_to_game[sid] = game_id
         await server.add_game(
-            sid, game_id, user_name, user.id, gameType == "PVP"
+            sid, game_id, user.id, gameType == "PVP"
         )  # 유저이름 변경 필요 받아야 할듯
         await server.add_user(game_id, user, gameType == "PVP")
         game_state = game_state_db.load_game_state(game_id)
@@ -82,8 +82,12 @@ class GameIO(socketio.AsyncNamespace):
 
     async def on_keyPress(self, sid, data):
         logger.info(f"Key press: {data}")
+        if sid not in user_to_game:
+            return
         game_id = user_to_game[sid]
         game_state = server.game_state.load_game_state(game_id)
+        if game_state["gameStart"] == False:
+            return
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         logger.info(f"user_id: {user.id}")

@@ -448,10 +448,10 @@ class PingPongClient {
             }
         }
         else if (key === 'C') {
-            const nowIndexColor = this.initColor.indexOf(this.playerOne.material.color.getHex());
-            this.playerOne.material.color.set(this.initColor[nowIndexColor >= this.initColor.length - 1 ? 0 : nowIndexColor + 1])
+            const player = !this.secondPlayer ? this.playerOne : this.playerTwo;
+            const nowIndexColor = this.initColor.indexOf(player.material.color.getHex());
+            player.material.color.set(this.initColor[nowIndexColor >= this.initColor.length - 1 ? 0 : nowIndexColor + 1])
         }
-
     }
 
     onKeyUp(event) {
@@ -679,52 +679,3 @@ class PingPongClient {
 }
 
 const game = new PingPongClient(true);
-
-// socket.on('secondPlayer', (gameState)=> {
-//     game.secondPlayer = true;
-//     game.cameraTheta = -game.cameraTheta;
-//     game.updateCameraPosition();
-//     game.playerOne.material.color.setHex(game.initColor[0]);
-//     game.playerTwo.material.color.setHex(game.initColor[1]);
-// });
-
-// socket.on('score',(gameState)=>{
-//     game.makeFont(!game.secondPlayer ? `${gameState.oneName} ${gameState.score.playerOne} : ${gameState.score.playerTwo} ${gameState.twoName}`: `${gameState.twoName} ${gameState.score.playerTwo} : ${gameState.score.playerOne} ${gameState.oneName}`);
-// });
-// socket.on('gameStart',(gameState)=>{
-//     game.gameStart = START_GAME;
-//     game.makeFont(!game.secondPlayer ? `${gameState.oneName} ${gameState.score.playerOne} : ${gameState.score.playerTwo} ${gameState.twoName}`: `${gameState.twoName} ${gameState.score.playerTwo} : ${gameState.score.playerOne} ${gameState.oneName}`);
-// });
-// socket.on('gameEnd',(txt)=>{
-//     game.gameStart = END_GAME;
-//     game.makeFont(txt);
-//     game.textdata.lookAt(game.camera.position);
-//     // game.textdata.lookAt(game.camera.position);
-//     // alert(txt);
-// });
-
-// socket.on('data',(gameState = null)=>{
-//     console.log(gameState.type,gameState);
-//     if(gameState.type === 'score'){
-//         game.makeFont(!game.secondPlayer ? `${gameState.oneName} ${gameState.score.playerOne} : ${gameState.score.playerTwo} ${gameState.twoName}`: `${gameState.twoName} ${gameState.score.playerTwo} : ${gameState.score.playerOne} ${gameState.oneName}`);
-//     }
-//     else if(gameState.type === 'gameStart'){
-//     game.gameStart = START_GAME;
-//     game.makeFont(!game.secondPlayer ? `${gameState.oneName} ${gameState.score.playerOne} : ${gameState.score.playerTwo} ${gameState.twoName}`: `${gameState.twoName} ${gameState.score.playerTwo} : ${gameState.score.playerOne} ${gameState.oneName}`);
-//     }
-//     else if(gameState.type === 'gameEnd'){
-//     game.gameStart = END_GAME;
-//     game.makeFont(gameState.txt);
-//     game.textdata.lookAt(game.camera.position);
-//     }
-//     else if(gameState.type === 'secondPlayer'){
-//     game.secondPlayer = true;
-//     game.cameraTheta = -game.cameraTheta;
-//     game.updateCameraPosition();
-//     game.playerOne.material.color.setHex(game.initColor[0]);
-//     game.playerTwo.material.color.setHex(game.initColor[1]);
-//     }
-//     else if(gameState.type === 'gameWait'){
-//         game.gameStart = WAIT_GAME;
-//     }
-// })

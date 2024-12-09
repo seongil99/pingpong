@@ -79,7 +79,7 @@ class InMemoryGameState:
         # In-memory store for game states
         pass
 
-    async def new_game(self, game_id, userId, playerId, multiOption=False) -> dict:
+    async def new_game(self, game_id, multiOption=False) -> dict:
         game_state = {
             "render_data": {
                 "oneName": "",
@@ -138,33 +138,28 @@ class PingPongServer:
         game_state = self.game_state.load_game_state(game_id)
 
         logger.info(f"user: {user}")
-        if multiOption == True:
-            user1, user2 = await get_game_users(game_id)
-            if user1.id == user.id:
-                game_state["render_data"]["oneName"] = user1.username
-                game_state["playerOneId"] = user1.id
-            elif user2.id == user.id:
-                game_state["render_data"]["twoName"] = user2.username
-                game_state["playerTwoId"] = user2.id
+        if multiOption == False:
+            game_state["render_data"]["oneName"] = user.username
+            game_state["playerOneId"] = user.id
+            return
+        user1, user2 = await get_game_users(game_id)
+        if user1.id == user.id:
+            game_state["render_data"]["oneName"] = user1.username
+            game_state["playerOneId"] = user1.id
+        elif user2.id == user.id:
+            game_state["render_data"]["twoName"] = user2.username
+            game_state["playerTwoId"] = user2.id
 
     async def add_game(
-        self, sid, game_id, user_id, player_id, multi_option, ballCount=1
+        self, sid, game_id, player_id, multi_option, ballCount=1
     ):  # user_id == user_name, player_id == user.id -> pk
         # if game doesn't exist == User1
         game_state = self.game_state.load_game_state(game_id)
         if game_state == None:
-            game_state = await self.game_state.new_game(
-                game_id, user_id, player_id, multi_option
-            )
+            game_state = await self.game_state.new_game(game_id, multi_option)
             for i in range(0, ballCount):
                 self.addBall(game_state)
         game_state["clients"][sid] = sid
-        if (
-            game_state["playerOneId"] == player_id
-            or game_state["playerTwoId"] == player_id
-        ):
-            return
-        game_state["playerTwoId"] = player_id
 
     def game_loop(self, game_state):
         game_id = game_state["game_id"]
