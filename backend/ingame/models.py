@@ -1,12 +1,17 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from pingpong_history.models import PingPongHistory
 
 User = get_user_model()
 
 
 # Create your models here.
 class OneVersusOneGame(models.Model):
-    game_id = models.AutoField(primary_key=True)
+    game_id = models.OneToOneField(
+        PingPongHistory,
+        primary_key=True,
+        on_delete=models.CASCADE,
+    )
     user_1 = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="player_one"
     )

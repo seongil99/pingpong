@@ -4,6 +4,7 @@ from django.db import transaction
 
 from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
+from pingpong_history.models import PingPongHistory
 
 from logging import getLogger
 
@@ -22,18 +23,12 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             await self.accept()
             # 사용자별 그룹에 가입
             self.group_name = f"user_{self.user.id}"
-            await self.channel_layer.group_add(
-                self.group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
         else:
             await self.close()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
         await self.cancel_match()
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
@@ -50,36 +45,47 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 if opponent:
                     game_id = await create_game_and_get_game_id(self.user, opponent)
                     # 매칭이 성사되었습니다.
-                    await self.send_json({
-                        "type": "match_found",
-                        "opponent_id": opponent.id,
-                        "opponent_username": opponent.username,
-                        "game_id": game_id,
-                    })
+                    await self.send_json(
+                        {
+                            "type": "match_found",
+                            "opponent_id": opponent.id,
+                            "opponent_username": opponent.username,
+                            "game_id": game_id,
+                        }
+                    )
                     # 상대방에게도 매칭 결과를 전송합니다.
                     await self.notify_opponent(opponent, game_id)
                 else:
                     # 대기열에 추가되었습니다.
-                    await self.send_json({
-                        "type": "waiting_for_match",
-                    })
+                    await self.send_json(
+                        {
+                            "type": "waiting_for_match",
+                        }
+                    )
             elif content.get("type") == "cancel_match":
                 await self.cancel_match()
-                await self.send_json({
-                    "type": "match_canceled",
-                })
+                await self.send_json(
+                    {
+                        "type": "match_canceled",
+                    }
+                )
         except Exception as e:
-            await self.send_json({
-                "type": "error",
-                "message": str(e),
-            })
+            await self.send_json(
+                {
+                    "type": "error",
+                    "message": str(e),
+                }
+            )
 
     @database_sync_to_async
     def find_match(self, gamemode):
         with transaction.atomic():
-            existing_request = MatchRequest.objects.select_for_update().filter(
-                gamemode=gamemode
-            ).exclude(user=self.user).first()
+            existing_request = (
+                MatchRequest.objects.select_for_update()
+                .filter(gamemode=gamemode)
+                .exclude(user=self.user)
+                .first()
+            )
 
             if existing_request:
                 opponent = existing_request.user
@@ -98,17 +104,19 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 "opponent_id": self.user.id,
                 "opponent_username": self.user.username,
                 "game_id": game_id,
-            }
+            },
         )
 
     async def match_found(self, event):
         # 상대방으로부터 매칭 결과를 수신하여 클라이언트로 전달
-        await self.send_json({
-            "type": "match_found",
-            "opponent_id": event["opponent_id"],
-            "opponent_username": event["opponent_username"],
-            "game_id": event["game_id"],
-        })
+        await self.send_json(
+            {
+                "type": "match_found",
+                "opponent_id": event["opponent_id"],
+                "opponent_username": event["opponent_username"],
+                "game_id": event["game_id"],
+            }
+        )
 
     @database_sync_to_async
     def cancel_match(self):

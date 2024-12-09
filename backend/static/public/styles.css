@@ -3,7 +3,7 @@
 	justify-content: center;
 	display: flex;
 }
-body, html {
+/* body, html {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -11,4 +11,23 @@ body, html {
     display: flex;
     justify-content: center;
     align-items: center;
+} */
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Prevent scrollbars */
+    width: 100%;
+    height: 100%;
+}
+
+canvas {
+    display: block;
+    /* Removes inline-block default spacing */
+    width: 100%;
+    /* Matches the width of the window */
+    height: 100%;
+    /* Matches the height of the window */
 }

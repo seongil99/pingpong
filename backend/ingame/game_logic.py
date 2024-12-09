@@ -5,7 +5,11 @@ import time
 import asyncio
 from backend.socketsend import socket_send
 from ingame.data import user_to_game, gameid_to_task
-from backend.dbAsync import get_game_users
+from backend.dbAsync import get_game_users, delete_game
+from pingpong_history.models import PingPongHistory as GameHistory
+from .enums import KeyState
+from django.utils import timezone
+from asgiref.sync import sync_to_async
 
 from .enums import Game
 import logging
@@ -85,6 +89,8 @@ class InMemoryGameState:
                 "balls": [],
                 "score": {"playerOne": 0, "playerTwo": 0},
             },
+            "one_keystate": {"A": False, "D": False},
+            "two_keystate": {"A": False, "D": False},
             "is_single_player": multiOption == False,
             "ai_KeyState": {"A": False, "D": False},
             "gameStart": False,
@@ -93,7 +99,7 @@ class InMemoryGameState:
             "clients": {},
             "game_id": game_id,
         }
-
+        self.key_state_lock = asyncio.Lock()
         self.save_game_state(game_id, game_state)
         return game_state
 
@@ -137,7 +143,7 @@ class PingPongServer:
             if user1.id == user.id:
                 game_state["render_data"]["oneName"] = user1.username
                 game_state["playerOneId"] = user1.id
-            else:
+            elif user2.id == user.id:
                 game_state["render_data"]["twoName"] = user2.username
                 game_state["playerTwoId"] = user2.id
 
@@ -171,20 +177,17 @@ class PingPongServer:
                     )
                 )
             )
-            task_list.append(
-                asyncio.create_task(
-                    set_interval(
-                        lambda: self.update_physics(game_state),
-                        Game.PHYSICS_INTERVAL.value,
-                    )
-                )
-            )
-            gameid_to_task[game_id] = task_list
-            return
         task_list.append(
             asyncio.create_task(
                 set_interval(
                     lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
+                )
+            )
+        )
+        task_list.append(
+            asyncio.create_task(
+                set_interval(
+                    lambda: self.paddle_loop(game_state), Game.PADDLE_INTERVAL.value
                 )
             )
         )
@@ -234,13 +237,13 @@ class PingPongServer:
                 game_state["ai_KeyState"]["D"] = False
             if not game_state["ai_KeyState"]["A"]:
                 game_state["ai_KeyState"]["A"] = True
-            self.handle_player_input(game_state, "ai", "A", True)
+            await self.handle_player_input(game_state, "ai", "A", True)
         else:
             if game_state["ai_KeyState"]["A"]:
                 game_state["ai_KeyState"]["A"] = False
             if not game_state["ai_KeyState"]["D"]:
                 game_state["ai_KeyState"]["D"] = True
-            self.handle_player_input(game_state, "ai", "D", True)
+            await self.handle_player_input(game_state, "ai", "D", True)
 
     async def update_physics(self, game_state):
         if not game_state["gameStart"]:
@@ -298,6 +301,12 @@ class PingPongServer:
                         > game_state["render_data"]["score"]["playerTwo"]
                         else game_state["render_data"]["twoName"]
                     )
+                    winnerId = (
+                        game_state["playerOneId"]
+                        if game_state["render_data"]["score"]["playerOne"]
+                        > game_state["render_data"]["score"]["playerTwo"]
+                        else game_state["playerTwoId"]
+                    )
                     await socket_send(
                         game_state["render_data"],
                         "gameEnd",
@@ -305,7 +314,7 @@ class PingPongServer:
                         f"Winner is {winner}",
                     )
                     game_state["gameStart"] = False
-
+                    await self.game_finish(game_state, winnerId)
                 if game_state["gameStart"]:
                     await socket_send(game_state["render_data"], "score", game_id)
                     self.reset_ball(game_state, ball)
@@ -367,34 +376,73 @@ class PingPongServer:
         game_id = game_state["game_id"]
         await socket_send(game_state["render_data"], "gameState", game_id)
 
-    def handle_player_input(self, game_state, player_id, key, pressed):
-        client_keys = list(game_state["clients"].keys())
+    async def handle_player_input(self, game_state, player_id, key, pressed):
         logger.info(f"player_id: {player_id}")
         logger.info(f"user1: {game_state['playerOneId']}")
         logger.info(f"user2: {game_state['playerTwoId']}")
 
+        # logger.info(f"key???: {key}")
+        await self.game_state.key_state_lock.acquire()
         if player_id == "ai":
             # AI 플레이어의 입력 처리
-            player = game_state["render_data"]["playerTwo"]
+            game_state["two_keystate"][key] = pressed
         elif player_id == game_state["playerOneId"]:
             # 첫 번째 플레이어의 입력 처리
-            player = game_state["render_data"]["playerOne"]
+            game_state["one_keystate"][key] = pressed
         elif player_id == game_state["playerTwoId"]:
             # 두 번째 플레이어의 입력 처리
-            player = game_state["render_data"]["playerTwo"]
+            game_state["two_keystate"][key] = pressed
         else:
             logger.warning(f"Unknown player ID: {player_id}")
-            return  # 플레이어 ID를 찾을 수 없으므로 처리하지 않음
+            # 플레이어 ID를 찾을 수 없으므로 처리하지 않음
+        self.game_state.key_state_lock.release()
 
-        move_speed = 2
+    async def paddle_loop(self, game_state):
+        # logger.info("Paddle loop")
+        playerOne = game_state["render_data"]["playerOne"]
+        playerTwo = game_state["render_data"]["playerTwo"]
+        await self.process_paddle_move(
+            game_state, playerOne, game_state["one_keystate"]
+        )
+        await self.process_paddle_move(
+            game_state, playerTwo, game_state["two_keystate"]
+        )
 
-        if key == "A" and pressed:
-            player["x"] -= move_speed
-        elif key == "D" and pressed:
-            player["x"] += move_speed
-
+    async def process_paddle_move(self, game_state, player, key):
+        await self.game_state.key_state_lock.acquire()
+        # logger.info(f"key: {key}")
+        if key["A"] and key["D"]:
+            self.game_state.key_state_lock.release()
+            return
+        if key["A"]:
+            # logger.info("move left")
+            player["x"] -= Game.MOVE_SPEED.value
+        elif key["D"]:
+            # logger.info("move right")
+            player["x"] += Game.MOVE_SPEED.value
+        self.game_state.key_state_lock.release()
         # 플레이어의 위치가 게임 영역을 벗어나지 않도록 제한
         player["x"] = max(
             -Game.GAME_WIDTH.value / 2 + 10,
             min(Game.GAME_WIDTH.value / 2 - 10, player["x"]),
         )
+
+    async def game_finish(self, game_state, winnerId):
+        await save_game_history(game_state, winnerId)
+        self.game_state.delete_game_state(game_state["game_id"])
+        task_list = gameid_to_task[game_state["game_id"]]
+        for task in task_list:
+            task.cancel()
+        await delete_game(game_state["game_id"])
+
+
+@sync_to_async
+def save_game_history(game_state, winnerId):
+    game_id = game_state["game_id"]
+    game = GameHistory.objects.get(id=game_id)
+    winner = game.user1 if game.user1.id == winnerId else game.user2
+    game.winner = winner
+    game.ended_at = timezone.now()
+    game.user1_score = game_state["render_data"]["score"]["playerOne"]
+    game.user2_score = game_state["render_data"]["score"]["playerTwo"]
+    game.save()

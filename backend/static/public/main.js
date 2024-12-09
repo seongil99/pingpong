@@ -419,15 +419,19 @@ class PingPongClient {
     }
 
     setupEventListeners() {
-        window.addEventListener('keydown', this.onKeyDown.bind(this), false);
-        window.addEventListener('keyup', this.onKeyUp.bind(this), false);
+        this.onKeyDownBound = this.onKeyDown.bind(this);
+        this.onKeyUpBound = this.onKeyUp.bind(this);
+        window.addEventListener('keydown', this.onKeyDownBound, false);
+        window.addEventListener('keyup', this.onKeyUpBound, false);
         this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false);
         this.renderer.domElement.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
+        window.addEventListener('load', this.onWindowResize.bind(this), false);
     }
 
     onKeyDown(event) {
+        console.log('keydown', event.key);
         let key = event.key.toUpperCase();
         key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
@@ -451,7 +455,9 @@ class PingPongClient {
     }
 
     onKeyUp(event) {
-        const key = event.key.toUpperCase();
+        let key = event.key.toUpperCase();
+        key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
+        console.log('keyup', key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
             socket.emit('keyPress', { key: key, pressed: false });
         }
@@ -503,6 +509,7 @@ class PingPongClient {
     }
 
     onWindowResize() {
+        console.log('resize');
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -604,7 +611,7 @@ class PingPongClient {
         });
 
         socket.on('data', (gameState) => {
-            console.log(gameState.type, gameState);
+            // console.log(gameState.type, gameState);
             if (gameState.type === 'gameState') {
                 // console.log(gameState);
                 this.updateGameState(gameState);
@@ -627,6 +634,9 @@ class PingPongClient {
                 this.gameStart = END_GAME;
                 this.makeFont(gameState.txt);
                 this.textdata.lookAt(this.camera.position);
+                // 게임 종료시 이벤트 리스너 제거
+                window.removeEventListener('keydown', this.onKeyDownBound, false);
+                window.removeEventListener('keyup', this.onKeyUpBound, false);
             }
             else if (gameState.type === 'secondPlayer') {
                 this.secondPlayer = true;

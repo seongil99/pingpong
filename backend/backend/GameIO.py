@@ -60,8 +60,9 @@ class GameIO(socketio.AsyncNamespace):
                     game_state["render_data"], "secondPlayer", game_id, sid
                 )
             await socket_send(game_state["render_data"], "gameStart", game_id)
+            if game_state["gameStart"] == False:
+                server.game_loop(game_state)
             game_state["gameStart"] = True
-            server.game_loop(game_state)
         else:
             if user2 == user:
                 await socket_send(
@@ -73,8 +74,9 @@ class GameIO(socketio.AsyncNamespace):
             if game_state["is_single_player"]:
                 await socket_send(game_state["render_data"], "gameStart", game_id)
                 logger.info("Single player game start")
+                if game_state["gameStart"] == False:
+                    server.game_loop(game_state)
                 game_state["gameStart"] = True
-                server.game_loop(game_state)
 
         await socket_send(game_state["render_data"], "gameState", sid, game_id)
 
@@ -87,7 +89,7 @@ class GameIO(socketio.AsyncNamespace):
         logger.info(f"user_id: {user.id}")
 
         if data["key"] != " ":
-            server.handle_player_input(
+            await server.handle_player_input(
                 game_state, user.id, data["key"], data["pressed"]
             )
         else:
@@ -120,12 +122,6 @@ class GameIO(socketio.AsyncNamespace):
         game_state = server.game_state.load_game_state(game_id)
         if sid in game_state["clients"]:
             del game_state["clients"][sid]
-        if len(game_state["clients"]) == 0:
-            game_state_db.delete_game_state(game_id)
-            task_list = gameid_to_task.pop(game_id)
-            for task in task_list:
-                task.cancel()
-            await delete_game(game_id)
 
 
 from rest_framework_simplejwt.backends import TokenBackend
@@ -136,15 +132,6 @@ from rest_framework_simplejwt.exceptions import (
 )
 
 from channels.db import database_sync_to_async
-
-
-@database_sync_to_async
-def delete_game(game_id):
-    try:
-        game = OneVersusOneGame.objects.get(game_id=game_id)
-        game.delete()
-    except OneVersusOneGame.DoesNotExist:
-        return None
 
 
 @database_sync_to_async
