@@ -614,6 +614,7 @@ class PingPongClient {
             // console.log(gameState.type, gameState);
             if (gameState.type === 'gameState') {
                 // console.log(gameState);
+                this.gameStart = START_GAME;
                 this.updateGameState(gameState);
             }
             else if (gameState.type === 'score') {

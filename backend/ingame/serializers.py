@@ -24,6 +24,7 @@ class gameStateSerializer(serializers.Serializer):
     balls = BallSerializer(many=True)
     score = serializers.DictField()
 
+
 class InMemoryGameStateSerializer(serializers.Serializer):
     game_id = serializers.CharField()
     game_state = gameStateSerializer()

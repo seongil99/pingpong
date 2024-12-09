@@ -7,7 +7,7 @@ from http.cookies import SimpleCookie
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from ingame.models import OneVersusOneGame
-from ingame.data import gameid_to_task
+from ingame.data import gameid_to_task, user_to_socket
 
 import socketio
 import logging
@@ -32,15 +32,23 @@ class GameIO(socketio.AsyncNamespace):
         params = parse_qs(query)
         game_id = params.get("gameId", [""])[0]
         gameType = params.get("gameType", [""])[0]
-        if gameType == "PVP" and await check_authorization(sid, game_id) == False:
-            sio.disconnect(sid)
-            return False
+        # upon successful authentication, enter game room
+        await sio.enter_room(sid, game_id, namespace="/api/game")
+        if await check_authorization(sid, game_id) == False:
+            # enter spectator mode
+            game_state = game_state_db.load_game_state(game_id)
+            if game_state and game_state["gameStart"] == True:
+                await socket_send(game_state["render_data"], "gameStart", sid, game_id)
+            return
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
-        user_name = session["user"].username
         user1, user2 = await get_game_users(game_id)
+        # add user's active socket to user_to_socket
+        if user.id in user_to_socket:
+            sio.disconnect(sid)
+            return
+        user_to_socket[user.id] = sid
         # enter game room
-        await sio.enter_room(sid, game_id, namespace="/api/game")
         logger.info(f"rooms: {sio.manager.rooms}")
 
         # save user sid to game_id
@@ -50,7 +58,7 @@ class GameIO(socketio.AsyncNamespace):
         )  # 유저이름 변경 필요 받아야 할듯
         await server.add_user(game_id, user, gameType == "PVP")
         game_state = game_state_db.load_game_state(game_id)
-
+        game_state["clients"][sid] = sid
         # game_state["is_single_player"] = True
         logger.info(f"game_state: {game_state}")
         if len(game_state["clients"]) > 1:
@@ -83,6 +91,7 @@ class GameIO(socketio.AsyncNamespace):
     async def on_keyPress(self, sid, data):
         logger.info(f"Key press: {data}")
         if sid not in user_to_game:
+            logger.info(f"User not in game: {sid}")
             return
         game_id = user_to_game[sid]
         game_state = server.game_state.load_game_state(game_id)
@@ -120,12 +129,12 @@ class GameIO(socketio.AsyncNamespace):
 
     async def on_disconnect(self, sid):
         logger.info(f"Client disconnected: {sid}")
-        sio.leave_room(sid, user_to_game[sid], namespace=default_namespace)
-        game_id = user_to_game[sid]
+        session = await sio.get_session(sid, namespace=default_namespace)
+        user = session["user"]
+        if user.id in user_to_socket:
+            del user_to_socket[user.id]
+        # sio.leave_room(sid, user_to_game[sid], namespace=default_namespace)
         del user_to_game[sid]
-        game_state = server.game_state.load_game_state(game_id)
-        if sid in game_state["clients"]:
-            del game_state["clients"][sid]
 
 
 from rest_framework_simplejwt.backends import TokenBackend

@@ -4,7 +4,7 @@ import random
 import time
 import asyncio
 from backend.socketsend import socket_send
-from ingame.data import user_to_game, gameid_to_task
+from ingame.data import gameid_to_task
 from backend.dbAsync import get_game_users, delete_game
 from pingpong_history.models import PingPongHistory as GameHistory
 from .enums import KeyState
@@ -159,7 +159,6 @@ class PingPongServer:
             game_state = await self.game_state.new_game(game_id, multi_option)
             for i in range(0, ballCount):
                 self.addBall(game_state)
-        game_state["clients"][sid] = sid
 
     def game_loop(self, game_state):
         game_id = game_state["game_id"]
@@ -310,6 +309,8 @@ class PingPongServer:
                     )
                     game_state["gameStart"] = False
                     await self.game_finish(game_state, winnerId)
+                    return
+                
                 if game_state["gameStart"]:
                     await socket_send(game_state["render_data"], "score", game_id)
                     self.reset_ball(game_state, ball)
@@ -426,9 +427,10 @@ class PingPongServer:
         await save_game_history(game_state, winnerId)
         self.game_state.delete_game_state(game_state["game_id"])
         task_list = gameid_to_task[game_state["game_id"]]
+        if await delete_game(game_state["game_id"]) == False:
+            logger.error("Failed to delete game")
         for task in task_list:
             task.cancel()
-        await delete_game(game_state["game_id"])
 
 
 @sync_to_async
