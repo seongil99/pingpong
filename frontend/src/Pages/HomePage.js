@@ -1,6 +1,7 @@
 import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import FriendList from "../Components/FriendList.js";
+import FriendModal from "../Components/FriendModal.js";
 
 class HomePage {
     template() {
@@ -49,9 +50,9 @@ class HomePage {
             matching
         );
         // 컨테이너에 모달, 네비게이션 바, main 요소 추가
-        // const modal = Modal();
+        const modal = FriendModal();
         const navBar = NavBar();
-        const container = createElement("div", {}, navBar, main);
+        const container = createElement("div", {}, modal, navBar, main);
         return container; // 컨테이너를 반환
     }
 }
