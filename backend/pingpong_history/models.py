@@ -29,7 +29,10 @@ class PingPongHistory(models.Model):
     user1_score = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     user2_score = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     gamemode = models.CharField(max_length=255)
-
+    longest_rally = models.IntegerField(null=True, validators=[MinValueValidator(0)])
+    average_rally = models.FloatField(null=True, validators=[MinValueValidator(0)])
+    user1_powerball = models.IntegerField(null=True, validators=[MinValueValidator(0)])
+    user2_powerball = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     class Meta:
         constraints = [
             models.UniqueConstraint(

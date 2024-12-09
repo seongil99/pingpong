@@ -1,13 +1,21 @@
-from ingame.game_logic import PingPongServer
-from backend.sio import sio
-from backend.socketsend import socket_send, default_namespace
-from ingame.data import user_to_game
-from urllib.parse import parse_qs
-from http.cookies import SimpleCookie
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.backends import TokenBackend
+from rest_framework_simplejwt.exceptions import (
+    InvalidToken,
+    TokenError,
+    TokenBackendError,
+)
+from asgiref.sync import sync_to_async
+from http.cookies import SimpleCookie
+from backend.sio import sio
+from backend.socketsend import socket_send, default_namespace
+from ingame.game_logic import PingPongServer
+from ingame.data import user_to_game
 from ingame.models import OneVersusOneGame
 from ingame.data import gameid_to_task, user_to_socket
+from urllib.parse import parse_qs
+from backend.dbAsync import get_game_users
 
 import socketio
 import logging
@@ -24,7 +32,7 @@ game_state_db = server.game_state
 class GameIO(socketio.AsyncNamespace):
     async def on_connect(self, sid, environ, auth):
         # logger.info(f"Client connected: {sid} {auth}")
-        if await check_authentication(environ, sid) == False:
+        if await self.check_authentication(environ, sid) == False:
             sio.disconnect(sid)
             return False
 
@@ -34,14 +42,17 @@ class GameIO(socketio.AsyncNamespace):
         gameType = params.get("gameType", [""])[0]
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
-        if await check_authorization(sid, game_id) == False:
-            # enter spectator mode
-            game_state = game_state_db.load_game_state(game_id)
-            if game_state and game_state["gameStart"] == True:
-                await socket_send(game_state["render_data"], "gameStart", sid, game_id)
+        try:
+            if await self.process_authorization(sid, game_id) == False:
+                return
+        except OneVersusOneGame.DoesNotExist:
+            logger.info(f"Game not found: {game_id}")
+            sio.disconnect(sid)
             return
+
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
+        # 게임이 존재하지 않을 경우 연결 종료
         user1, user2 = await get_game_users(game_id)
         # add user's active socket to user_to_socket
         if user.id in user_to_socket:
@@ -49,7 +60,6 @@ class GameIO(socketio.AsyncNamespace):
             return
         user_to_socket[user.id] = sid
         # enter game room
-        logger.info(f"rooms: {sio.manager.rooms}")
 
         # save user sid to game_id
         user_to_game[sid] = game_id
@@ -59,32 +69,11 @@ class GameIO(socketio.AsyncNamespace):
         await server.add_user(game_id, user, gameType == "PVP")
         game_state = game_state_db.load_game_state(game_id)
         game_state["clients"][sid] = sid
-        # game_state["is_single_player"] = True
         logger.info(f"game_state: {game_state}")
         if len(game_state["clients"]) > 1:
-            logger.info("Two players are ready!")
-            if user2 == user:
-                await socket_send(
-                    game_state["render_data"], "secondPlayer", game_id, sid
-                )
-            await socket_send(game_state["render_data"], "gameStart", game_id)
-            if game_state["gameStart"] == False:
-                server.game_loop(game_state)
-            game_state["gameStart"] = True
+            await self.on_game_ready(user2, user, game_state, sid)
         else:
-            if user2 == user:
-                await socket_send(
-                    game_state["render_data"], "secondPlayer", game_id, sid
-                )
-            logger.info("Waiting for another player...")
-            logger.info(f"is single player: {game_state['is_single_player']}")
-            await socket_send(game_state["render_data"], "gameWait", game_id, sid)
-            if game_state["is_single_player"]:
-                await socket_send(game_state["render_data"], "gameStart", game_id)
-                logger.info("Single player game start")
-                if game_state["gameStart"] == False:
-                    server.game_loop(game_state)
-                game_state["gameStart"] = True
+            await self.on_first_user_enter(user2, user, game_state, sid)
 
         await socket_send(game_state["render_data"], "gameState", sid, game_id)
 
@@ -106,26 +95,7 @@ class GameIO(socketio.AsyncNamespace):
                 game_state, user.id, data["key"], data["pressed"]
             )
         else:
-            player = (
-                game_state["render_data"]["playerOne"]
-                if not data.get("who")
-                else game_state["render_data"]["playerTwo"]
-            )
-            is_collision = [
-                ball
-                for ball in game_state["render_data"]["balls"]
-                if server.is_in_range(int(ball.position["x"]), int(player["x"]), 10)
-                and server.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
-            ]
-            if len(is_collision) == 1:
-                server.set_ball_velocity(game_state, is_collision[0], 2)
-                logger.info(f"Collision: {is_collision[0].position}")
-                await socket_send(
-                    game_state["render_data"],
-                    "effect",
-                    game_id,
-                    is_collision[0].position,
-                )
+            await server.check_powerball(game_state, data)
 
     async def on_disconnect(self, sid):
         logger.info(f"Client disconnected: {sid}")
@@ -134,62 +104,88 @@ class GameIO(socketio.AsyncNamespace):
         if user.id in user_to_socket:
             del user_to_socket[user.id]
         # sio.leave_room(sid, user_to_game[sid], namespace=default_namespace)
-        del user_to_game[sid]
+        if sid in user_to_game:
+            del user_to_game[sid]
+
+    ### helper functions
+
+    async def check_authentication(self, environ, sid):
+        cookies = environ.get("HTTP_COOKIE", "")
+        cookie = SimpleCookie()
+        cookie.load(cookies)
+
+        logger.info(f"cookie: {cookie}")
+
+        token = cookie.get(settings.REST_AUTH["JWT_AUTH_COOKIE"])
+        if not token:
+            logger.info("Authentication failed: No token found in cookies")
+            return False
+        SECRET_KEY = settings.SECRET_KEY
+        try:
+            token_backend = TokenBackend(algorithm="HS256", signing_key=SECRET_KEY)
+            validated_data = token_backend.decode(token.value)
+            logger.info(f"User authenticated: {validated_data}")
+            user = await get_user(validated_data["user_id"])
+            await sio.save_session(sid, {"user": user}, namespace=default_namespace)
+        except (InvalidToken, TokenError, TokenBackendError) as e:
+            logger.info(f"Invalid token: {str(e)}")
+            return False  # Deny the connection
+
+        logger.info("Connection allowed")
+        return True  # Allow the connection
+
+    async def check_authorization(self, sid, game_id):
+        session = await sio.get_session(sid, namespace=default_namespace)
+        user = session["user"]
+        user_1, user_2 = await get_game_users(game_id)
+        if user in [user_1, user_2]:
+            logger.info(f"Authorization success: {user} in {game_id}")
+            return True
+        logger.info(f"Authorization failed: {user} not in {game_id}")
+        return False
+
+    async def process_authorization(self, sid, game_id):
+        if not await self.check_authorization(sid, game_id):
+            return False
+
+            # enter spectator mode
+        game_state = game_state_db.load_game_state(game_id)
+        if game_state and game_state["gameStart"] == True:
+            await socket_send(game_state["render_data"], "gameStart", sid, game_id)
+        return True
+
+    async def on_game_ready(self, user2, user, game_state, sid):
+        logger.info("Two players are ready!")
+        game_id = game_state["game_id"]
+        if user2 == user:
+            await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
+        await socket_send(game_state["render_data"], "gameStart", game_id)
+        if game_state["gameStart"] == False:
+            server.game_loop(game_state)
+        game_state["gameStart"] = True
+
+    async def on_first_user_enter(self, user2, user, game_state, sid):
+        game_id = game_state["game_id"]
+        if user2 == user:
+            await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
+        logger.info("Waiting for another player...")
+        logger.info(f"is single player: {game_state['is_single_player']}")
+        await socket_send(game_state["render_data"], "gameWait", game_id, sid)
+
+        if game_state["is_single_player"]:
+            await self.single_player_start(self, game_state, game_id)
+
+    async def single_player_start(self, game_state, game_id):
+        await socket_send(game_state["render_data"], "gameStart", game_id)
+        logger.info("Single player game start")
+        if game_state["gameStart"] == False:
+            server.game_loop(game_state)
+        game_state["gameStart"] = True
 
 
-from rest_framework_simplejwt.backends import TokenBackend
-from rest_framework_simplejwt.exceptions import (
-    InvalidToken,
-    TokenError,
-    TokenBackendError,
-)
-
-from channels.db import database_sync_to_async
-
-
-@database_sync_to_async
+@sync_to_async
 def get_user(user_id):
     try:
         return User.objects.get(id=user_id)
     except User.DoesNotExist:
         return None
-
-
-async def check_authentication(environ, sid):
-    cookies = environ.get("HTTP_COOKIE", "")
-    cookie = SimpleCookie()
-    cookie.load(cookies)
-
-    logger.info(f"cookie: {cookie}")
-
-    token = cookie.get(settings.REST_AUTH["JWT_AUTH_COOKIE"])
-    if not token:
-        logger.info("Authentication failed: No token found in cookies")
-        return False
-    SECRET_KEY = settings.SECRET_KEY
-    try:
-        token_backend = TokenBackend(algorithm="HS256", signing_key=SECRET_KEY)
-        validated_data = token_backend.decode(token.value)
-        logger.info(f"User authenticated: {validated_data}")
-        user = await get_user(validated_data["user_id"])
-        await sio.save_session(sid, {"user": user}, namespace=default_namespace)
-    except (InvalidToken, TokenError, TokenBackendError) as e:
-        logger.info(f"Invalid token: {str(e)}")
-        return False  # Deny the connection
-
-    logger.info("Connection allowed")
-    return True  # Allow the connection
-
-
-from backend.dbAsync import get_game_users
-
-
-async def check_authorization(sid, game_id):
-    session = await sio.get_session(sid, namespace=default_namespace)
-    user = session["user"]
-    user_1, user_2 = await get_game_users(game_id)
-    if user in [user_1, user_2]:
-        logger.info(f"Authorization success: {user} in {game_id}")
-        return True
-    logger.info(f"Authorization failed: {user} not in {game_id}")
-    return False

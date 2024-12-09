@@ -97,6 +97,8 @@ class InMemoryGameState:
             "playerOneId": "",
             "playerTwoId": "",
             "clients": {},
+            "rallies": [],
+            "current_rally": 0,
             "game_id": game_id,
         }
         self.key_state_lock = asyncio.Lock()
@@ -275,6 +277,8 @@ class PingPongServer:
                 or ball.position["y"] < 0
                 or ball.position["y"] > 20
             ):
+                game_state["rallies"].append(game_state["current_rally"])
+                game_state["current_rally"] = 0
                 if ball.position["z"] > 0:
                     game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = True
@@ -310,7 +314,7 @@ class PingPongServer:
                     game_state["gameStart"] = False
                     await self.game_finish(game_state, winnerId)
                     return
-                
+
                 if game_state["gameStart"]:
                     await socket_send(game_state["render_data"], "score", game_id)
                     self.reset_ball(game_state, ball)
@@ -343,6 +347,7 @@ class PingPongServer:
 
         # 3. If the distance is less than or equal to the ball's radius, it's a collision
         if distance <= Game.BALL_SIZE.value:
+            game_state["current_rally"] += 1
             await socket_send(game_state["render_data"], "sound", "ballToWall")
             hit_point_diff = ball.position["x"] - paddle["x"]
             max_bounce_angle = math.pi / 3
@@ -354,6 +359,30 @@ class PingPongServer:
             ball.velocity.x = math.sin(bounce_angle) * speed
             ball.velocity.z = math.cos(bounce_angle) * speed * direction
             ball.velocity.y = min(ball.velocity.y, 0)
+
+    async def check_powerball(self, game_state, data):
+        game_id = game_state["game_id"]
+        player = (
+            game_state["render_data"]["playerOne"]
+            if not data.get("who")
+            else game_state["render_data"]["playerTwo"]
+        )
+
+        is_collision = [
+            ball
+            for ball in game_state["render_data"]["balls"]
+            if self.is_in_range(int(ball.position["x"]), int(player["x"]), 10)
+            and self.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
+        ]
+        if len(is_collision) == 1:
+            self.set_ball_velocity(game_state, is_collision[0], 2)
+            logger.info(f"Collision: {is_collision[0].position}")
+            await socket_send(
+                game_state["render_data"],
+                "effect",
+                game_id,
+                is_collision[0].position,
+            )
 
     def is_in_range(self, number, target, range):
         return abs(number - target) <= range
@@ -436,10 +465,15 @@ class PingPongServer:
 @sync_to_async
 def save_game_history(game_state, winnerId):
     game_id = game_state["game_id"]
+    longest_rally = max(game_state["rallies"])
+    average_rally = sum(game_state["rallies"]) / len(game_state["rallies"])
     game = GameHistory.objects.get(id=game_id)
     winner = game.user1 if game.user1.id == winnerId else game.user2
+    # Save game history
     game.winner = winner
     game.ended_at = timezone.now()
     game.user1_score = game_state["render_data"]["score"]["playerOne"]
     game.user2_score = game_state["render_data"]["score"]["playerTwo"]
+    game.longest_rally = longest_rally
+    game.average_rally = average_rally
     game.save()
