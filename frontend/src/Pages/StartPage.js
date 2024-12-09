@@ -5,11 +5,11 @@ class StartPage {
         const transcendentTitle = createElement("h1", {}, "ft_transcendence");
 
         // flag = detectLoginStatus();
-        let flag = 0;
+        let flag = 2;
         let correctPath;
         if (flag === 0) correctPath = "/home";
         else if (flag === 1) correctPath = "/login";
-        else if (flag === 2) correctPath = "/verification";
+        else if (flag === 2) correctPath = "/otp";
 
         // go to Login Page or 2FA Page or Main Page
         const startButton = createElement(
