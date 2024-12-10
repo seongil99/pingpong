@@ -1,16 +1,41 @@
-import NavBar from "../Components/Navbar";
+import createElement from "../Utils/createElement.js";
+import NavBar from "../Components/Navbar.js";
 
 class SettingsPage {
-    template() {
-        const settingsTitle = document.createElement("h1");
-        const settingsList = document.createElement("ul");
-        const settingsItem = ["Profile", "2FA", "Withdraw"];
-        for (let item of settingsItem)
-            settingsList.appendChild(createElement("li", {}, item));
-        const a1 = createElement("div", {}, settingsTitle, settingsList);
+    async template() {
+        const title1 = createElement("h1", {class: "settings-section-title"}, "Edit Profile");
+		const title2 = createElement("h1", {class: "settings-section-title"}, "2FA Enable/Disable");
+		const title3 = createElement("h1", {class: "settings-section-title"}, "Inactive Account");
+		const editProfileForm = ProfileForm();
+        const twoAuthBtn = createElement("button", {class: "settings-btn", events: {click: }}, );
+        const editProfileSection = createElement(
+            "section",
+            { class: "settings-section" },
+            title1,
+            editProfileForm
+        );
+        const twoAuthSection = createElement(
+            "section",
+            { class: "settings-section" },
+            title2,
+            twoAuthBtn
+        );
+        const inactivateAccountSection = createElement(
+            "section",
+            { class: "settings-section" },
+            title3,
+            inactiveBtn
+        );
+        const modal = SettingsModal();
         const navBar = NavBar();
-        const main = createElement("main", {}, a1);
-        const container = createElement("div", {}, navBar, main);
+        const main = createElement(
+            "main",
+            { class: "settings-content" },
+            editProfileSection,
+            twoAuthSection,
+            inactivateAccountSection
+        );
+        const container = createElement("div", {}, modal, navBar, main);
         return container;
     }
 }

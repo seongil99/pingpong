@@ -18,10 +18,10 @@ const logout = async () => {
     }
 };
 
-function NavBarItem(path, text) {
+function NavBarItem(p, text) {
     const a = createElement(
         "a",
-        { class: "nav-link navigate", path: path },
+        { class: "nav-link navigate", path: p },
         text
     );
     const li = createElement("li", { class: "nav-item" }, a);

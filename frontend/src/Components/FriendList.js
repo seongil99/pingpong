@@ -1,27 +1,10 @@
 import createElement from "../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
-// const fetchFriendsInfo = async () => {
-//     const url = "https://localhost/api/v1/users/friends";
-//     try {
-//         const response = await fetch(url, {
-//             method: "GET",
-//             headers: {
-//                 "Content-Type": "application/json",
-//             },
-//         });
-//         if (!response.ok) {
-//             throw new Error("Not OK! Status Code: ", response.status);
-//         }
-//         return await response.json().results;
-//     } catch (error) {
-//         console.error("Error: ", error);
-//     }
-// };
 
 function FriendList() {
-    // const friendsInfo = fetchFriendsInfo();
+    // const friendsInfos = fetchFriends();
 
-    // for (let info of friendsInfo) {
+    // for (let info of friendsInfos) {
     //     console.log(info);
     //     const friendUser = info["other_user"];
     //     const infos = FriendItem(friendUser);
