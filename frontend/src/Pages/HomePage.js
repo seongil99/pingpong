@@ -44,7 +44,7 @@ class HomePage {
         // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가
         const main = createElement(
             "main",
-            {},
+            {class: "home-main"},
             friendToggle,
             friendList,
             matching
