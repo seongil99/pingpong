@@ -172,12 +172,15 @@ class GameIO(socketio.AsyncNamespace):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         pingpong_history = await get_pingpong_history(game_id)
-        if (
-            not pingpong_history
-            or pingpong_history.user1 != user
-            or pingpong_history.ended_at
-        ):
-            return False
+        await self.is_pve_auth_condition_valid(user, pingpong_history)
+
+    @sync_to_async
+    def is_pve_auth_condition_valid(self, user, pingpong_history):
+        return (
+            pingpong_history
+            and pingpong_history.user1 == user
+            and not pingpong_history.ended_at
+        )
 
     async def on_game_ready(self, user2, user, game_state, sid):
         logger.info("Two players are ready!")
