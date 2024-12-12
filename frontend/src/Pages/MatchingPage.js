@@ -7,6 +7,7 @@ class MatchingPage {
     this.container = null;
     this.requestMatchButton = null;
     this.cancelMatchButton = null;
+    this.requestPVEButton = null;
     this.statusDiv = null;
   }
 
@@ -37,6 +38,12 @@ class MatchingPage {
     this.cancelMatchButton.disabled = true; // 초기에는 비활성화
     this.container.appendChild(this.cancelMatchButton);
 
+    // PVE 버튼 생성
+    this.requestPVEButton = document.createElement("button");
+    this.requestPVEButton.id = "requestPVEButton";
+    this.requestPVEButton.textContent = "PVE 게임 시작";
+    this.container.appendChild(this.requestPVEButton);
+
     // 상태 표시 영역 생성
     this.statusDiv = document.createElement("div");
     this.statusDiv.id = "status";
@@ -66,6 +73,19 @@ class MatchingPage {
     // 매칭 취소 버튼 클릭 이벤트
     this.cancelMatchButton.addEventListener("click", () => {
       this.cancelMatch();
+    });
+
+    this.requestPVEButton.addEventListener("click", async () => {
+      let response = await fetch("/api/v1/pingpong-history/", {
+        method: "POST",
+      });
+      if (response.status === 201) {
+        const data = await response.json();
+        const gameId = data.id;
+        window.location.href = `/api/static/public/index.html?gameType=PVE&gameId=${gameId}`;
+      } else {
+        console.error("PVE 게임 생성에 실패했습니다.");
+      }
     });
 
     // 페이지를 떠날 때 웹소켓 연결 종료

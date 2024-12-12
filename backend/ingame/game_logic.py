@@ -100,8 +100,8 @@ class InMemoryGameState:
             "rallies": [],
             "current_rally": 0,
             "game_id": game_id,
+            "key_state_lock": asyncio.Lock(),
         }
-        self.key_state_lock = asyncio.Lock()
         self.save_game_state(game_id, game_state)
         return game_state
 
@@ -153,7 +153,7 @@ class PingPongServer:
             game_state["playerTwoId"] = user2.id
 
     async def add_game(
-        self, sid, game_id, player_id, multi_option, ballCount=1
+        self, game_id, multi_option, ballCount=1
     ):  # user_id == user_name, player_id == user.id -> pk
         # if game doesn't exist == User1
         game_state = self.game_state.load_game_state(game_id)
@@ -244,7 +244,6 @@ class PingPongServer:
     async def update_physics(self, game_state):
         if not game_state["gameStart"]:
             return
-        # logger.info("Updating physics...")
         game_id = game_state["game_id"]
         # logger.info(f"game_id: {game_id}")
         for ball in game_state["render_data"]["balls"]:
@@ -396,6 +395,18 @@ class PingPongServer:
         for ball in self.game_state["balls"]:
             self.reset_ball(game_state, ball)
 
+    def handle_ai_input(self, game_state, key, pressed):
+        player = game_state["render_data"]["playerTwo"]
+        if key == "A" and pressed:
+            player["x"] -= Game.MOVE_SPEED.value
+        elif key == "D" and pressed:
+            player["x"] += Game.MOVE_SPEED.value
+
+        player["x"] = max(
+            -Game.GAME_WIDTH.value / 2 + 10,
+            min(Game.GAME_WIDTH.value / 2 - 10, player["x"]),
+        )
+
     async def broadcast_game_state(self, game_state):
         # logger.info("Broadcasting game state...")
         game_id = game_state["game_id"]
@@ -407,10 +418,11 @@ class PingPongServer:
         logger.info(f"user2: {game_state['playerTwoId']}")
 
         # logger.info(f"key???: {key}")
-        await self.game_state.key_state_lock.acquire()
+        await game_state["key_state_lock"].acquire()
         if player_id == "ai":
             # AI 플레이어의 입력 처리
-            game_state["two_keystate"][key] = pressed
+            logger.info(f"AI key state: {game_state['two_keystate']}")
+            self.handle_ai_input(game_state, key, pressed)
         elif player_id == game_state["playerOneId"]:
             # 첫 번째 플레이어의 입력 처리
             game_state["one_keystate"][key] = pressed
@@ -420,24 +432,27 @@ class PingPongServer:
         else:
             logger.warning(f"Unknown player ID: {player_id}")
             # 플레이어 ID를 찾을 수 없으므로 처리하지 않음
-        self.game_state.key_state_lock.release()
+        game_state["key_state_lock"].release()
 
     async def paddle_loop(self, game_state):
-        # logger.info("Paddle loop")
         playerOne = game_state["render_data"]["playerOne"]
+        oneName = game_state["render_data"]["oneName"]
         playerTwo = game_state["render_data"]["playerTwo"]
+        twoName = game_state["render_data"]["twoName"]
         await self.process_paddle_move(
-            game_state, playerOne, game_state["one_keystate"]
+            game_state, oneName, playerOne, game_state["one_keystate"]
         )
         await self.process_paddle_move(
-            game_state, playerTwo, game_state["two_keystate"]
+            game_state, twoName, playerTwo, game_state["two_keystate"]
         )
 
-    async def process_paddle_move(self, game_state, player, key):
-        await self.game_state.key_state_lock.acquire()
+    async def process_paddle_move(self, game_state, playerName, player, key):
+        if playerName == "ai":
+            return
+        await game_state["key_state_lock"].acquire()
         # logger.info(f"key: {key}")
         if key["A"] and key["D"]:
-            self.game_state.key_state_lock.release()
+            game_state["key_state_lock"].release()
             return
         if key["A"]:
             # logger.info("move left")
@@ -445,7 +460,7 @@ class PingPongServer:
         elif key["D"]:
             # logger.info("move right")
             player["x"] += Game.MOVE_SPEED.value
-        self.game_state.key_state_lock.release()
+        game_state["key_state_lock"].release()
         # 플레이어의 위치가 게임 영역을 벗어나지 않도록 제한
         player["x"] = max(
             -Game.GAME_WIDTH.value / 2 + 10,
@@ -456,7 +471,10 @@ class PingPongServer:
         await save_game_history(game_state, winnerId)
         self.game_state.delete_game_state(game_state["game_id"])
         task_list = gameid_to_task[game_state["game_id"]]
-        if await delete_game(game_state["game_id"]) == False:
+        if (
+            game_state["is_single_player"] == True
+            and await delete_game(game_state["game_id"]) == False
+        ):
             logger.error("Failed to delete game")
         for task in task_list:
             task.cancel()
