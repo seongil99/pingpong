@@ -1,5 +1,6 @@
 from asgiref.sync import sync_to_async
 from ingame.models import OneVersusOneGame
+from pingpong_history.models import PingPongHistory
 import logging
 
 logger = logging.getLogger("django")
@@ -20,3 +21,11 @@ def delete_game(game_id):
         return True
     except OneVersusOneGame.DoesNotExist:
         return False
+
+@sync_to_async
+def get_pingpong_history(id):
+    try:
+        game = PingPongHistory.objects.get(id=id)
+        return game
+    except PingPongHistory.DoesNotExist:
+        return None

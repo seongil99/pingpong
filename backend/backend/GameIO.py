@@ -14,7 +14,7 @@ from ingame.game_logic import PingPongServer
 from ingame.data import user_to_game, gameid_to_task, user_to_socket
 from ingame.models import OneVersusOneGame
 from urllib.parse import parse_qs
-from backend.dbAsync import get_game_users
+from backend.dbAsync import get_game_users, get_pingpong_history
 from ingame.enums import GameMode
 
 import socketio
@@ -44,10 +44,7 @@ class GameIO(socketio.AsyncNamespace):
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
-            if (
-                GameMode.PVP.value == gameType
-                and await self.process_authorization(sid, game_id) == False
-            ):
+            if await self.process_authorization(sid, game_id, gameType) == False:
                 return
         except OneVersusOneGame.DoesNotExist:
             logger.info(f"Game not found: {game_id}")
@@ -70,7 +67,7 @@ class GameIO(socketio.AsyncNamespace):
             await server.add_game(game_id, gameType == GameMode.PVP.value)
             await server.add_user(game_id, user, gameType == GameMode.PVP.value)
         else:
-        # 게임이 존재하지 않을 경우 연결 종료
+            # 게임이 존재하지 않을 경우 연결 종료
             user1, user2 = await get_game_users(game_id)
         # add user's active socket to user_to_socket
         if gameType == GameMode.PVP.value:
@@ -84,7 +81,7 @@ class GameIO(socketio.AsyncNamespace):
         if gameType == GameMode.PVE.value:
             await self.single_player_start(game_id)
             return
-        #PVP logic
+        # PVP logic
         if len(game_state["clients"]) > 1:
             await self.on_game_ready(user2, user, game_state, sid)
         else:
@@ -159,7 +156,9 @@ class GameIO(socketio.AsyncNamespace):
         logger.info(f"Authorization failed: {user} not in {game_id}")
         return False
 
-    async def process_authorization(self, sid, game_id):
+    async def process_authorization(self, sid, game_id, gameType):
+        if gameType == GameMode.PVE.value:
+            return await self.pve_authorization(sid, game_id)
         if not await self.check_authorization(sid, game_id):
             return False
 
@@ -168,6 +167,17 @@ class GameIO(socketio.AsyncNamespace):
         if game_state and game_state["gameStart"] == True:
             await socket_send(game_state["render_data"], "gameStart", sid, game_id)
         return True
+
+    async def pve_authorization(self, sid, game_id):
+        session = await sio.get_session(sid, namespace=default_namespace)
+        user = session["user"]
+        pingpong_history = await get_pingpong_history(game_id)
+        if (
+            not pingpong_history
+            or pingpong_history.user1 != user
+            or pingpong_history.ended_at
+        ):
+            return False
 
     async def on_game_ready(self, user2, user, game_state, sid):
         logger.info("Two players are ready!")
