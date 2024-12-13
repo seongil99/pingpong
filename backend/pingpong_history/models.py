@@ -1,6 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from users.models import User
+from ingame.enums import GameMode
 
 
 class PingPongHistory(models.Model):
@@ -31,8 +32,7 @@ class PingPongHistory(models.Model):
     gamemode = models.CharField(max_length=255)
     longest_rally = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     average_rally = models.FloatField(null=True, validators=[MinValueValidator(0)])
-    user1_powerball = models.IntegerField(null=True, validators=[MinValueValidator(0)])
-    user2_powerball = models.IntegerField(null=True, validators=[MinValueValidator(0)])
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -45,7 +45,9 @@ class PingPongHistory(models.Model):
         ordering = ["-started_at"]
 
     def save(self, *args, **kwargs):
-        if self.user1.id > self.user2.id:
+        if self.gamemode == GameMode.PVE.value:
+            self.user2 = None
+        elif self.user1.id > self.user2.id:
             # 사용자 순서 교환
             self.user1, self.user2 = self.user2, self.user1
             # 점수도 교환 (필요한 경우)

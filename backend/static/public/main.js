@@ -4,6 +4,7 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 const params = new URLSearchParams(window.location.search);
 let gameId = params.get("gameId");
+let gameTypeParam = params.get('gameType');
 let userName = await fetch("/api/v1/users/me/")
   .then((res) => res.json())
   .then((data) => data.username);
@@ -11,7 +12,7 @@ if (!gameId) {
   gameId = prompt("게임 아이디를 입력하세요"); // 임시 게임아이디 넘겨받는 로직
   userName = prompt("사용자 이름을 입력하세요");
 }
-const gameType = ['AI', 'PVP'];
+const gameType = ['PVE', 'PVP'];
 const socket = io('/api/game', {
     transports: ['websocket'],
     debug: true,
@@ -19,7 +20,7 @@ const socket = io('/api/game', {
     query: {
         gameId: gameId,
         userName: userName,
-        gameType: gameType[1],
+        gameType: gameTypeParam,
     }
 });
 const WAIT_GAME = 1;

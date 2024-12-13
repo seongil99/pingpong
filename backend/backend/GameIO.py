@@ -11,11 +11,11 @@ from http.cookies import SimpleCookie
 from backend.sio import sio
 from backend.socketsend import socket_send, default_namespace
 from ingame.game_logic import PingPongServer
-from ingame.data import user_to_game
+from ingame.data import user_to_game, gameid_to_task, user_to_socket
 from ingame.models import OneVersusOneGame
-from ingame.data import gameid_to_task, user_to_socket
 from urllib.parse import parse_qs
-from backend.dbAsync import get_game_users
+from backend.dbAsync import get_game_users, get_pingpong_history
+from ingame.enums import GameMode
 
 import socketio
 import logging
@@ -40,10 +40,11 @@ class GameIO(socketio.AsyncNamespace):
         params = parse_qs(query)
         game_id = params.get("gameId", [""])[0]
         gameType = params.get("gameType", [""])[0]
+        logger.info(f"gameType : {gameType}")
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
-            if await self.process_authorization(sid, game_id) == False:
+            if await self.process_authorization(sid, game_id, gameType) == False:
                 return
         except OneVersusOneGame.DoesNotExist:
             logger.info(f"Game not found: {game_id}")
@@ -52,9 +53,8 @@ class GameIO(socketio.AsyncNamespace):
 
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
-        # 게임이 존재하지 않을 경우 연결 종료
-        user1, user2 = await get_game_users(game_id)
-        # add user's active socket to user_to_socket
+
+        # single player 게임일 경우
         if user.id in user_to_socket:
             sio.disconnect(sid)
             return
@@ -63,13 +63,25 @@ class GameIO(socketio.AsyncNamespace):
 
         # save user sid to game_id
         user_to_game[sid] = game_id
-        await server.add_game(
-            sid, game_id, user.id, gameType == "PVP"
-        )  # 유저이름 변경 필요 받아야 할듯
-        await server.add_user(game_id, user, gameType == "PVP")
+        if gameType == GameMode.PVE.value:
+            await server.add_game(game_id, gameType == GameMode.PVP.value)
+            await server.add_user(game_id, user, gameType == GameMode.PVP.value)
+        else:
+            # 게임이 존재하지 않을 경우 연결 종료
+            user1, user2 = await get_game_users(game_id)
+        # add user's active socket to user_to_socket
+        if gameType == GameMode.PVP.value:
+            await server.add_game(
+                game_id, gameType == "PVP"
+            )  # 유저이름 변경 필요 받아야 할듯
+            await server.add_user(game_id, user, gameType == "PVP")
         game_state = game_state_db.load_game_state(game_id)
         game_state["clients"][sid] = sid
         logger.info(f"game_state: {game_state}")
+        if gameType == GameMode.PVE.value:
+            await self.single_player_start(game_id)
+            return
+        # PVP logic
         if len(game_state["clients"]) > 1:
             await self.on_game_ready(user2, user, game_state, sid)
         else:
@@ -144,7 +156,9 @@ class GameIO(socketio.AsyncNamespace):
         logger.info(f"Authorization failed: {user} not in {game_id}")
         return False
 
-    async def process_authorization(self, sid, game_id):
+    async def process_authorization(self, sid, game_id, gameType):
+        if gameType == GameMode.PVE.value:
+            return await self.pve_authorization(sid, game_id)
         if not await self.check_authorization(sid, game_id):
             return False
 
@@ -153,6 +167,20 @@ class GameIO(socketio.AsyncNamespace):
         if game_state and game_state["gameStart"] == True:
             await socket_send(game_state["render_data"], "gameStart", sid, game_id)
         return True
+
+    async def pve_authorization(self, sid, game_id):
+        session = await sio.get_session(sid, namespace=default_namespace)
+        user = session["user"]
+        pingpong_history = await get_pingpong_history(game_id)
+        await self.is_pve_auth_condition_valid(user, pingpong_history)
+
+    @sync_to_async
+    def is_pve_auth_condition_valid(self, user, pingpong_history):
+        return (
+            pingpong_history
+            and pingpong_history.user1 == user
+            and not pingpong_history.ended_at
+        )
 
     async def on_game_ready(self, user2, user, game_state, sid):
         logger.info("Two players are ready!")
@@ -169,13 +197,10 @@ class GameIO(socketio.AsyncNamespace):
         if user2 == user:
             await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
         logger.info("Waiting for another player...")
-        logger.info(f"is single player: {game_state['is_single_player']}")
         await socket_send(game_state["render_data"], "gameWait", game_id, sid)
 
-        if game_state["is_single_player"]:
-            await self.single_player_start(self, game_state, game_id)
-
-    async def single_player_start(self, game_state, game_id):
+    async def single_player_start(self, game_id):
+        game_state = game_state_db.load_game_state(game_id)
         await socket_send(game_state["render_data"], "gameStart", game_id)
         logger.info("Single player game start")
         if game_state["gameStart"] == False:
