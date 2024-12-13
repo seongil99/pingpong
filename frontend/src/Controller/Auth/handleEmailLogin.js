@@ -38,3 +38,5 @@ const handleEmailLogin = async () => {
         alert("Login failed!");
     }
 };
+
+export default handleEmailLogin;

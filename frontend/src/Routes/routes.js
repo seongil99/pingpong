@@ -8,7 +8,7 @@ const routes = {
     "/otp/auth": () => import("../Pages/AuthPage.js"),
     "/profile": () => import("../Pages/ProfilePage.js"),
     "/settings": () => import("../Pages/SettingsPage.js"),
-    // "/matching": () => import("../Pages/MatchingPage.js"),
+    "/matching": () => import("../Pages/MatchingPage.js"),
 };
 
 export default routes;

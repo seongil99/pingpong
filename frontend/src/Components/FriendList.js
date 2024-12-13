@@ -12,10 +12,24 @@ function FriendList() {
     // }
     const friendsList = createElement(
         "div",
-        { id: "friends-list" },
-        FriendInfos(),
-        FriendInfos(),
-        FriendInfos()
+        {
+            id: "friends-list",
+        },
+        FriendInfos(1),
+        FriendInfos(2),
+        FriendInfos(3),
+        FriendInfos(4),
+        FriendInfos(5),
+        FriendInfos(6),
+        FriendInfos(7),
+        FriendInfos(8),
+        FriendInfos(9),
+        FriendInfos(10),
+        FriendInfos(11),
+        FriendInfos(12),
+        FriendInfos(13),
+        FriendInfos(14),
+        FriendInfos(15)
     );
 
     const friendAppendBtn = createElement(

@@ -7,7 +7,7 @@ const findFriends = () => {
         img: "/src/Components/profile.png",
         email: "jonghole@student.42seoul.kr",
         status: "✅",
-        added: true,
+        added: false,
     };
 };
 
@@ -15,15 +15,14 @@ const FriendModal = () => {
     const profile = createElement(
         "div",
         { class: "friend-profile hide" },
-        FriendInfos(),
-        createElement("button", { class: "friend-profile-btn" }, "프로필 이동")
+        FriendInfos()
     );
     const modalMessage = createElement(
         "h3",
-        { class: "modal-message" },
+        { class: "friend-modal-message" },
         "유저를 검색해보세요."
     );
-    const searchInput = createElement("input", { class: "search-input" }, "");
+    const searchInput = createElement("input", { class: "friend-search-input" }, "");
     const searchOrAddBtn = createElement(
         "button",
         {
@@ -31,17 +30,17 @@ const FriendModal = () => {
             events: {
                 click: (event) => {
                     if (event.target.classList.contains("search")) {
-                        const data = findFriends();
+                        const data = null;
                         document
-                            .querySelector(".search-input")
+                            .querySelector(".friend-search-input")
                             .classList.add("hide");
                         if (!data) {
                             event.target.classList.add("hide");
                             document.querySelector(
-                                ".modal-message"
+                                ".friend-modal-message"
                             ).textContent = `${
-                                document.querySelector(".search-input").value
-                            }님을 찾을 수 없습니다.`;
+                                document.querySelector(".friend-search-input").value
+                            }님이 존재하지 않습니다.`;
                         } else {
                             document.querySelector(".friend-img").src =
                                 data.img;
@@ -57,11 +56,11 @@ const FriendModal = () => {
                             if (data.added) {
                                 event.target.classList.add("hide");
                                 document.querySelector(
-                                    ".modal-message"
+                                    ".friend-modal-message"
                                 ).textContent = "이미 등록된 친구입니다.";
                             } else {
                                 document
-                                    .querySelector(".modal-message")
+                                    .querySelector(".friend-modal-message")
                                     .classList.add("hide");
                                 event.target.classList.remove("search");
                                 event.target.classList.add("add");
@@ -73,7 +72,7 @@ const FriendModal = () => {
                     document
                         .querySelector(".cancel-modal-btn")
                         .classList.add("cancel-result");
-                    document.querySelector(".search-input").value = "";
+                    document.querySelector(".friend-search-input").value = "";
                 },
             },
         },
@@ -90,10 +89,10 @@ const FriendModal = () => {
                             .querySelector(".friend-profile")
                             .classList.add("hide");
                         document
-                            .querySelector(".modal-message")
+                            .querySelector(".friend-modal-message")
                             .classList.remove("hide");
                         document
-                            .querySelector(".search-input")
+                            .querySelector(".friend-search-input")
                             .classList.remove("hide");
                         event.target.classList.remove("cancel-result");
                         event.target.classList.add("cancel-model-btn");
@@ -106,15 +105,15 @@ const FriendModal = () => {
                             .querySelector(".search-add-btn")
                             .classList.remove("add", "hide");
                         document
-                            .querySelector(".modal-message")
+                            .querySelector(".friend-modal-message")
                             .classList.remove("hide");
                     } else if (
                         event.target.classList.contains("cancel-modal-btn")
                     ) {
                         document.querySelector(".modal").classList.add("hide");
                     }
-                    document.querySelector(".search-input").value = "";
-                    document.querySelector(".modal-message").textContent =
+                    document.querySelector(".friend-search-input").value = "";
+                    document.querySelector(".friend-modal-message").textContent =
                         "유저를 검색해보세요.";
                 },
             },
@@ -129,7 +128,7 @@ const FriendModal = () => {
     );
     const friendModal = createElement(
         "div",
-        { class: "friend-modal" },
+        { class: "modal-box friend-modal" },
         profile,
         modalMessage,
         searchInput,

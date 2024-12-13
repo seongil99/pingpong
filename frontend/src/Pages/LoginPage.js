@@ -4,7 +4,6 @@ import handleEmailLogin from "../Controller/Auth/handleEmailLogin.js";
 
 class LoginPage {
     template() {
-        const navBar = NavBar();
         const title = createElement("h2", {}, "Login Page");
         const loginBtn = createElement(
             "button",
@@ -34,7 +33,6 @@ class LoginPage {
         const container = createElement(
             "div",
             {},
-            navBar,
             title,
             loginBtn,
             fortytwoLoginBtn

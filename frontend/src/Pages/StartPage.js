@@ -5,7 +5,7 @@ class StartPage {
         const transcendentTitle = createElement("h1", {}, "ft_transcendence");
 
         // flag = detectLoginStatus();
-        let flag = 2;
+        let flag = 1;
         let correctPath;
         if (flag === 0) correctPath = "/home";
         else if (flag === 1) correctPath = "/login";

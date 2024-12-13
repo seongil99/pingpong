@@ -1,6 +1,8 @@
 import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import ProfileForm from "../Components/ProfileForm.js";
+import SettingsModal from "../Components/SettingsModal.js";
+import fetchMFAStatus from "../Controller/Auth/fetchMFAStatus.js";
 
 class SettingsPage {
     async template() {
@@ -20,14 +22,42 @@ class SettingsPage {
             "Inactive Account"
         );
         const editProfileForm = ProfileForm();
+        const mfaStatus = await fetchMFAStatus();
         const twoAuthBtn = createElement(
             "button",
-            { class: "settings-btn" },
-            "2FA Enable"
+            {
+                class: "settings-btn",
+                events: {
+                    click: () => {
+                        document
+                            .querySelector(".modal")
+                            .classList.remove("hide");
+                        document
+                            .querySelector(".two-auth-package")
+                            .classList.remove("hide");
+                    },
+                },
+            },
+            `2FA ${mfaStatus === "enabled" ? "Disable" : "Enable"}`
         );
         const inactiveBtn = createElement(
             "button",
-            { class: "settings-btn" },
+            {
+                class: "settings-btn",
+                events: {
+                    click: (event) => {
+                        document
+                            .querySelector(".modal")
+                            .classList.remove("hide");
+                        document
+                            .querySelector(".inactive-account-caution")
+                            .classList.remove("hide");
+                        document
+                            .querySelector(".settings-modal-confirm-btn")
+                            .classList.remove("hide");
+                    },
+                },
+            },
             "Inactive"
         );
         const editProfileSection = createElement(
@@ -48,7 +78,7 @@ class SettingsPage {
             title3,
             inactiveBtn
         );
-        // const modal = SettingsModal();
+        const modal = SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
             "h1",
@@ -64,34 +94,13 @@ class SettingsPage {
         );
         const main = createElement(
             "main",
-            { class: "settings-main" },
+            { id: "settings-main" },
             settingsTitle,
             sections
         );
-        const container = createElement("div", {}, navBar, main);
+        const container = createElement("div", {}, modal, navBar, main);
         return container;
     }
 }
 
 export default SettingsPage;
-
-
-// const mfaStatus = await fetchMFAStatus();
-//         console.log(mfaStatus);
-//         const mfaSection = document.getElementById("mfa-section");
-//         if (mfaStatus == "enabled") {
-//             const mfaDisableTitle = document.createElement("h2");
-//             const mfaDisableButton =
-//                 document.createElement("disable-mfa-button");
-//             mfaDisableTitle.textContent = "Disable MFA";
-//             mfaSection.appendChild(mfaDisableTitle);
-//             mfaSection.appendChild(mfaDisableButton);
-//         } else {
-//             const mfaEnableTitle = document.createElement("h2");
-//             mfaEnableTitle.textContent = "Enable MFA";
-//             const mfaQRcode = document.createElement("mfa-qr-display");
-//             mfaSection.appendChild(mfaEnableTitle);
-//             mfaSection.appendChild(mfaQRcode);
-//             const mfaForm = createFormComponent();
-//             mfaSection.appendChild(mfaForm);
-//         }

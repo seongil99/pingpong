@@ -1,0 +1,37 @@
+#matching-main {
+    justify-content: center;
+    height: 100vh;
+}
+
+#matching-page-title {
+    padding-bottom: 30px;
+}
+
+#matching-modes {
+    display: flex;
+    align-items: center;
+    margin-bottom: 100px;
+}
+
+.matching-mode {
+    display: flex;
+    justify-content: center;
+    width: 100px;
+    height: 125px;
+    border: 1px solid black;
+    margin: 0px 8px;
+}
+
+.matching-mode-title-layer {
+    margin-top: 35px;
+}
+
+.matching-mode-general-custum-selection {
+    display: grid;
+    text-align: center;
+}
+
+.matching-mode-selection {
+    flex-grow: 1;
+    
+}

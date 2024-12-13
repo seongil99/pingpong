@@ -11,18 +11,6 @@
     margin-bottom: 30px;
 }
 
-.verification-btn {
-    width: 240px;
-    margin: 7px 0px;
-    padding: 8px 0px;
-    font-size: 21px;
-    border: 1px solid black;
-}
-
-.verification-btn:last-child {
-    margin-bottom: 50px;
-}
-
 /* 스마트폰 세로 */
 @media only screen and (min-width: 320px) {
     .two-factor-auto > h1 {
