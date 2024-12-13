@@ -25,7 +25,7 @@ class HomePage {
     loginButton.textContent = "Go to Login Page";
 
     const getHello = async () => {
-      const url = "https://localhost/api/v1/users/accounts/hello/";
+      const url = "https://localhost/api/v1/users/accounts/islogin/";
       try {
         const response = await fetch(url, {
           method: "GET",
@@ -42,7 +42,7 @@ class HomePage {
       if (response.ok) {
         const hello = await response.json();
         document.getElementById("h2").textContent =
-          hello.message + " login success";
+          "login success";
       } else {
         document.getElementById("h2").textContent = "does not login";
       }
