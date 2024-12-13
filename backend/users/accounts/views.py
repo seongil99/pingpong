@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @extend_schema(tags=["users"])
-class IsLoginView(APIView):
+class VerifyView(APIView):
     authentication_classes = [JWTCookieAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
