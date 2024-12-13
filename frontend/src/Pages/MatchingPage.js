@@ -7,6 +7,7 @@ class MatchingPage {
         this.requestMatchButton = null;
         this.cancelMatchButton = null;
         this.isMatching = false;
+        this.requestPVEButton = null;
         this.statusDiv = null;
     }
 
@@ -108,6 +109,12 @@ class MatchingPage {
         //     "매칭 취소"
         // );
 
+        // PVE 버튼 생성
+    this.requestPVEButton = document.createElement("button");
+    this.requestPVEButton.id = "requestPVEButton";
+    this.requestPVEButton.textContent = "PVE 게임 시작";
+    this.container.appendChild(this.requestPVEButton);
+
         // 상태 표시 영역 생성
         // this.statusDiv = createElement("div", { id: "status" }, []);
 
@@ -145,10 +152,10 @@ class MatchingPage {
     //         }
     //     });
 
-    //     // 매칭 취소 버튼 클릭 이벤트
-    //     this.cancelMatchButton.addEventListener("click", () => {
-    //         this.cancelMatch();
-    //     });
+    // // 매칭 취소 버튼 클릭 이벤트
+    // this.cancelMatchButton.addEventListener("click", () => {
+    //   this.cancelMatch();
+    // });
 
     //     // 페이지를 떠날 때 웹소켓 연결 종료
     //     window.addEventListener("beforeunload", () => {
@@ -173,28 +180,31 @@ class MatchingPage {
     //         const data = JSON.parse(event.data);
     //         console.log("수신한 데이터:", data);
 
-    //         if (data.type === "waiting_for_match") {
-    //             this.statusDiv.textContent = "상대를 기다리는 중...";
-    //             this.isMatching = true;
-    //             this.requestMatchButton.disabled = true;
-    //             this.cancelMatchButton.disabled = false;
-    //         } else if (data.type === "match_found") {
-    //             this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
-    //             this.isMatching = false;
-    //             this.requestMatchButton.disabled = false;
-    //             this.cancelMatchButton.disabled = true;
-    //         } else if (data.type === "match_canceled") {
-    //             this.statusDiv.textContent = "매칭이 취소되었습니다.";
-    //             this.isMatching = false;
-    //             this.requestMatchButton.disabled = false;
-    //             this.cancelMatchButton.disabled = true;
-    //         } else if (data.type === "error") {
-    //             this.statusDiv.textContent = `에러 발생: ${data.message}`;
-    //             this.isMatching = false;
-    //             this.requestMatchButton.disabled = false;
-    //             this.cancelMatchButton.disabled = true;
-    //         }
-    //     };
+      if (data.type === "waiting_for_match") {
+        this.statusDiv.textContent = "상대를 기다리는 중...";
+        this.isMatching = true;
+        this.requestMatchButton.disabled = true;
+        this.cancelMatchButton.disabled = false;
+        const gameUrl = "/api/static/public/index.html";
+        const gameId = data.game_id;
+        window.location.href = `${gameUrl}?gameId=${gameId}`;
+      } else if (data.type === "match_found") {
+        this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
+        this.isMatching = false;
+        this.requestMatchButton.disabled = false;
+        this.cancelMatchButton.disabled = true;
+      } else if (data.type === "match_canceled") {
+        this.statusDiv.textContent = "매칭이 취소되었습니다.";
+        this.isMatching = false;
+        this.requestMatchButton.disabled = false;
+        this.cancelMatchButton.disabled = true;
+      } else if (data.type === "error") {
+        this.statusDiv.textContent = `에러 발생: ${data.message}`;
+        this.isMatching = false;
+        this.requestMatchButton.disabled = false;
+        this.cancelMatchButton.disabled = true;
+      }
+    };
 
     //     this.socket.onclose = (event) => {
     //         console.log("WebSocket 연결이 닫혔습니다.", event);

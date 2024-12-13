@@ -8,11 +8,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@extend_schema(tags=['accounts'])
-class HelloView(APIView):
+
+@extend_schema(tags=["users"])
+class VerifyView(APIView):
     authentication_classes = [JWTCookieAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        content = {'message': 'Hello, World!'}
-        return Response(content)
+        content = {"message": "user is logged in"}
+        return Response(content, status=200)
