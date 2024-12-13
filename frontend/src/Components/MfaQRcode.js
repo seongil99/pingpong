@@ -12,7 +12,7 @@ class mfaQRcode extends HTMLElement {
 
 	fetchQRcode() {
 		// URL to your QR code API endpoint
-		const apiUrl = "/api/v1/accounts/mfa/qrcode/";
+		const apiUrl = "/api/v1/users/accounts/mfa/qrcode/";
 
 		fetch(apiUrl, {
 			method: "GET",

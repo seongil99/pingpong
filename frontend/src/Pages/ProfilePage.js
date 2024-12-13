@@ -124,7 +124,7 @@ async function displayProfile(userData) {
 }
 
 async function fetchMFAStatus() {
-  return await fetch("/api/v1/accounts/mfa/", {
+  return await fetch("/api/v1/users/accounts/mfa/", {
     method: "GET",
     credentials: "include",
   })
