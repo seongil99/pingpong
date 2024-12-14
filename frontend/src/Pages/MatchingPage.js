@@ -180,31 +180,31 @@ class MatchingPage {
     //         const data = JSON.parse(event.data);
     //         console.log("수신한 데이터:", data);
 
-      if (data.type === "waiting_for_match") {
-        this.statusDiv.textContent = "상대를 기다리는 중...";
-        this.isMatching = true;
-        this.requestMatchButton.disabled = true;
-        this.cancelMatchButton.disabled = false;
-        const gameUrl = "/api/static/public/index.html";
-        const gameId = data.game_id;
-        window.location.href = `${gameUrl}?gameId=${gameId}`;
-      } else if (data.type === "match_found") {
-        this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
-        this.isMatching = false;
-        this.requestMatchButton.disabled = false;
-        this.cancelMatchButton.disabled = true;
-      } else if (data.type === "match_canceled") {
-        this.statusDiv.textContent = "매칭이 취소되었습니다.";
-        this.isMatching = false;
-        this.requestMatchButton.disabled = false;
-        this.cancelMatchButton.disabled = true;
-      } else if (data.type === "error") {
-        this.statusDiv.textContent = `에러 발생: ${data.message}`;
-        this.isMatching = false;
-        this.requestMatchButton.disabled = false;
-        this.cancelMatchButton.disabled = true;
-      }
-    };
+    //   if (data.type === "waiting_for_match") {
+    //     this.statusDiv.textContent = "상대를 기다리는 중...";
+    //     this.isMatching = true;
+    //     this.requestMatchButton.disabled = true;
+    //     this.cancelMatchButton.disabled = false;
+    //     const gameUrl = "/api/static/public/index.html";
+    //     const gameId = data.game_id;
+    //     window.location.href = `${gameUrl}?gameId=${gameId}`;
+    //   } else if (data.type === "match_found") {
+    //     this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
+    //     this.isMatching = false;
+    //     this.requestMatchButton.disabled = false;
+    //     this.cancelMatchButton.disabled = true;
+    //   } else if (data.type === "match_canceled") {
+    //     this.statusDiv.textContent = "매칭이 취소되었습니다.";
+    //     this.isMatching = false;
+    //     this.requestMatchButton.disabled = false;
+    //     this.cancelMatchButton.disabled = true;
+    //   } else if (data.type === "error") {
+    //     this.statusDiv.textContent = `에러 발생: ${data.message}`;
+    //     this.isMatching = false;
+    //     this.requestMatchButton.disabled = false;
+    //     this.cancelMatchButton.disabled = true;
+    //   }
+    // };
 
     //     this.socket.onclose = (event) => {
     //         console.log("WebSocket 연결이 닫혔습니다.", event);

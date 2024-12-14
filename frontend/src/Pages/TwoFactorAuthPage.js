@@ -1,21 +1,5 @@
 import createElement from "../Utils/createElement.js";
 
-// createElement() {
-//     // Create the HTML structure for the 2FA verification page
-//     const container = document.createElement("div");
-//     const innerHtml = `
-//             <h2>2FA Verification</h2>
-//             <p>Please enter the OTP sent to your device.</p>
-//             <form id="2fa-form">
-//                 <input type="text" id="otp" placeholder="Enter OTP" required>
-//                 <button type="submit">Verify OTP</button>
-//             </form>
-//             <div id="error-message" style="color: red; text-align: center; display: none;"></div>
-//         `;
-//     container.innerHTML = innerHtml;
-//     return container; // Return the HTML string
-//   }
-
 class TwoFactorAuthPage {
     template() {
         const MultiFactorAuthTitle = createElement(

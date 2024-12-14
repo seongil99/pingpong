@@ -33,12 +33,13 @@ function NavBarList() {
     const settingBtn = NavBarItem("/settings", "Setting");
     const logoutBtn = NavBarItem("", "Log out");
     logoutBtn.lastElementChild.classList.remove("navigate");
-    logoutBtn.onClick = async () => {
+    logoutBtn.onclick = async () => {
         const response = await logout();
         if (response.ok) {
-            document.getElementById("h2").textContent = " logout success";
+            alert("logout success!!");
+            window.router.navigate("/");
         } else {
-            document.getElementById("h2").textContent = " logout fail";
+            alert("logout fail");
         }
     };
     const ul = createElement(

@@ -59,7 +59,6 @@ class HomePage {
 
 export default HomePage;
 
-
 // async template() {
 //   // 컨테이너 div 생성
 //   const container = document.createElement("div");
