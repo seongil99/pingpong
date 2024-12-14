@@ -3,7 +3,7 @@ from channels.db import database_sync_to_async
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
-from .models import Tournament, TournamentParticipant, TournamentGame, TournamentQueue
+from .models import Tournament, TournamentParticipant, TournamentGame, TournamentQueue, TournamentMatchParticipants
 
 User = get_user_model()
 
@@ -100,6 +100,13 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
             tournament = Tournament.objects.create()
             for p in players:
                 TournamentParticipant.objects.create(user=p, tournament=tournament)
+            TournamentMatchParticipants.objects.create(
+                tournament=tournament,
+                user1=players[0],
+                user2=players[1],
+                user3=players[2],
+                user4=players[3],
+            )
             return tournament.tournament_id
 
     @database_sync_to_async

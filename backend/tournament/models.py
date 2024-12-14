@@ -28,6 +28,16 @@ class Tournament(models.Model):
         ]
     )  # 0: pending, 1: 1st round, 2: 2nd round, 3: 3rd round
 
+class TournamentMatchParticipants(models.Model):
+    tournament = models.OneToOneField(Tournament, on_delete=models.CASCADE)
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_participant_user1")
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_participant_user2")
+    user3 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_participant_user3")
+    user4 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_participant_user4")
+
+    class Meta:
+        unique_together = ['tournament', 'user1', 'user2', 'user3', 'user4']
+
 
 class TournamentParticipant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
