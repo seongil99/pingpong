@@ -14,10 +14,10 @@ class UserRelationSerializer(serializers.Serializer):
         required=True,
         validators=[MinValueValidator(0)],
     )
-    
+
     def validate_target_user(self, value):
         # Check if the target user is the same as the current authenticated user
-        user = self.context['request'].user
+        user = self.context["request"].user
         if value == user.id:
             raise serializers.ValidationError("You cannot block yourself.")
         return value
@@ -26,7 +26,7 @@ class UserRelationSerializer(serializers.Serializer):
 class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = Friend
-        fields = ["id", "user1", "user2", "requester", "status", "created_at"]
+        fields = ["id", "user1", "user2", "requester", "created_at"]
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
@@ -53,7 +53,7 @@ class FriendRequestWithOtherUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Friend  # Replace with your actual FriendRequest model
-        fields = ("id", "requester", "status", "created_at", "other_user")
+        fields = ("id", "requester", "created_at", "other_user")
         read_only_fields = (
             "id",
             "requester",

@@ -6,18 +6,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
+
 # Create your models here.
 class Friend(models.Model):
-    PENDING = 1
-    ACCEPTED = 2
-    BLOCKED = 3
-
-    FRIEND_STATUS_CHOICES = [
-        (PENDING, "Pending"),
-        (ACCEPTED, "Accepted"),
-        (BLOCKED, "Blocked"),
-    ]
-
     user1 = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -32,11 +23,6 @@ class Friend(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="send_request",
-    )
-    status = models.IntegerField(
-        choices=FRIEND_STATUS_CHOICES,
-        default=PENDING,
-        validators=[MinValueValidator(1), MaxValueValidator(3)],
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
