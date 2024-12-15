@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from tournament.models import (
     Tournament,
@@ -28,10 +29,11 @@ class TournamentViewByTournamentId(APIView):
     serializer_class = TournamentSerializer
     queryset = Tournament.objects.all()
 
-    def get(self):
+    def get(self, request, tournament_id):
         # 특정 tournament_id에 해당하는 토너먼트만 필터링
-        return Tournament.objects.filter(tournament_id=self.kwargs["tournament_id"])
-
+        tournament = Tournament.objects.get(tournament_id=tournament_id)
+        serializer = TournamentSerializer(tournament)
+        return Response(serializer.data)
 
 @extend_schema(
     responses=TournamentSerializer,

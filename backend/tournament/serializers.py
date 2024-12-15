@@ -11,14 +11,14 @@ class TournamentMatchParticipantsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TournamentMatchParticipants
         fields = [
-            "tournament_id",
+            "tournament",
             "user1",
             "user2",
             "user3",
             "user4",
         ]
         read_only_fields = [
-            "tournament_id",
+            "tournament",
             "user1",
             "user2",
             "user3",
