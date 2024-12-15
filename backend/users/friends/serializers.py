@@ -19,7 +19,7 @@ class UserRelationSerializer(serializers.Serializer):
         # Check if the target user is the same as the current authenticated user
         user = self.context["request"].user
         if value == user.id:
-            raise serializers.ValidationError("You cannot block yourself.")
+            raise serializers.ValidationError("Target ID cannot be urself.")
         return value
 
 

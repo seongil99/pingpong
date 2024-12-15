@@ -74,7 +74,6 @@ class FriendRequestView(GenericAPIView):
         """
         friends = Friend.objects.filter(
             Q(user1=self.request.user) | Q(user2=self.request.user),
-            status=Friend.PENDING,
         )
         return friends
 
