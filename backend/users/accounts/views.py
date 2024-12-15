@@ -17,3 +17,24 @@ class VerifyView(APIView):
     def get(self, request):
         content = {"message": "user is logged in"}
         return Response(content, status=200)
+
+
+@extend_schema(tags=["users"])
+class CheckAnonymousView(APIView):
+    authentication_classes = [JWTCookieAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            content = {
+                "is_logged_in": False,
+                "status": "anonymous",
+                "message": "user is not logged in"
+            }
+            return Response(content, status=200)
+        content = {
+            "is_logged_in": True,
+            "status": "logged in",
+            "message": "user is logged in"
+        }
+        return Response(content, status=200)
