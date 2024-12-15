@@ -5,7 +5,7 @@ const detectLoginStatus = async () => {
             credentials: "include",
         });
         if (!response.ok) {
-            return false;
+            throw Error("No Anonymous");
         }
         return true;
     } catch (error) {

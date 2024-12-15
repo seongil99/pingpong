@@ -1,23 +1,17 @@
-import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js"
+import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
 
 class Oauth2Page {
     async template() {
-        // 컨테이너 div 생성
         try {
             const callBackUri =
                 "https://localhost/api/v1/users/accounts/oauth2/fortytwo/login/callback/";
             const queryParam = new URLSearchParams(window.location.search);
             const code = queryParam.get("code");
-            // const csrftoken = document.cookie
-            //     .split("; ")
-            //     .find((row) => row.startsWith("csrftoken="))
-            //     .split("=")[1];
             const response = await fetch(callBackUri, {
                 method: "POST",
                 redirect: "manual",
                 headers: {
                     "Content-Type": "application/json",
-                    // "X-CSRFToken": csrftoken,
                 },
                 body: JSON.stringify({ code }),
             });
@@ -38,11 +32,11 @@ class Oauth2Page {
                 window.router.navigate("/login");
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
         }
         const container = document.createElement("div");
 
-        return container; // 최종 DOM을 반환
+        return container;
     }
 }
 

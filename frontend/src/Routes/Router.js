@@ -1,5 +1,12 @@
 import detectLoginStatus from "../Controller/Auth/detectLoginStatus.js";
-// import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
+
+const AuthorizationStatus = {
+    LOGIN: 1,
+    NOLOGIN: 0,
+    NOTHING: -1,
+};
+Object.freeze(AuthorizationStatus);
+const { LOGIN, NOLOGIN, NOTHING } = AuthorizationStatus;
 
 class Router {
     constructor(routes) {
@@ -27,25 +34,25 @@ class Router {
 
     async #checkAuthorization(pathname) {
         const loginStatus = await detectLoginStatus();
-        console.log(loginStatus);
         if (!loginStatus && this.routes["game"][pathname]) {
-            return 0;
+            return NOLOGIN;
         }
         if (
             loginStatus &&
             (this.routes["auth"][pathname] || this.routes["mfa"][pathname])
         ) {
-            return 1;
+            return LOGIN;
         }
-        return -1;
+        return NOTHING;
     }
 
     async render(pathname) {
         const isAuthorization = await this.#checkAuthorization(pathname);
 
-        if (isAuthorization >= 0) {
-            if (isAuthorization === 1) window.router.navigate("/home");
-            else if (isAuthorization === 0) window.router.navigate("/login");
+        if (isAuthorization != NOTHING) {
+            if (isAuthorization === LOGIN) window.router.navigate("/home");
+            else if (isAuthorization === NOLOGIN)
+                window.router.navigate("/login");
             return;
         }
         const routeLoader =
