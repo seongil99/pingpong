@@ -37,7 +37,7 @@ function NavBarList() {
         const response = await logout();
         if (response.ok) {
             alert("logout success!!");
-            window.router.navigate("/");
+            window.router.navigate("/", false);
         } else {
             alert("logout fail");
         }

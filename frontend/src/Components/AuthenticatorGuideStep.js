@@ -1,10 +1,5 @@
 import createElement from "../Utils/createElement.js";
-const AuthenticatorGuideStep = (img, stepNum, stepTitle, stepDescription) => {
-    const stepImg = createElement(
-        "img",
-        { src: img, style: { width: "100px", height: "100px" } },
-        []
-    );
+const AuthenticatorGuideStep = (stepImg, stepNum, stepTitle, stepDescription) => {
     const num = createElement(
         "span",
         { class: "authenticator-guide-step-number" },

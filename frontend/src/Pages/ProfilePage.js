@@ -27,7 +27,7 @@ const Game = () => {
     const opponent = createElement(
         "div",
         {},
-        createElement("img", {}, "/src/Components/profile.png"),
+        createElement("img", {}, "/src/Media/profile.png"),
         createElement("span", {}, "sabyun")
     );
     const game = createElement("li", {}, gameResult, gameInfo, opponent);
@@ -41,9 +41,17 @@ const GamesList = () => {
 
 const GameRounds = () => {
     const prevBtn = createElement();
-    const game = createElement("div", {}, prevBtn, options, tournament, versus, rounds);
+    const game = createElement(
+        "div",
+        {},
+        prevBtn,
+        options,
+        tournament,
+        versus,
+        rounds
+    );
     return game;
-}
+};
 
 const HistoryDescription = () => {
     const description = document.createElement(

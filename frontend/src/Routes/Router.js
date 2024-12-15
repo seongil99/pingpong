@@ -23,12 +23,18 @@ class Router {
         ); // 첫 로딩
     }
 
-    navigate(pathname) {
-        window.history.pushState(
-            {},
-            pathname,
-            window.location.origin + pathname
-        );
+    navigate(pathname, isRedirect) {
+        isRedirect
+            ? window.history.replaceState(
+                  {},
+                  pathname,
+                  window.location.origin + pathname
+              )
+            : window.history.pushState(
+                  {},
+                  pathname,
+                  window.location.origin + pathname
+              );
         this.render(pathname);
     }
 
@@ -50,9 +56,10 @@ class Router {
         const isAuthorization = await this.#checkAuthorization(pathname);
 
         if (isAuthorization != NOTHING) {
-            if (isAuthorization === LOGIN) window.router.navigate("/home");
-            else if (isAuthorization === NOLOGIN)
-                window.router.navigate("/login");
+            let redirectPath;
+            if (isAuthorization === LOGIN) redirectPath = "/home";
+            else if (isAuthorization === NOLOGIN) redirectPath = "/login";
+            window.router.navigate(redirectPath, true);
             return;
         }
         const routeLoader =

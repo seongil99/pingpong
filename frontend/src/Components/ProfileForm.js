@@ -10,7 +10,7 @@ const ProfileForm = () => {
     const editBg = createElement("button", { class: "edit-bg hide" }, editIcon);
     const realImg = createElement(
         "img",
-        { src: "/src/Components/profile.png", alt: "real" },
+        { src: "/src/Media/profile.png", alt: "real" },
         []
     );
     const profileImg = createElement(
@@ -27,7 +27,7 @@ const ProfileForm = () => {
     );
     const nameInput = createElement(
         "input",
-        { type: "text", id: "account-name", value: data.name, readonly: true },
+        { type: "text", id: "account-name", value: data.name, readonly: true, maxlength: 100 },
         ""
     );
     const nameInputBox = createElement(
@@ -48,6 +48,7 @@ const ProfileForm = () => {
             id: "account-email",
             value: data.email,
             readonly: true,
+            maxlength: 254
         },
         ""
     );

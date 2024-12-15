@@ -1,16 +1,6 @@
 import createElement from "../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
 
-const findFriends = () => {
-    return {
-        id: "jonghole",
-        img: "/src/Components/profile.png",
-        email: "jonghole@student.42seoul.kr",
-        status: "✅",
-        added: false,
-    };
-};
-
 const FriendModal = () => {
     const profile = createElement(
         "div",
@@ -22,7 +12,11 @@ const FriendModal = () => {
         { class: "friend-modal-message" },
         "유저를 검색해보세요."
     );
-    const searchInput = createElement("input", { class: "friend-search-input" }, "");
+    const searchInput = createElement(
+        "input",
+        { class: "friend-search-input" },
+        ""
+    );
     const searchOrAddBtn = createElement(
         "button",
         {
@@ -39,7 +33,8 @@ const FriendModal = () => {
                             document.querySelector(
                                 ".friend-modal-message"
                             ).textContent = `${
-                                document.querySelector(".friend-search-input").value
+                                document.querySelector(".friend-search-input")
+                                    .value
                             }님이 존재하지 않습니다.`;
                         } else {
                             document.querySelector(".friend-img").src =
@@ -113,8 +108,9 @@ const FriendModal = () => {
                         document.querySelector(".modal").classList.add("hide");
                     }
                     document.querySelector(".friend-search-input").value = "";
-                    document.querySelector(".friend-modal-message").textContent =
-                        "유저를 검색해보세요.";
+                    document.querySelector(
+                        ".friend-modal-message"
+                    ).textContent = "유저를 검색해보세요.";
                 },
             },
         },

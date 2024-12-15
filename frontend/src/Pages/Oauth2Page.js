@@ -16,21 +16,23 @@ class Oauth2Page {
                 body: JSON.stringify({ code }),
             });
             const data = await response.json();
+            let redirectPath;
             if (response.ok) {
                 const mfa = await detectMfaEnabled();
                 if (mfa === null) {
                     alert("API Request error");
-                    window.router.navigate("/login");
+                    redirectPath = "/login";
                 }
                 mfa.status === "enabled"
-                    ? window.router.navigate("/otp")
-                    : window.router.navigate("/home");
+                    ? redirectPath = "/otp"
+                    : redirectPath = "/home";
             } else if (data.status === "redirect") {
-                window.router.navigate(data.url);
+                redirectPath = data.url;
             } else {
                 alert("Failed to login");
-                window.router.navigate("/login");
+                redirectPath = "/login";
             }
+            window.router.navigate(redirectPath, true);
         } catch (error) {
             console.error(error);
         }

@@ -2,7 +2,8 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import ProfileForm from "../Components/ProfileForm.js";
 import SettingsModal from "../Components/SettingsModal.js";
-import fetchMFAStatus from "../Controller/Auth/fetchMFAStatus.js";
+import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
+import disableMFA from "../Controller/Auth/disableMFA.js";
 
 class SettingsPage {
     async template() {
@@ -22,19 +23,23 @@ class SettingsPage {
             "Inactive Account"
         );
         const editProfileForm = ProfileForm();
-        const mfaStatus = await fetchMFAStatus();
+        const mfaStatus = await detectMfaEnabled();
         const twoAuthBtn = createElement(
             "button",
             {
                 class: "settings-btn",
                 events: {
                     click: () => {
-                        document
-                            .querySelector(".modal")
-                            .classList.remove("hide");
-                        document
-                            .querySelector(".two-auth-package")
-                            .classList.remove("hide");
+                        if (mfaStatus === "enabled") {
+                            disableMFA();
+                        } else {
+                            document
+                                .querySelector(".modal")
+                                .classList.remove("hide");
+                            document
+                                .querySelector(".two-auth-package")
+                                .classList.remove("hide");
+                        }
                     },
                 },
             },
@@ -78,7 +83,7 @@ class SettingsPage {
             title3,
             inactiveBtn
         );
-        const modal = SettingsModal();
+        const modal = await SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
             "h1",

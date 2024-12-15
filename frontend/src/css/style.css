@@ -2,6 +2,7 @@
 @import "Components/Friends.module.css";
 @import "Components/Modal.module.css";
 @import "Components/FriendModal.module.css";
+@import "Components/SettingsModal.module.css";
 
 @import "StartPage/StartPage.css";
 @import "StartPage/TwoFactorAuthPage.css";

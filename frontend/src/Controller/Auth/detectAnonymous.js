@@ -1,6 +1,6 @@
-const detectLoginStatus = async () => {
+const detectAnonymous = async () => {
     try {
-        const response = await fetch("/api/v1/users/accounts/verify/", {
+        const response = await fetch("/api/v1/users/accounts/check-anonymous/", {
             method: "GET",
             credentials: "include",
         });
@@ -13,4 +13,4 @@ const detectLoginStatus = async () => {
     }
 };
 
-export default detectLoginStatus;
+export default detectAnonymous;

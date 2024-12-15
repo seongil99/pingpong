@@ -11,7 +11,7 @@ const FriendInfos = (num) => {
     const userId = createElement("h3", { class: "user-id" }, "");
     const userEmail = createElement("span", { class: "user-email" }, "");
     const userStatus = createElement("span", { class: "user-status" }, "");
-    friendImg.src = "/src/Components/profile.png";
+    friendImg.src = "/src/Media/profile.png";
     userId.textContent = "jonghopa";
     userEmail.textContent = "jonghopa@student.42seoul.kr";
     userStatus.textContent = "✅";
