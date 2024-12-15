@@ -2,7 +2,9 @@ from django.urls import path, include
 from .views import (
     VerifyView,
     CheckAnonymousView,
+    AccountActiveView,
 )
+
 
 urlpatterns = [
     path("", include("dj_rest_auth.urls")),
@@ -11,4 +13,9 @@ urlpatterns = [
     path("check-anonymous/", CheckAnonymousView.as_view(), name="check_anonymous"),
     path("oauth2/", include("users.accounts.oauth2.urls")),
     path("mfa/", include("users.accounts.two_factor_auth.urls")),
+    path(
+        "status/",
+        AccountActiveView.as_view(),
+        name="user-account-status",
+    ),
 ]
