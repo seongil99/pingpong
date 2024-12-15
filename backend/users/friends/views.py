@@ -1,19 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
-from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
-from .serializers import FriendRequestWithOtherUserSerializer
-from rest_framework.generics import GenericAPIView
+from drf_spectacular.utils import extend_schema
 
 from .models import Friend
 from .serializers import (
     FriendSerializer,
-    UserRelationSerializer,
+    AddFriendSerializer,
 )
-from .error import FriendError
-from .detail import FriendDetail
 
 from common.error import Error
 from common.pagination import StandardLimitOffsetPagination
@@ -38,97 +31,33 @@ from drf_spectacular.utils import extend_schema_view
     destroy=extend_schema(
         tags=["Friends"], summary="Unfriend a friend", description="Unfriend a user."
     ),
+    create=extend_schema(
+        tags=["Friends"], summary="Update Friend", description="Update a friend."
+    ),
 )
 class FriendsViewSet(viewsets.ModelViewSet):
     """
     A viewset to list friends for the authenticated user.
     """
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = FriendRequestWithOtherUserSerializer
-
-    def get_queryset(self):
-        """
-        Return a list of friends for the authenticated user.
-        """
-        friends = Friend.objects.filter(
-            Q(user1=self.request.user) | Q(user2=self.request.user),
-        )
-        return friends
-
-
-@extend_schema(
-    tags=["Friends"],
-)
-class FriendRequestView(GenericAPIView):
-    """
-    A viewset to list friend requests for the authenticated user.
-    """
-
     queryset = Friend.objects.all()
     permission_classes = [IsAuthenticated]
+    serializer_class = FriendSerializer
+    pagination_class = StandardLimitOffsetPagination
+
+    def get_serializer_class(self):
+        # This allows you to return different serializers for different actions
+        if self.action == "create":
+            return AddFriendSerializer  # For POST requests (creating a friend request)
+        return FriendSerializer  # For GET or other actions (responding with friendship data)
 
     def get_queryset(self):
-        """
-        Return a list of friends for the authenticated user.
-        """
-        friends = Friend.objects.filter(
-            Q(user1=self.request.user) | Q(user2=self.request.user),
-        )
-        return friends
+        # Filter queryset to include only the friends of the currently logged-in user
+        return Friend.objects.filter(user=self.request.user)
 
-    @extend_schema(
-        summary="Send a Friend Request",
-        request=UserRelationSerializer,
-        responses={
-            201: OpenApiResponse(
-                description="Friend request successfully sent.",
-                response=FriendSerializer,
-            ),
-            400: OpenApiResponse(
-                description="Bad request - Invalid data or friend request already sent.",
-                response={
-                    "application/json": {
-                        "type": "object",
-                        "properties": {"error": {"type": "string"}},
-                    }
-                },
-            ),
-            404: OpenApiResponse(
-                description="User not found.",
-                response={
-                    "application/json": {
-                        "type": "object",
-                        "properties": {"error": {"type": "string"}},
-                    }
-                },
-            ),
-        },
-    )
-    def post(self, request):
-        target_user_id = request.data.get("target_user")
-
-        if not UserRelationSerializer(
-            data=request.data, context={"request": request}
-        ).is_valid():
-            return Response({"error": FriendError.INVALID_REQUEST.value}, status=400)
-
-        if not target_user_id:
-            return Response({"error": FriendError.EMPTY_ID.value}, status=400)
-
-        target_user = User.objects.filter(id=target_user_id).first()
-        if not target_user:
-            return Response({"error": Error.USER_NOT_FOUND.value}, status=404)
-
-        # Ensure no duplicate friend requests
-        user1, user2 = sorted([request.user, target_user], key=lambda u: u.id)
-        existing_friendship = Friend.objects.filter(user1=user1, user2=user2).first()
-
-        if existing_friendship:
-            Response({"error": FriendError.REQUEST_ALREADY_SENT.value}, status=400)
-
-        # Create a new friend request
-        friend = Friend.objects.create(user1=user1, user2=user2, requester=request.user)
-        serializer = FriendSerializer(friend)
-
-        return Response(serializer.data, status=201)
+    def create(self, request, *args, **kwargs):
+        # Custom create logic (if needed)
+        user = request.user
+        friend = User.objects.get(id=request.data["friend"])
+        Friend.objects.create(user=user, friend=friend)
+        return super().create(request, *args, **kwargs)

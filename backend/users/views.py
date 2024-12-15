@@ -7,13 +7,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from users.friends.models import Friend
-from users.friends.serializers import (
-    FriendRequestWithOtherUserSerializer,
-    UserRelationSerializer,
-    FriendSerializer,
-)
 from .serializers import UserSearchSerializer
-from django.shortcuts import get_object_or_404
 from .serializers import UserProfileSerializer
 
 
