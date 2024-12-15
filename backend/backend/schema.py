@@ -102,3 +102,91 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
         },
     },
 }
+
+tournament_matchmaking_schema = {
+    "/api/ws/tournament/matchmaking/": {
+        "get": {
+            "operationId": "tournament_matchmaking_ws",
+            "summary": "토너먼트 매치메이킹을 위한 WebSocket 연결",
+            "description": """
+이 엔드포인트는 토너먼트 매치메이킹을 위한 WebSocket 연결을 설정합니다.
+
+### WebSocket 연결
+
+WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
+
+`wss://localhost/api/ws/tournament/matchmaking/`
+
+### 메시지 형식
+
+**클라이언트 → 서버:**
+
+- **매칭 요청**:
+
+```json
+
+{ "type": "request_match" }
+
+```
+
+- **매칭 취소**:
+
+```json
+
+{ "type": "cancel_match" }
+
+```
+
+**서버 → 클라이언트:**
+
+- **매칭 대기 중**:
+
+```json
+
+{ "type": "match_waiting", "count": 1 }
+
+```
+
+- **매칭 성공**:
+
+```json
+
+{ "type": "match_found", "opponents": ["opponent1", "opponent2", "opponent3"], "tournament_id": 1 }
+
+```
+
+- **매칭 취소**:
+
+```json
+
+{ "type": "match_canceled" }
+
+```
+
+- **에러**:
+
+```json
+
+{ "type": "error", "message": "에러 메시지" }
+
+```
+
+### 예제
+
+```json
+
+{ "type": "request_match" }
+
+```
+
+""",
+            "tags": ["Tournament"],
+            "servers": [{"url": "wss://localhost/"}],
+            "responses": {
+                "101": {"description": "Switching Protocols"},
+                "400": {"description": "Bad Request"},
+                "401": {"description": "Unauthorized"},
+            },
+        },
+    },
+}
