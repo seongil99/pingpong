@@ -9,7 +9,7 @@ class Oauth2Page {
 
     const callCallback = async () => {
       const callBackUri =
-        "https://localhost/api/v1/users/accounts/oauth2/fortytwo/login/callback/";
+        "/api/v1/users/accounts/oauth2/fortytwo/login/callback/";
       const queryParam = new URLSearchParams(window.location.search);
       const code = queryParam.get("code");
       console.log(code);
@@ -40,6 +40,33 @@ class Oauth2Page {
         window.router.navigate("/");
       } else if (data.status === "redirect") {
         window.router.navigate(data.url);
+      } else if (data.status == "activation_required") {
+        const result = await Swal.fire({
+          title: "님 계정 비활성화임. 활성화 할꺼임?",
+          showDenyButton: true,
+          showCancelButton: true,
+          confirmButtonText: "활성화",
+          denyButtonText: `취소`,
+        });
+        console.log(`result is confirmed: ${result.isConfirmed}`);
+        if (result.isConfirmed) {
+          const url = "/api/v1/users/accounts/status/";
+          const response = await fetch(url, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ is_account_active: true }),
+          });
+          if (response.ok) {
+            window.router.navigate("/");
+          } else {
+            alert("Failed to activate");
+            window.router.navigate("/");
+          }
+        } else if (result.isDenied) {
+          window.router.navigate("/");
+        }
       } else {
         alert("Failed to login");
         window.router.navigate("/login");
