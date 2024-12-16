@@ -13,6 +13,7 @@ const disableMFA = async () => {
             throw new Error(await response.json());
         }
         alert("MFA disabled!");
+        document.querySelector(".two-auth-btn").textContent = "2FA Enable";
     } catch (error) {
         console.error("MFA disable failed:", error);
         alert("MFA disable failed!");

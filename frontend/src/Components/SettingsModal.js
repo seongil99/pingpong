@@ -57,17 +57,33 @@ const SettingsModal = async () => {
             },
             createElement(
                 "input",
-                { id: "otp-number-input", placeholder: "코드" },
+                {
+                    id: "otp-number-input",
+                    placeholder: "코드",
+                    maxlength: 6,
+                    events: {
+                        input: (event) => {
+                            const value = event.target.value;
+                            const filteredValue = value.replace(/[^0-9]/g, ""); // 숫자만 남김
+                            // 입력값이 필터링된 값과 다르면 업데이트
+                            if (value !== filteredValue) {
+                                event.target.value = filteredValue;
+                            }
+                        },
+                    },
+                },
                 ""
             ),
             createElement(
                 "button",
                 {
                     type: "submit",
+                    class: "otp-submit-btn",
                     events: {
                         click: (event) => {
                             enableMfa(
-                                document.querySelector("#otp-number-input").value
+                                document.querySelector("#otp-number-input")
+                                    .value
                             );
                         },
                     },
@@ -168,6 +184,7 @@ const SettingsModal = async () => {
             class: "settings-modal-prev-btn hide",
             events: {
                 click: (event) => {
+                    document.querySelector("#otp-number-input").value = "";
                     document
                         .querySelector(".two-auth-authenticator-guide")
                         .classList.add("hide");
@@ -191,6 +208,7 @@ const SettingsModal = async () => {
             class: "settings-modal-cancel-btn",
             events: {
                 click: () => {
+                    document.querySelector("#otp-number-input").value = "";
                     document.querySelector(".modal").classList.add("hide");
                     document
                         .querySelector(".two-auth-package")

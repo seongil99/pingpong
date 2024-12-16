@@ -22,15 +22,16 @@ class SettingsPage {
             { class: "settings-section-title" },
             "Inactive Account"
         );
-        const editProfileForm = ProfileForm();
+        const editProfileForm = await ProfileForm();
         const mfaStatus = await detectMfaEnabled();
         const twoAuthBtn = createElement(
             "button",
             {
-                class: "settings-btn",
+                class: "settings-btn two-auth-btn",
                 events: {
-                    click: () => {
-                        if (mfaStatus === "enabled") {
+                    click: async () => {
+                        const mfaStatusAgain = await detectMfaEnabled();
+                        if (mfaStatusAgain.status === "enabled") {
                             disableMFA();
                         } else {
                             document
@@ -43,7 +44,7 @@ class SettingsPage {
                     },
                 },
             },
-            `2FA ${mfaStatus === "enabled" ? "Disable" : "Enable"}`
+            `2FA ${mfaStatus.status === "enabled" ? "Disable" : "Enable"}`
         );
         const inactiveBtn = createElement(
             "button",

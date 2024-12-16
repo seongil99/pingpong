@@ -130,6 +130,7 @@ button {
     font-size: 18px;
     padding: 5px 7px;
 }
+button,
 a {
     cursor: pointer;
 }

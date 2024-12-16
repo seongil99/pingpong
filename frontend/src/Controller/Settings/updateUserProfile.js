@@ -1,8 +1,12 @@
-const fetchUserProfile = async () => {
+const updateUserProfile = async (infos) => {
     try {
         const response = await fetch("/api/v1/users/me/", {
-            method: "GET",
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
             credentials: "include",
+            body: JSON.stringify(infos),
         });
         if (!response.ok) throw new Error("Network response was not ok");
         const userData = await response.json();
@@ -12,4 +16,4 @@ const fetchUserProfile = async () => {
     }
 };
 
-export default fetchUserProfile;
+export default updateUserProfile;
