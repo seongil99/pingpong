@@ -69,8 +69,6 @@ class AccountActiveView(GenericAPIView):
         user.is_account_active = False
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
-        content = {"message": "user is logged in"}
-        return Response(content, status=200)
 
 
 @extend_schema(
