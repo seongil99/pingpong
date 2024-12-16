@@ -69,10 +69,8 @@ class SearchFriendableView(ListAPIView):
 
     def get_queryset(self):
         # Get all friends for the current user (both as user1 and user2)
-        friends_users = Friend.objects.filter(
-            Q(user1=self.request.user) | Q(user2=self.request.user)
-        ).values_list(
-            "user1", "user2"
+        friends_users = Friend.objects.filter(Q(user=self.request.user)).values_list(
+            "friend_user"
         )  # Get both user1 and user2
 
         # Flatten the result to a single list and exclude the current user's ID

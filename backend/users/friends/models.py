@@ -14,14 +14,14 @@ class Friend(models.Model):
         on_delete=models.CASCADE,
         related_name="user",
     )
-    friend = models.ForeignKey(
+    friend_user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="friend",
+        related_name="friend_user",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
-            UniqueConstraint(fields=["user", "friend"], name="unique_friendship"),
+            UniqueConstraint(fields=["user", "friend_user"], name="unique_friendship"),
         ]

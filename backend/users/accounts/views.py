@@ -83,12 +83,12 @@ class CheckAnonymousView(APIView):
             content = {
                 "is_logged_in": False,
                 "status": "anonymous",
-                "message": "user is not logged in"
+                "message": "user is not logged in",
             }
             return Response(content, status=200)
         content = {
             "is_logged_in": True,
             "status": "logged in",
-            "message": "user is logged in"
+            "message": "user is logged in",
         }
         return Response(content, status=200)
