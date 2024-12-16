@@ -162,6 +162,7 @@ class mfa(APIView):
                 response = Response(content, status=200)
                 self.setJWTToken(request, response)
                 request.session.clear()
+                return response
             return JsonResponse({"status": Errors.INVALID_OTP.value}, status=400)
         return JsonResponse(serializer.errors, status=400)
 
@@ -219,7 +220,7 @@ def qrcode_display(request):
 @extend_schema(tags=["2fa"])
 class CheckLoginStatusView(APIView):
     def get(self, request):
-        if "otp_required" in request.session and request.session["otp_required"]:
+        if "userId" in request.session:
             return Response({"status": "logged in"}, status=200)
         return Response({"status": "logged out"}, status=401)
 
