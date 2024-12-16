@@ -1,18 +1,18 @@
 class DisableMFAbutton extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: "open" });
-    }
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
 
-    connectedCallback() {
-        this.template();
-        this.shadowRoot
-            .querySelector("button")
-            .addEventListener("click", this.handleDisableMFA);
-    }
+  connectedCallback() {
+    this.template();
+    this.shadowRoot
+      .querySelector("button")
+      .addEventListener("click", this.handleDisableMFA);
+  }
 
-    template() {
-        this.shadowRoot.innerHTML = `
+  template() {
+    this.shadowRoot.innerHTML = `
       <style>
         button {
           padding: 10px;
@@ -27,34 +27,33 @@ class DisableMFAbutton extends HTMLElement {
       </style>
       <button>Disable MFA</button>
     `;
+  }
+
+  async handleDisableMFA() {
+    const url = "https://localhost/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
+
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("MFA disabled:", data);
+      alert("MFA disabled!");
+      window.location.reload(); // 페이지 새로고침
+    } catch (error) {
+      console.error("MFA disable failed:", error);
+      alert("MFA disable failed!");
     }
-
-    async handleDisableMFA() {
-        const url = "https://localhost/api/v1/accounts/mfa/"; // MFA 비활성화 API 서버 URL
-
-        try {
-            const response = await fetch(url, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log("MFA disabled:", data);
-            alert("MFA disabled!");
-            window.location.reload(); // 페이지 새로고침
-
-        } catch (error) {
-            console.error("MFA disable failed:", error);
-            alert("MFA disable failed!");
-        }
-    }
+  }
 }
 
 customElements.define("disable-mfa-button", DisableMFAbutton);
