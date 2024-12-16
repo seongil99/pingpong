@@ -12,7 +12,6 @@ const enableOTP = async (otp) => {
 			throw new Error(response.json());
         }
 		alert("MFA Enabled!!");
-		window.location.reload();
     } catch (error) {
         console.error("Error:", error);
     }

@@ -13,7 +13,6 @@ const disableMFA = async () => {
             throw new Error(await response.json());
         }
         alert("MFA disabled!");
-        window.location.reload(); // 페이지 새로고침
     } catch (error) {
         console.error("MFA disable failed:", error);
         alert("MFA disable failed!");
