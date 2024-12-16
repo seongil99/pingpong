@@ -70,7 +70,7 @@ class FortyTwoLogin(
         logger.info(f"response: {response.data}")
         refresh = response.cookies[settings.REST_AUTH["JWT_AUTH_REFRESH_COOKIE"]].value
 
-        request.session["otp_required"] = True
+        request.session["userId"] = request.user.id
         request.session["access"] = response.data["access"]
         request.session["refresh"] = refresh
 
