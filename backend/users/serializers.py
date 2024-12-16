@@ -18,6 +18,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_verified",
             "is_online",
             "last_seen",
+            "wins",
+            "loses",
         ]
         read_only_fields = ["id", "email"]
         extra_kwargs = {

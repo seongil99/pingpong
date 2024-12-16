@@ -49,13 +49,14 @@ class FortyTwoLogin(
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
+
         if request.user.is_authenticated:
             return self.processAuthenticatedUser(request, response)
-        logger.info("not authenticated")
-        access = response.data["access"]
-        refresh = response.cookies[settings.REST_AUTH["JWT_AUTH_REFRESH_COOKIE"]].value
-        # logger.info(f'here: {refresh}')
-        response.data["refresh"] = ""
+
+        # access = response.data["access"]
+        # refresh = response.cookies[settings.REST_AUTH["JWT_AUTH_REFRESH_COOKIE"]].value
+        # # logger.info(f'here: {refresh}')
+        # response.data["refresh"] = ""
         return response
 
     def processAuthenticatedUser(self, request, response):
@@ -69,7 +70,7 @@ class FortyTwoLogin(
         logger.info(f"response: {response.data}")
         refresh = response.cookies[settings.REST_AUTH["JWT_AUTH_REFRESH_COOKIE"]].value
 
-        request.session["userId"] = request.user.id
+        request.session["otp_required"] = True
         request.session["access"] = response.data["access"]
         request.session["refresh"] = refresh
 
