@@ -35,14 +35,13 @@ const ProfileForm = async () => {
                         return;
                     }
                     const reader = new FileReader();
-                    reader.onload = () => {
-                        console.log(reader.result);
-
+                    reader.onload = (e) => {
+                        console.log(typeof e.target.result);
                         const profileImg = document.querySelector(
                             ".settings-profile-image > img"
                         );
-                        profileImg.src = reader.result;
-                        data.avatar = reader.result;
+                        profileImg.src = e.target.result;
+                        data.avatar = e.target.result;
                     };
                     reader.readAsDataURL(file);
                 },
