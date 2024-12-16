@@ -74,51 +74,6 @@ class AccountActiveView(GenericAPIView):
 
 
 @extend_schema(
-    tags=["accounts"],
-)
-class AccountActiveView(GenericAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserStatusSerializer
-
-    @extend_schema(
-        summary="Update the status of the logged in user.",
-        description="only takes True as is_active value.",
-        request=UserStatusSerializer,
-        responses={200: UserStatusSerializer},
-    )
-    def patch(self, request, *args, **kwargs):
-        userId = request.session.get("userId")
-        user = User.objects.get(id=userId)
-
-        is_account_active = request.data.get(
-            "is_account_active", user.is_account_active
-        )
-        if is_account_active is not True:
-            return Response(
-                {"success": False, "message": "Invalid value for is_account_active."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        user.is_account_active = is_account_active
-        user.save()
-        response = Response(self.get_serializer(user).data)
-        logger.info(f"response: {request.session['access']}")
-        logger.info(f"response: {request.session['refresh']}")
-        setAccessToken(
-            request, response, request.session["access"], request.session["refresh"]
-        )
-
-        return response
-
-    def delete(self, request, *args, **kwargs):
-        user = request.user
-        user.is_account_active = False
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-        content = {"message": "user is logged in"}
-        return Response(content, status=200)
-
-
-@extend_schema(
     tags=["users"],
     examples=[
         OpenApiExample(
