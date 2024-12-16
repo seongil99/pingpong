@@ -321,6 +321,7 @@ SPECTACULAR_SETTINGS = {
         **callback_schema,
         **matchmaking_schema,
         **tournament_matchmaking_schema,
+        **tournament_game_schema,
     },
 }
 
