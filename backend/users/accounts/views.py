@@ -24,8 +24,8 @@ class VerifyView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        content = {"message": "Hello, World!"}
-        return Response(content)
+        content = {"message": "user is logged in"}
+        return Response(content, status=200)
 
 
 @extend_schema(
