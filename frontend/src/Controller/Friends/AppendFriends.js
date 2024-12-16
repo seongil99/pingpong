@@ -14,7 +14,7 @@ async function AppendFriends(params) {
 			if (!response.ok) {
 				throw new Error("Not OK! Status Code: ", response.status);
 			}
-			return true;
+			return await response.json();
 		} catch (error) {
 			console.error("Error: ", error);
 			return false;

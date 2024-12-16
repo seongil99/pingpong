@@ -29,15 +29,15 @@ const FriendModal = () => {
             class: "search-add-btn search",
             events: {
                 click: async (event) => {
-                    console.log("버튼0");
+                    console.log(event.target.classList);
                     if (event.target.classList.contains("search")) {
                         const input = document
                             .querySelector(".friend-search-input");
                         console.log('intput', input);
                         const data = await SearchFriends(input.value);
-                        console.log(data);
+                        console.log('data: ', data);
                         input.classList.add("hide");
-                        if (!data) {
+                        if (!data.length) {
                             event.target.classList.add("hide");
                             document.querySelector(
                                 ".friend-modal-message"
@@ -46,8 +46,7 @@ const FriendModal = () => {
                             const friendProfile = document
                                 .querySelector(".friend-profile");
                             friendProfile.classList.remove("hide");
-                            console.log(data);
-                            friendProfile.appendChild(FriendInfos(data));
+                            friendProfile.appendChild(FriendInfos({friend_user:data[0]}));
                             document
                                 .querySelector(".friend-modal-message")
                                 .classList.add("hide");
@@ -56,15 +55,28 @@ const FriendModal = () => {
                             event.target.textContent = "추가";
                         }
                     } else if (event.target.classList.contains("add")) {
-                        const result = AppendFriends(data.id);
-                        console.log('result: ', result);
-                        const friendList = document.querySelector("friends-list");
+                        const friendList = document.getElementById("friends-list");
+                        console.log('friendList: ', friendList);
                         const profile = document.querySelector(".friend-profile");
-
-                        profile.children
-                        console.log('profile.children: ', profile.children);
+                        const userId = profile.querySelector(".user-id");
+                        const username = userId.getAttribute("data-id");
+                        console.log('username: ', username);
+                        console.log('userId: ', userId);
+                        const result = await AppendFriends(username);
+                        console.log('result: ', result);
+                        const newFriendInfo = FriendInfos(result);
+                        friendList.appendChild(newFriendInfo);
                         document
-                            .querySelector(".friend-profile").replaceChildren(); // 검색된 유저 제거.
+                            .querySelector(".friend-profile").replaceChildren();
+                        document.querySelector(".modal").classList.add("hide"); // 검색된 유저 제거.
+                        document
+                            .querySelector(".friend-modal-message").classList.remove("hide");
+                        document
+                            .querySelector(".friend-search-input")
+                            .classList.remove("hide");
+                        event.target.textContent = "검색";
+                        event.target.classList.remove("add");
+                        event.target.classList.add("search");
                     }
                     document
                         .querySelector(".cancel-modal-btn")

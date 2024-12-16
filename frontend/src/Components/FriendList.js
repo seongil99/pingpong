@@ -7,7 +7,7 @@ async function FriendList() {
     const friendsList = createElement(
         "div",
         { id: "friends-list" },
-        ...userData.map((v) => FriendInfos(v.friend_user))
+        ...userData.map((v) => FriendInfos(v))
     );
     const friendAppendBtn = createElement(
         "button",
