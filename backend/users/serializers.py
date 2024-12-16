@@ -21,7 +21,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "wins",
             "loses",
         ]
-        read_only_fields = ["id", "email"]
+        read_only_fields = [
+            "id",
+            "email",
+            "is_online",
+            "last_seen",
+            "wins",
+            "loses",
+        ]
         extra_kwargs = {
             "username": {"required": False},
             "avatar": {"required": False},
