@@ -1,4 +1,5 @@
 import callCallback from "../Controller/Auth/callCallback.js";
+import checkMfaAuthentication from "../Controller/Auth/checkMfaAuthentication.js";
 import detectAnonymous from "../Controller/Auth/detectAnonymous.js";
 import detectLoginStatus from "../Controller/Auth/detectLoginStatus.js";
 
@@ -28,6 +29,7 @@ class Router {
     }
 
     navigate(pathname, isRedirect) {
+        console.log("Navigate Method> ", pathname);
         isRedirect
             ? window.history.replaceState(
                   {},
@@ -50,8 +52,10 @@ class Router {
                 return ANONYMOUS;
             }
             if (this.routes["mfa"][pathname]) {
-                const isMfa = await callCallback();
-                if (isMfa.detail === "OTP required") return MFA;
+                const isMfa = await checkMfaAuthentication();
+                console.log(isMfa);
+                if (isMfa === false || isMfa.status !== "logged in")
+                    return ANONYMOUS;
             }
             return NOTHING;
         }
@@ -77,6 +81,7 @@ class Router {
             if (isAuthorization === ANONYMOUS || isAuthorization === NOLOGIN)
                 redirectPath = "/login";
             else if (isAuthorization === LOGIN) redirectPath = "/home";
+            else redirectPath = "/otp"
             window.router.navigate(redirectPath, true);
             return;
         }
