@@ -127,12 +127,17 @@ class GameIO(socketio.AsyncNamespace):
             return
         game_id = user_to_game[sid]
         game_state = game_state_db.load_game_state(game_id)
-        
+
         if sid in game_state["clients"]:
             del game_state["clients"][sid]
 
+        game = await PingPongHistory.objects.aget(id=game_id)
         # 게임이 진행중이고고 클라이언트가 모두 나갔을 경우 게임 종료
-        if len(game_state["clients"]) == 0 and game_state["gameStart"] == True:
+        if (
+            len(game_state["clients"]) == 0
+            and game_state["gameStart"] == True
+            and game.gamemode == GameMode.PVP.value
+        ):
             await server.process_abandoned_game(game_state)
         del user_to_game[sid]
 
