@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from users.manages import UserManager
 
+
 # Create your models here.
 class User(AbstractUser):
     username = models.CharField(max_length=255, blank=True, null=True)
@@ -13,6 +14,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
+    is_account_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

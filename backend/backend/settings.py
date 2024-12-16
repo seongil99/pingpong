@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "pingpong_history",
     "ingame",
     "matchmaking",
+    "tournament",
 ]
 
 MIDDLEWARE = [
@@ -319,6 +320,7 @@ SPECTACULAR_SETTINGS = {
     "APPEND_PATHS": {
         **callback_schema,
         **matchmaking_schema,
+        **tournament_matchmaking_schema,
     },
 }
 
