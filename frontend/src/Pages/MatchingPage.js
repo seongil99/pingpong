@@ -21,9 +21,15 @@ class MatchingPage {
             "div",
             {
                 class: "match-mode-selection general",
-                event: {
-                    click: () => {},
-                },
+                events: {
+                    click: (event) => {
+                        console.log(event);
+                        console.log('clicked 일반');
+                        this.connectWebSocket(()=> this.requestMatch());
+                        // this.requestMatch();
+                        // window.location.href = "/playing";
+                    }
+                }
             },
             "일반"
         );
@@ -31,8 +37,12 @@ class MatchingPage {
             "div",
             {
                 class: "match-mode-selection custom",
-                event: {
-                    click: () => {},
+                events: {
+                    click: (event) => {
+                        console.log(event);
+                        console.log('clicked 설정');
+                        // window.location.href = "/playing";
+                    },
                 },
             },
             "사용자 설정"
@@ -87,14 +97,17 @@ class MatchingPage {
     async template() {
         // 네비게이션 바 추가
         const navBar = NavBar();
-
+        
         // 제목 추가
         const title = createElement(
             "h2",
             { id: "matching-page-title" },
             "Mathching Page"
         );
-
+        this.statusDiv = createElement(
+            "div",
+            {},
+        );
         // // 매칭 요청 버튼 생성
         // this.requestMatchButton = createElement(
         //     "button",
@@ -110,10 +123,10 @@ class MatchingPage {
         // );
 
         // PVE 버튼 생성
-    this.requestPVEButton = document.createElement("button");
-    this.requestPVEButton.id = "requestPVEButton";
-    this.requestPVEButton.textContent = "PVE 게임 시작";
-    this.container.appendChild(this.requestPVEButton);
+    // this.requestPVEButton = document.createElement("button");
+    // this.requestPVEButton.id = "requestPVEButton";
+    // this.requestPVEButton.textContent = "PVE 게임 시작";
+    // this.container.appendChild(this.requestPVEButton);
 
         // 상태 표시 영역 생성
         // this.statusDiv = createElement("div", { id: "status" }, []);
@@ -131,7 +144,7 @@ class MatchingPage {
             title,
             matchModes
         );
-        const container = createElement("div", {}, navBar, main);
+        const container = createElement("div", {}, navBar, main, matchModes);
         // 이벤트 리스너 및 웹소켓 설정
         // this.setupEventListeners();
         return container;
@@ -165,20 +178,20 @@ class MatchingPage {
     //     });
     // }
 
-    // connectWebSocket(callback) {
-    //     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    //     const wsUrl = `${protocol}://${window.location.host}/api/ws/matchmaking/`;
-    //     this.socket = new WebSocket(wsUrl);
+    connectWebSocket(callback) {
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${protocol}://${window.location.host}/api/ws/matchmaking/`;
+        this.socket = new WebSocket(wsUrl);
 
-    //     this.socket.onopen = () => {
-    //         console.log("WebSocket 연결이 열렸습니다.");
-    //         this.statusDiv.textContent = "서버와 연결되었습니다.";
-    //         if (callback) callback();
-    //     };
+        this.socket.onopen = () => {
+            console.log("WebSocket 연결이 열렸습니다.");
+            this.statusDiv.textContent = "서버와 연결되었습니다.";
+            if (callback) callback();
+        };
 
-    //     this.socket.onmessage = (event) => {
-    //         const data = JSON.parse(event.data);
-    //         console.log("수신한 데이터:", data);
+        this.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("수신한 데이터:", data);
 
       if (data.type === "waiting_for_match") {
         this.statusDiv.textContent = "상대를 기다리는 중...";
@@ -206,31 +219,31 @@ class MatchingPage {
       }
     };
 
-    //     this.socket.onclose = (event) => {
-    //         console.log("WebSocket 연결이 닫혔습니다.", event);
-    //         this.statusDiv.textContent = "서버와의 연결이 끊어졌습니다.";
-    //         this.isMatching = false;
-    //         this.requestMatchButton.disabled = false;
-    //         this.cancelMatchButton.disabled = true;
-    //     };
+        this.socket.onclose = (event) => {
+            console.log("WebSocket 연결이 닫혔습니다.", event);
+            this.statusDiv.textContent = "서버와의 연결이 끊어졌습니다.";
+            this.isMatching = false;
+            this.requestMatchButton.disabled = false;
+            this.cancelMatchButton.disabled = true;
+        };
 
-    //     this.socket.onerror = (error) => {
-    //         console.error("WebSocket 에러 발생:", error);
-    //     };
-    // }
+        this.socket.onerror = (error) => {
+            console.error("WebSocket 에러 발생:", error);
+        };
+    }
 
-    // requestMatch() {
-    //     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-    //         const message = {
-    //             type: "request_match",
-    //             gamemode: "1v1", // 필요한 게임 모드로 설정
-    //         };
-    //         this.socket.send(JSON.stringify(message));
-    //         console.log("매칭 요청을 보냈습니다:", message);
-    //     } else {
-    //         console.error("WebSocket이 연결되지 않았습니다.");
-    //     }
-    // }
+    requestMatch() {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const message = {
+                type: "request_match",
+                gamemode: "1v1", // 필요한 게임 모드로 설정
+            };
+            this.socket.send(JSON.stringify(message));
+            console.log("매칭 요청을 보냈습니다:", message);
+        } else {
+            console.error("WebSocket이 연결되지 않았습니다.");
+        }
+    }
 
     // cancelMatch() {
     //     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -243,6 +256,7 @@ class MatchingPage {
     //         console.error("WebSocket이 연결되지 않았습니다.");
     //     }
     // }
+
 }
 
 export default MatchingPage;
