@@ -1,7 +1,17 @@
 import createElement from "../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
-// import SearchFriends from "../Controller/Friends/SearchFriends.js";
-import Friendapi from "../Controller/Friends/FriendApi.js";
+import SearchFriends from "../Controller/Friends/SearchFriends.js";
+import AppendFriends from "../Controller/Friends/AppendFriends.js";
+import FetchFriends from "../Controller/Friends/FetchFriends.js";
+async function appendFriend(target,list){
+    const ret = await FetchFriends();
+    ret.map((v)=>{
+    if(v.friend_user.id === target.id)
+    {
+        list.appendChild(FriendInfos(v));
+    }
+})
+}
 const FriendModal = () => {
     const profile = createElement(
         "div",
@@ -19,43 +29,48 @@ const FriendModal = () => {
             class: "search-add-btn search",
             events: {
                 click: async (event) => {
+                    console.log("버튼0");
                     if (event.target.classList.contains("search")) {
-                        const input = document  
-                        .querySelector(".friend-search-input");
-                        console.log('intput',input);
-                        // const data = await SearchFriends(input.value);
-                        const data = await Friendapi("GET","/api/v1/users/friendable/?search=",input.value);
+                        const input = document
+                            .querySelector(".friend-search-input");
+                        console.log('intput', input);
+                        const data = await SearchFriends(input.value);
                         console.log(data);
                         input.classList.add("hide");
-                            if (!data) {
-                                event.target.classList.add("hide");
-                                document.querySelector(
-                                    ".friend-modal-message"
-                                ).textContent = `${input.value}님이 존재하지 않거나 추가할수 없는 유저입니다.`;
-                            } else {
+                        if (!data) {
+                            event.target.classList.add("hide");
+                            document.querySelector(
+                                ".friend-modal-message"
+                            ).textContent = `${input.value}님이 존재하지 않거나 추가할수 없는 유저입니다.`;
+                        } else {
                             const friendProfile = document
                                 .querySelector(".friend-profile");
-                                friendProfile.classList.remove("hide");
-                            friendProfile.appendChild(FriendInfos({other_user:data}));
-                                document
-                                    .querySelector(".friend-modal-message")
-                                    .classList.add("hide");
-                                event.target.classList.remove("search");
-                                event.target.classList.add("add");
-                                event.target.textContent = "추가";
-                            }
+                            friendProfile.classList.remove("hide");
+                            console.log(data);
+                            friendProfile.appendChild(FriendInfos(data));
+                            document
+                                .querySelector(".friend-modal-message")
+                                .classList.add("hide");
+                            event.target.classList.remove("search");
+                            event.target.classList.add("add");
+                            event.target.textContent = "추가";
+                        }
                     } else if (event.target.classList.contains("add")) {
-                        /*
-                        친구추가 부분
-                        */
+                        const result = AppendFriends(data.id);
+                        console.log('result: ', result);
+                        const friendList = document.querySelector("friends-list");
+                        const profile = document.querySelector(".friend-profile");
+
+                        profile.children
+                        console.log('profile.children: ', profile.children);
                         document
-                        .querySelector(".friend-profile").replaceChildren(); // 검색된 유저 제거.
+                            .querySelector(".friend-profile").replaceChildren(); // 검색된 유저 제거.
                     }
                     document
                         .querySelector(".cancel-modal-btn")
                         .classList.add("cancel-result");
-                    document  
-                    .querySelector(".friend-search-input").value = "";
+                    document
+                        .querySelector(".friend-search-input").value = "";
                 },
             },
         },
@@ -69,7 +84,7 @@ const FriendModal = () => {
                 click: (event) => {
                     if (event.target.classList.contains("cancel-result")) {
                         document
-                        .querySelector(".friend-profile").replaceChildren();
+                            .querySelector(".friend-profile").replaceChildren();
                         document
                             .querySelector(".friend-profile")
                             .classList.add("hide");

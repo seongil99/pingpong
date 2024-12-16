@@ -6,7 +6,7 @@ async function searchFriends(params) {
             "Content-Type": "application/json",
         }
     })).json();
-    return response.results.length > 0 ? response.results[0]: null;
+    return response.results;
 }
 
 export default searchFriends;

@@ -1,15 +1,13 @@
 import createElement from "../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
-// import FetchFriends from "../Controller/Friends/FetchFriends.js";
-import Friendapi from "../Controller/Friends/FriendApi.js";
+import FetchFriends from "../Controller/Friends/FetchFriends.js";
 async function FriendList() {
-    // const userData = await FetchFriends();
-    const userData = await Friendapi('GET',"/api/v1/users/friends");
+    const userData = await FetchFriends(); 
     console.log('user data',userData);
     const friendsList = createElement(
         "div",
         { id: "friends-list" },
-        ...userData.map((v) => FriendInfos(v))
+        ...userData.map((v) => FriendInfos(v.friend_user))
     );
     const friendAppendBtn = createElement(
         "button",
@@ -18,9 +16,10 @@ async function FriendList() {
                 click: () => {
                     if (
                         document
-                            .querySelector(".modal")
-                            .classList.contains("hide")
+                        .querySelector(".modal")
+                        .classList.contains("hide")
                     ) {
+                        console.log('clicked');
                         document
                             .querySelector(".modal")
                             .classList.remove("hide");

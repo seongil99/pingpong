@@ -13,11 +13,11 @@ const FriendInfos = (dataRef) => {
     const userId = createElement("h3", { class: "user-id" }, "");
     const userEmail = createElement("span", { class: "user-email" }, "");
     const userStatus = createElement("span", { class: "user-status" }, "");
-    friendImg.src = dataRef.other_user.avatar ||"/src/Components/profile.png";
-    userId.textContent = dataRef.other_user.username || "jonghopa";
+    friendImg.src = dataRef.avatar ||"/src/Components/profile.png";
+    userId.textContent = dataRef.username || "jonghopa";
     userId.dataset.iduser = dataRef.id || null;
-    userEmail.textContent =  dataRef.other_user.username || "jonghopa@student.42seoul.kr";
-    userStatus.textContent = dataRef.other_user.is_online ? "✅" : "❌";
+    userEmail.textContent =  dataRef.username || "jonghopa@student.42seoul.kr";
+    userStatus.textContent = dataRef.is_online ? "✅" : "❌";
     // status.textContent = user.is_online ? "✅" : "❌";
     const infoBox = createElement(
         "div",
