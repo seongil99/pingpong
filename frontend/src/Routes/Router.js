@@ -1,12 +1,16 @@
+import callCallback from "../Controller/Auth/callCallback.js";
+import detectAnonymous from "../Controller/Auth/detectAnonymous.js";
 import detectLoginStatus from "../Controller/Auth/detectLoginStatus.js";
 
 const AuthorizationStatus = {
-    LOGIN: 1,
-    NOLOGIN: 0,
+    ANONYMOUS: 0,
+    NOLOGIN: 1,
+    MFA: 2,
+    LOGIN: 3,
     NOTHING: -1,
 };
 Object.freeze(AuthorizationStatus);
-const { LOGIN, NOLOGIN, NOTHING } = AuthorizationStatus;
+const { ANONYMOUS, NOLOGIN, MFA, LOGIN, NOTHING } = AuthorizationStatus;
 
 class Router {
     constructor(routes) {
@@ -39,7 +43,20 @@ class Router {
     }
 
     async #checkAuthorization(pathname) {
+        const isAnonymous = await detectAnonymous();
+        console.log("Anonymous User: ", isAnonymous);
+        if (isAnonymous) {
+            if (this.routes["game"][pathname]) {
+                return ANONYMOUS;
+            }
+            if (this.routes["mfa"][pathname]) {
+                const isMfa = await callCallback();
+                if (isMfa.detail === "OTP required") return MFA;
+            }
+            return NOTHING;
+        }
         const loginStatus = await detectLoginStatus();
+        console.log("Log In Status: ", loginStatus);
         if (!loginStatus && this.routes["game"][pathname]) {
             return NOLOGIN;
         }
@@ -54,11 +71,12 @@ class Router {
 
     async render(pathname) {
         const isAuthorization = await this.#checkAuthorization(pathname);
-
+        console.log(isAuthorization);
         if (isAuthorization != NOTHING) {
             let redirectPath;
-            if (isAuthorization === LOGIN) redirectPath = "/home";
-            else if (isAuthorization === NOLOGIN) redirectPath = "/login";
+            if (isAuthorization === ANONYMOUS || isAuthorization === NOLOGIN)
+                redirectPath = "/login";
+            else if (isAuthorization === LOGIN) redirectPath = "/home";
             window.router.navigate(redirectPath, true);
             return;
         }

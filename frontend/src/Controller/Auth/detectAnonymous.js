@@ -4,9 +4,8 @@ const detectAnonymous = async () => {
             method: "GET",
             credentials: "include",
         });
-        if (!response.ok) {
-            throw Error("No Anonymous");
-        }
+        const data = await response.json();
+        if (data.is_logged_in) return false;
         return true;
     } catch (error) {
         console.error(error);

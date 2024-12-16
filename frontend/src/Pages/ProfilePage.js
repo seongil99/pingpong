@@ -5,11 +5,27 @@ import FriendInfos from "../Components/FriendInfos.js";
 const StatDescription = () => {
     const description = document.createElement(
         "div",
-        {},
-        createElement("span", {}, `게임 수: 18`),
-        createElement("span", {}, `승 • 패: 30 / 80`),
-        createElement("span", {}, `승률: 25.21%`),
-        createElement("span", {}, `플레이 시간: 100시간 0분`)
+        { class: "stat-description" },
+        createElement(
+            "span",
+            { class: "stat-description-content" },
+            `게임 수: 18`
+        ),
+        createElement(
+            "span",
+            { class: "stat-description-content" },
+            `승 • 패: 30 / 80`
+        ),
+        createElement(
+            "span",
+            { class: "stat-description-content" },
+            `승률: 25.21%`
+        ),
+        createElement(
+            "span",
+            { class: "stat-description-content" },
+            `플레이 시간: 100시간 0분`
+        )
     );
     return description;
 };
@@ -40,15 +56,10 @@ const GamesList = () => {
 };
 
 const GameRounds = () => {
-    const prevBtn = createElement();
     const game = createElement(
         "div",
         {},
-        prevBtn,
-        options,
-        tournament,
-        versus,
-        rounds
+        ""
     );
     return game;
 };

@@ -69,4 +69,4 @@ class FortyTwoLogin(SocialLoginView): # if you want to use Authorization Code Gr
             'status': 'redirect',
             'url': '/otp'
         }
-        return JsonResponse(contents, status=401)
+        return JsonResponse(contents, status=200)

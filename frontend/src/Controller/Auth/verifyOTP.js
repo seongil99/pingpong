@@ -12,6 +12,7 @@ const verifyOTP = async (otp) => {
         if (!response.ok) {
             document.getElementById("error-message").textContent =
                 data.error || "Verification failed. Please try again.";
+            return ;
         }
         alert("2FA verification successful!");
         window.router.navigate("/home", true);
