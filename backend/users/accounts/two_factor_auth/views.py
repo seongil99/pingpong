@@ -25,6 +25,8 @@ from .serializers import (
     OTPVerificationSerializer,
 )
 
+from users.accounts.utils import setAccessToken
+
 
 import base64
 import pyotp
@@ -171,22 +173,6 @@ class mfa(APIView):
         refresh = request.session.get("refresh")
         response = JsonResponse(content, status=200)
         return setAccessToken(request, response, access, refresh)
-
-
-def setAccessToken(request, response, access: str, refresh: str):
-    response.set_cookie(
-        settings.REST_AUTH["JWT_AUTH_COOKIE"],
-        access,
-        max_age=timedelta(days=1),
-        httponly=True,
-    )
-    response.set_cookie(
-        settings.REST_AUTH["JWT_AUTH_REFRESH_COOKIE"],
-        refresh,
-        max_age=timedelta(days=1),
-        httponly=True,
-    )
-    return response
 
 
 @api_view(["GET"])
