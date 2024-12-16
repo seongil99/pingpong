@@ -479,6 +479,12 @@ class PingPongServer:
         for task in task_list:
             task.cancel()
 
+    async def process_abandoned_game(self, game_state):
+        game_id = game_state["game_id"]
+        
+        await socket_send(
+            game_state["render_data"], "gameEnd", game_id, "Opponent has left the game"
+        )
 
 @sync_to_async
 def save_game_history(game_state, winnerId):
@@ -495,3 +501,13 @@ def save_game_history(game_state, winnerId):
     game.longest_rally = longest_rally
     game.average_rally = average_rally
     game.save()
+    update_wins_losses(game.user1, winner)
+
+
+@sync_to_async
+def update_wins_losses(user, winner):
+    if user == winner:
+        user.wins += 1
+    else:
+        user.loses += 1
+    user.save()

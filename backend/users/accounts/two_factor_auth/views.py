@@ -158,7 +158,10 @@ class mfa(APIView):
                 return JsonResponse({"status": Errors.NO_DEVICE.value}, status=404)
 
             if device.verify_token(otp_code):
-                return self.setJWTToken(request)
+                content = {"status": "redirect", "url": "/"}
+                response = Response(content, status=200)
+                self.setJWTToken(request, response)
+                request.session.clear()
             return JsonResponse({"status": Errors.INVALID_OTP.value}, status=400)
         return JsonResponse(serializer.errors, status=400)
 
@@ -167,12 +170,10 @@ class mfa(APIView):
             confirmed=True
         ).exists()  # confirmed = True means the device is enabled
 
-    def setJWTToken(self, request):
-        content = {"status": "redirect", "url": "/"}
+    def setJWTToken(self, request, response):
         access = request.session.get("access")
         refresh = request.session.get("refresh")
-        response = JsonResponse(content, status=200)
-        return setAccessToken(request, response, access, refresh)
+        setAccessToken(request, response, access, refresh)
 
 
 @api_view(["GET"])
@@ -213,6 +214,14 @@ def qrcode_display(request):
     img_base64 = base64.b64encode(img_io.getvalue()).decode("utf-8")
 
     return JsonResponse({"qrcode": f"data:image/png;base64,{img_base64}"})
+
+
+@extend_schema(tags=["2fa"])
+class CheckLoginStatusView(APIView):
+    def get(self, request):
+        if "otp_required" in request.session and request.session["otp_required"]:
+            return Response({"status": "logged in"}, status=200)
+        return Response({"status": "logged out"}, status=401)
 
 
 def convert_hex_to_base32(hex_key: str) -> str:
