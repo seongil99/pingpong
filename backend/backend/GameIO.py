@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from pingpong_history.models import PingPongHistory
 from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.exceptions import (
     InvalidToken,
@@ -14,7 +15,7 @@ from ingame.game_logic import PingPongServer
 from ingame.data import user_to_game, gameid_to_task, user_to_socket
 from ingame.models import OneVersusOneGame
 from urllib.parse import parse_qs
-from backend.dbAsync import get_game_users, get_pingpong_history
+from backend.dbAsync import get_game_users
 from ingame.enums import GameMode
 
 import socketio
@@ -115,8 +116,13 @@ class GameIO(socketio.AsyncNamespace):
         user = session["user"]
         if user.id in user_to_socket:
             del user_to_socket[user.id]
-        # sio.leave_room(sid, user_to_game[sid], namespace=default_namespace)
         if sid in user_to_game:
+            game_id = user_to_game[sid]
+            game_state = game_state_db.load_game_state(game_id)
+            if sid in game_state["clients"]:
+                del game_state["clients"][sid]
+            if len(game_state["clients"]) == 0:
+                await server.end_game(game_state)
             del user_to_game[sid]
 
     ### helper functions
@@ -171,7 +177,11 @@ class GameIO(socketio.AsyncNamespace):
     async def pve_authorization(self, sid, game_id):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
-        pingpong_history = await get_pingpong_history(game_id)
+        try:
+            pingpong_history = PingPongHistory.objects.aget(id=id)
+        except PingPongHistory.DoesNotExist:
+            logger.info(f"PingPongHistory not found: {game_id}")
+            return False
         await self.is_pve_auth_condition_valid(user, pingpong_history)
 
     @sync_to_async
