@@ -1,37 +1,16 @@
 import createElement from "../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
-
-function FriendList() {
-    // const friendsInfos = fetchFriends();
-
-    // for (let info of friendsInfos) {
-    //     console.log(info);
-    //     const friendUser = info["other_user"];
-    //     const infos = FriendItem(friendUser);
-    //     FriendList.appendChild(infos);
-    // }
+// import FetchFriends from "../Controller/Friends/FetchFriends.js";
+import Friendapi from "../Controller/Friends/FriendApi.js";
+async function FriendList() {
+    // const userData = await FetchFriends();
+    const userData = await Friendapi('GET',"/api/v1/users/friends");
+    console.log('user data',userData);
     const friendsList = createElement(
         "div",
-        {
-            id: "friends-list",
-        },
-        FriendInfos(1),
-        FriendInfos(2),
-        FriendInfos(3),
-        FriendInfos(4),
-        FriendInfos(5),
-        FriendInfos(6),
-        FriendInfos(7),
-        FriendInfos(8),
-        FriendInfos(9),
-        FriendInfos(10),
-        FriendInfos(11),
-        FriendInfos(12),
-        FriendInfos(13),
-        FriendInfos(14),
-        FriendInfos(15)
+        { id: "friends-list" },
+        ...userData.map((v) => FriendInfos(v))
     );
-
     const friendAppendBtn = createElement(
         "button",
         {

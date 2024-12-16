@@ -9,6 +9,7 @@ const routes = {
     "/profile": () => import("../Pages/ProfilePage.js"),
     "/settings": () => import("../Pages/SettingsPage.js"),
     "/matching": () => import("../Pages/MatchingPage.js"),
+    "/playing": () => import("../Pages/GamePage.js"),
 };
 
 export default routes;

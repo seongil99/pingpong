@@ -1,7 +1,9 @@
 import createElement from "../Utils/createElement.js";
+import DeleteFriend from "../Controller/Friends/DeleteFriends.js";
 
 // User Data Parameter 생략. API 연동 작업 때 추가 예정. 만약 추가하면 삭제 처리도 충분히 쉽게 할 수 있음
-const FriendInfos = (num) => {
+const FriendInfos = (dataRef) => {
+    console.log(dataRef);
     const friendImg = createElement(
         "img",
         { src: "", alt: "", class: "friend-img" },
@@ -11,10 +13,11 @@ const FriendInfos = (num) => {
     const userId = createElement("h3", { class: "user-id" }, "");
     const userEmail = createElement("span", { class: "user-email" }, "");
     const userStatus = createElement("span", { class: "user-status" }, "");
-    friendImg.src = "/src/Components/profile.png";
-    userId.textContent = "jonghopa";
-    userEmail.textContent = "jonghopa@student.42seoul.kr";
-    userStatus.textContent = "✅";
+    friendImg.src = dataRef.other_user.avatar ||"/src/Components/profile.png";
+    userId.textContent = dataRef.other_user.username || "jonghopa";
+    userId.dataset.iduser = dataRef.id || null;
+    userEmail.textContent =  dataRef.other_user.username || "jonghopa@student.42seoul.kr";
+    userStatus.textContent = dataRef.other_user.is_online ? "✅" : "❌";
     // status.textContent = user.is_online ? "✅" : "❌";
     const infoBox = createElement(
         "div",
@@ -28,9 +31,12 @@ const FriendInfos = (num) => {
         {
             class: "friend-delete-btn",
             events: {
-                click: (event) => {
-                    console.log(event.target.parentElement.classList);
+                click: async (event) => {
                     const friendList = document.querySelector("#friends-list");
+                    const id = friendList.querySelector('h3');
+                    console.log(id.dataset.iduser);
+                    console.log('삭제',event.target.parentElement);
+                    await DeleteFriend(id.dataset.iduser);
                     friendList.removeChild(event.target.parentElement);
                 },
             },
@@ -43,8 +49,10 @@ const FriendInfos = (num) => {
             class: `friend-infos`,
             events: {
                 // 클릭 시 해당 유저 프로필 페이지 이동
-                click: () => {
-                    console.log(`${num}`);
+                click: (event) => {
+                    console.log(event.target.classList);
+                    if(event.target.classList.contains("friend-delete-btn")) return;
+                    console.log('삭제아님',event);
                 },
             },
         },

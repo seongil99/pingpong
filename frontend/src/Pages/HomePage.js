@@ -4,7 +4,7 @@ import FriendList from "../Components/FriendList.js";
 import FriendModal from "../Components/FriendModal.js";
 
 class HomePage {
-    template() {
+    async template() {
         const friendToggleBtn = createElement(
             "button",
             {
@@ -29,7 +29,7 @@ class HomePage {
             { id: "friend-toggle" },
             friendToggleBtn
         );
-        const friendList = FriendList();
+        const friendList = await FriendList();
         // 게임시작 Div에 게임시작 버튼 추가
         const matchingButton = createElement(
             "button",
