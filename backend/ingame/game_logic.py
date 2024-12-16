@@ -5,13 +5,14 @@ import time
 import asyncio
 from backend.socketsend import socket_send
 from ingame.data import gameid_to_task
-from backend.dbAsync import get_game_users, delete_game
+from backend.dbAsync import get_game_users
 from pingpong_history.models import PingPongHistory as GameHistory
 from .enums import KeyState
 from django.utils import timezone
 from asgiref.sync import sync_to_async
+from ingame.models import OneVersusOneGame
 
-from .enums import Game
+from .enums import Game, GameMode
 import logging
 
 logger = logging.getLogger("django")
@@ -23,21 +24,8 @@ PORT = 3000
 
 async def set_interval(func, interval):
     while True:
-        start_time = time.perf_counter()
         await func()
-        elapsed_time = (
-            time.perf_counter() - start_time
-        ) * 1_000_000  # Convert to microseconds
         await asyncio.sleep(interval)
-
-
-# Example usage:
-def print_message():
-    print("This function runs every 0.5 seconds.")
-
-
-# Run the async function
-# asyncio.run(set_interval(print_message, 0.5))  # Calls `print_message` every 0.5 seconds
 
 
 class Vec3:
@@ -469,13 +457,15 @@ class PingPongServer:
 
     async def game_finish(self, game_state, winnerId):
         await save_game_history(game_state, winnerId)
-        self.game_state.delete_game_state(game_state["game_id"])
-        task_list = gameid_to_task[game_state["game_id"]]
-        if (
-            game_state["is_single_player"] == True
-            and await delete_game(game_state["game_id"]) == False
-        ):
-            logger.error("Failed to delete game")
+        game_id = game_state["game_id"]
+        self.game_state.delete_game_state(game_id)
+        if game_state["is_single_player"] == False:
+            try:
+                game = await OneVersusOneGame.objects.aget(game_id=game_id)
+                await game.adelete()
+            except OneVersusOneGame.DoesNotExist:
+                logger.info(f"Game not found: {game_id}")
+        task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
 
@@ -483,13 +473,9 @@ class PingPongServer:
         game_id = game_state["game_id"]
         await save_game_history(game_state, game_state["playerOneId"])
         self.game_state.delete_game_state(game_id)
-        await socket_send(
-            game_state["render_data"], "gameEnd", game_id, "Opponent has left the game"
-        )
 
 
-@sync_to_async
-def save_game_history(game_state, winnerId):
+async def save_game_history(game_state, winnerId):
     game_id = game_state["game_id"]
     longest_rally = 0 if len(game_state["rallies"]) == 0 else max(game_state["rallies"])
     average_rally = (
@@ -497,8 +483,8 @@ def save_game_history(game_state, winnerId):
         if len(game_state["rallies"]) == 0
         else sum(game_state["rallies"]) / len(game_state["rallies"])
     )
-    game = GameHistory.objects.get(id=game_id)
-    winner = game.user1 if game.user1.id == winnerId else game.user2
+    game = await GameHistory.objects.aget(id=game_id)
+    winner = await get_winner(game, winnerId)
     # Save game history
     game.winner = winner
     game.ended_at = timezone.now()
@@ -506,14 +492,22 @@ def save_game_history(game_state, winnerId):
     game.user2_score = game_state["render_data"]["score"]["playerTwo"]
     game.longest_rally = longest_rally
     game.average_rally = average_rally
-    game.save()
-    update_wins_losses(game.user1, winner)
+    await game.asave()
+    if game.gamemode == GameMode.PVP.value:
+        asyncio.gather(
+            update_wins_losses(game.user1, winner),
+            update_wins_losses(game.user2, winner),
+        )
 
 
 @sync_to_async
-def update_wins_losses(user, winner):
+def get_winner(game, winnerId):
+    return game.user1 if game.user1.id == winnerId else game.user2
+
+
+async def update_wins_losses(user, winner):
     if user == winner:
         user.wins += 1
     else:
         user.loses += 1
-    user.save()
+    await user.asave()

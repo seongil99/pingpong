@@ -62,7 +62,7 @@ class GameIO(socketio.AsyncNamespace):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
 
-        # single player 게임일 경우
+        # 여러 소켓이 하나의 유저로 들어올 경우
         if user.id in user_to_socket:
             sio.disconnect(sid)
             return
@@ -127,6 +127,10 @@ class GameIO(socketio.AsyncNamespace):
             return
         game_id = user_to_game[sid]
         game_state = game_state_db.load_game_state(game_id)
+        
+        # 게임이 종료되었을 경우
+        if game_state == None:
+            return
 
         if sid in game_state["clients"]:
             del game_state["clients"][sid]
