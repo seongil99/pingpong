@@ -190,3 +190,67 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
         },
     },
 }
+
+tournament_game_schema = {
+    "/api/ws/tournament/game/{tournament_id}/": {
+        "get": {
+            "operationId": "tournament_game_ws",
+            "summary": "토너먼트 게임을 위한 WebSocket 연결",
+            "description": """
+이 엔드포인트는 토너먼트 게임을 위한 WebSocket 연결을 설정합니다.
+
+### WebSocket 연결
+
+WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
+
+`wss://localhost/api/ws/tournament/game/{tournament_id}/`
+
+### 메시지 형식
+
+**클라이언트 → 서버:**
+
+- **게임 준비**:
+
+```json
+
+{ "type": "ready" }
+
+```
+
+**서버 → 클라이언트:**
+
+- **게임 시작**:
+
+```json
+
+{ "type": "game_started", "game_id": 1, "tournament_id": 1, "opponent": "opponent" }
+
+```
+
+- **에러**:
+                
+```json
+
+{ "type": "error", "message": "에러 메시지" }
+
+```
+            
+### 예제
+
+```json
+
+{ "type": "ready" }
+
+```
+
+""",
+            "tags": ["Tournament"],
+            "servers": [{"url": "wss://localhost/"}],
+            "responses": {
+                "101": {"description": "Switching Protocols"},
+                "400": {"description": "Bad Request"},
+                "401": {"description": "Unauthorized"},
+            },
+        },
+    },
+}
