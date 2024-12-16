@@ -48,7 +48,7 @@ User = get_user_model()
 )
 class UserSearchView(ListAPIView):
     permission_classes = [IsAuthenticated]  # Only allow authenticated users to search
-    serializer_class = UserSearchSerializer
+    serializer_class = UserProfileSerializer
     queryset = User.objects.all()
     filter_backends = [filters.SearchFilter]  # Use the search filter backend
     search_fields = ["email", "username"]  # Fields to search in
@@ -62,7 +62,7 @@ class UserSearchView(ListAPIView):
 class SearchFriendableView(ListAPIView):
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSearchSerializer
+    serializer_class = UserProfileSerializer
     queryset = User.objects.all()
     filter_backends = [filters.SearchFilter]
     search_fields = ["email", "username"]

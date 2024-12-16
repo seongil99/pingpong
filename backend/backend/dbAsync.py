@@ -21,11 +21,3 @@ def delete_game(game_id):
         return True
     except OneVersusOneGame.DoesNotExist:
         return False
-
-@sync_to_async
-def get_pingpong_history(id):
-    try:
-        game = PingPongHistory.objects.get(id=id)
-        return game
-    except PingPongHistory.DoesNotExist:
-        return None

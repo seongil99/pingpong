@@ -56,7 +56,7 @@ class TwoFactorAuthPage {
         window.location.href = "/";
       } else {
         this.showErrorMessage(
-          data.error || "Verification failed. Please try again.",
+          data.error || "Verification failed. Please try again."
         );
       }
     } catch (error) {

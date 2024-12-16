@@ -15,6 +15,8 @@ class User(AbstractUser):
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
     is_account_active = models.BooleanField(default=True)
+    wins = models.IntegerField(default=0)
+    loses = models.IntegerField(default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
