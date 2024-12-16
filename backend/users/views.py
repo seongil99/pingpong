@@ -42,11 +42,9 @@ User = get_user_model()
 
 
 @extend_schema(
-    summary="Search Users",
-    description="Search for users by email or username. 유저 검색",
     tags=["users"],
 )
-class UserSearchView(ListAPIView):
+class UserSearchView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]  # Only allow authenticated users to search
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
