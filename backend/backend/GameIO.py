@@ -40,8 +40,15 @@ class GameIO(socketio.AsyncNamespace):
         query = environ.get("QUERY_STRING", "")
         params = parse_qs(query)
         game_id = params.get("gameId", [""])[0]
-        gameType = params.get("gameType", [""])[0]
-        logger.info(f"gameType : {gameType}")
+        game = await PingPongHistory.objects.aget(id=game_id)
+        gameType = game.gamemode
+        if game.ended_at is not None:
+            logger.info(f"Game already ended: {game_id}")
+            sio.emit(
+                "gameEnd", room=sid, namespace="/api/game"
+            )  # TODO: 게임이 끝났다고 알림
+            sio.disconnect(sid)
+            return
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
@@ -116,14 +123,18 @@ class GameIO(socketio.AsyncNamespace):
         user = session["user"]
         if user.id in user_to_socket:
             del user_to_socket[user.id]
-        if sid in user_to_game:
-            game_id = user_to_game[sid]
-            game_state = game_state_db.load_game_state(game_id)
-            if sid in game_state["clients"]:
-                del game_state["clients"][sid]
-            if len(game_state["clients"]) == 0:
-                await server.end_game(game_state)
-            del user_to_game[sid]
+        if sid not in user_to_game:
+            return
+        game_id = user_to_game[sid]
+        game_state = game_state_db.load_game_state(game_id)
+        
+        if sid in game_state["clients"]:
+            del game_state["clients"][sid]
+
+        # 게임이 진행중이고고 클라이언트가 모두 나갔을 경우 게임 종료
+        if len(game_state["clients"]) == 0 and game_state["gameStart"] == True:
+            await server.process_abandoned_game(game_state)
+        del user_to_game[sid]
 
     ### helper functions
 
@@ -178,7 +189,7 @@ class GameIO(socketio.AsyncNamespace):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         try:
-            pingpong_history = PingPongHistory.objects.aget(id=id)
+            pingpong_history = await PingPongHistory.objects.aget(id=game_id)
         except PingPongHistory.DoesNotExist:
             logger.info(f"PingPongHistory not found: {game_id}")
             return False

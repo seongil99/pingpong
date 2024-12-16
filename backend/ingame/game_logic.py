@@ -481,15 +481,16 @@ class PingPongServer:
 
     async def process_abandoned_game(self, game_state):
         game_id = game_state["game_id"]
-        
+        await save_game_history(game_state, game_state["playerOneId"])
         await socket_send(
             game_state["render_data"], "gameEnd", game_id, "Opponent has left the game"
         )
 
+
 @sync_to_async
 def save_game_history(game_state, winnerId):
     game_id = game_state["game_id"]
-    longest_rally = max(game_state["rallies"])
+    longest_rally = 0 if len(game_state["rallies"]) else max(game_state["rallies"])
     average_rally = sum(game_state["rallies"]) / len(game_state["rallies"])
     game = GameHistory.objects.get(id=game_id)
     winner = game.user1 if game.user1.id == winnerId else game.user2
