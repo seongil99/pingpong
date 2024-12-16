@@ -62,7 +62,7 @@ class UserSearchView(ListAPIView):
 class SearchFriendableView(ListAPIView):
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSearchSerializer
+    serializer_class = UserProfileSerializer
     queryset = User.objects.all()
     filter_backends = [filters.SearchFilter]
     search_fields = ["email", "username"]
