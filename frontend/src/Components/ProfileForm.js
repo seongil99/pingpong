@@ -4,7 +4,6 @@ import updateUserProfile from "../Controller/Settings/updateUserProfile.js";
 
 const ProfileForm = async () => {
     let data = await fetchUserProfile();
-    console.log(data);
     const openFileBtn = createElement(
         "button",
         {
@@ -36,7 +35,6 @@ const ProfileForm = async () => {
                     }
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        console.log(typeof e.target.result);
                         const profileImg = document.querySelector(
                             ".settings-profile-image > img"
                         );

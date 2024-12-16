@@ -143,6 +143,7 @@ html {
 
 #home-main,
 #settings-main,
+#profile-main,
 #matching-main {
     display: flex;
     flex-direction: column;
