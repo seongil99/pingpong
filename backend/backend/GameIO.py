@@ -1,6 +1,6 @@
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from pingpong_history.models import PingPongHistory
+from http.cookies import SimpleCookie
+from urllib.parse import parse_qs
+import logging
 from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.exceptions import (
     InvalidToken,
@@ -8,19 +8,20 @@ from rest_framework_simplejwt.exceptions import (
     TokenBackendError,
 )
 from asgiref.sync import sync_to_async
-from http.cookies import SimpleCookie
-from backend.sio import sio
-from backend.socketsend import socket_send, default_namespace
+from django.conf import settings
+from django.contrib.auth import get_user_model
+import socketio
+
+from pingpong_history.models import PingPongHistory
 from ingame.game_logic import PingPongServer
-from ingame.data import user_to_game, gameid_to_task, user_to_socket
+from ingame.data import user_to_game, user_to_socket
 from ingame.models import OneVersusOneGame
-from urllib.parse import parse_qs
-from backend.dbAsync import get_game_users
 from ingame.enums import GameMode
 
-import socketio
-import logging
-import uuid
+from backend.socketsend import socket_send, default_namespace
+from backend.sio import sio
+from backend.dbAsync import get_game_users
+
 
 logger = logging.getLogger("django")
 User = get_user_model()
@@ -31,9 +32,16 @@ game_state_db = server.game_state
 
 
 class GameIO(socketio.AsyncNamespace):
+    """
+    게임 통신을 위한 SocketIO 네임스페이스
+    """
+
     async def on_connect(self, sid, environ, auth):
+        """
+        클라이언트가 연결되었을 때 호출되는 메서드
+        """
         # logger.info(f"Client connected: {sid} {auth}")
-        if await self.check_authentication(environ, sid) == False:
+        if await self.check_authentication(environ, sid) is False:
             sio.disconnect(sid)
             return False
 
@@ -41,9 +49,9 @@ class GameIO(socketio.AsyncNamespace):
         params = parse_qs(query)
         game_id = params.get("gameId", [""])[0]
         game = await PingPongHistory.objects.aget(id=game_id)
-        gameType = game.gamemode
+        game_type = game.gamemode
         if game.ended_at is not None:
-            logger.info(f"Game already ended: {game_id}")
+            logger.info("Game already ended: %s", game_id)
             sio.emit(
                 "gameEnd", room=sid, namespace="/api/game"
             )  # TODO: 게임이 끝났다고 알림
@@ -52,10 +60,10 @@ class GameIO(socketio.AsyncNamespace):
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
-            if await self.process_authorization(sid, game_id, gameType) == False:
+            if await self.process_authorization(sid, game_id, game_type) is False:
                 return
         except OneVersusOneGame.DoesNotExist:
-            logger.info(f"Game not found: {game_id}")
+            logger.info("Game not found: %s", game_id)
             sio.disconnect(sid)
             return
 
@@ -71,22 +79,22 @@ class GameIO(socketio.AsyncNamespace):
 
         # save user sid to game_id
         user_to_game[sid] = game_id
-        if gameType == GameMode.PVE.value:
-            await server.add_game(game_id, gameType == GameMode.PVP.value)
-            await server.add_user(game_id, user, gameType == GameMode.PVP.value)
+        if game_type == GameMode.PVE.value:
+            await server.add_game(game_id, game_type == GameMode.PVP.value)
+            await server.add_user(game_id, user, game_type == GameMode.PVP.value)
         else:
             # 게임이 존재하지 않을 경우 연결 종료
             user1, user2 = await get_game_users(game_id)
         # add user's active socket to user_to_socket
-        if gameType == GameMode.PVP.value:
+        if game_type == GameMode.PVP.value:
             await server.add_game(
-                game_id, gameType == "PVP"
+                game_id, game_type == "PVP"
             )  # 유저이름 변경 필요 받아야 할듯
-            await server.add_user(game_id, user, gameType == "PVP")
+            await server.add_user(game_id, user, game_type == "PVP")
         game_state = game_state_db.load_game_state(game_id)
         game_state["clients"][sid] = sid
-        logger.info(f"game_state: {game_state}")
-        if gameType == GameMode.PVE.value:
+        logger.info("game_state: %s", game_state)
+        if game_type == GameMode.PVE.value:
             await self.single_player_start(game_id)
             return
         # PVP logic
@@ -97,7 +105,10 @@ class GameIO(socketio.AsyncNamespace):
 
         await socket_send(game_state["render_data"], "gameState", sid, game_id)
 
-    async def on_keyPress(self, sid, data):
+    async def on_keypress(self, sid, data):
+        """
+        클라이언트로부터 키 입력을 받았을 때 호출되는 메서드
+        """
         logger.info(f"Key press: {data}")
         if sid not in user_to_game:
             logger.info(f"User not in game: {sid}")
@@ -127,7 +138,7 @@ class GameIO(socketio.AsyncNamespace):
             return
         game_id = user_to_game[sid]
         game_state = game_state_db.load_game_state(game_id)
-        
+
         # 게임이 종료되었을 경우
         if game_state == None:
             return

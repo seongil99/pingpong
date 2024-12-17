@@ -480,19 +480,19 @@ class PingPongClient {
     let key = event.key.toUpperCase();
     key = key === "ARROWRIGHT" ? "D" : key === "ARROWLEFT" ? "A" : key;
     if (!this.secondPlayer && (key === "A" || key === "D")) {
-      socket.emit("keyPress", {
+      socket.emit("keypress", {
         key: key,
         pressed: true,
         who: this.secondPlayer,
       });
     } else if (this.secondPlayer && (key === "A" || key === "D")) {
-      socket.emit("keyPress", {
+      socket.emit("keypress", {
         key: key === "A" ? "D" : "A",
         pressed: true,
         who: this.secondPlayer,
       });
     } else if (key === " ")
-      socket.emit("keyPress", {
+      socket.emit("keypress", {
         key: " ",
         pressed: true,
         who: this.secondPlayer,
@@ -522,9 +522,9 @@ class PingPongClient {
     key = key === "ARROWRIGHT" ? "D" : key === "ARROWLEFT" ? "A" : key;
     console.log("keyup", key);
     if (!this.secondPlayer && (key === "A" || key === "D")) {
-      socket.emit("keyPress", { key: key, pressed: false });
+      socket.emit("keypress", { key: key, pressed: false });
     } else if (this.secondPlayer && (key === "A" || key === "D")) {
-      socket.emit("keyPress", { key: key === "A" ? "D" : "A", pressed: false });
+      socket.emit("keypress", { key: key === "A" ? "D" : "A", pressed: false });
     }
   }
 
