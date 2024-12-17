@@ -54,6 +54,37 @@ class ProfilePage {
     profileImage.height = 100;
     container.insertBefore(profileImage, title);
 
+    const editProfileImageForm = document.createElement("form");
+    editProfileImageForm.enctype = "multipart/form-data";
+    editProfileImageForm.id = "edit-profile-image-form";
+    editProfileImageForm.innerHTML = `
+        <input type="file" id="edit-profile-image" accept="image/*" />
+        <button type="submit">Save Image</button>
+    `;
+    editProfileImageForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData();
+      formData.append(
+        "avatar",
+        document.getElementById("edit-profile-image").files[0],
+      );
+      try {
+        const response = await fetch("/api/v1/users/me/", {
+          method: "PATCH",
+          credentials: "include",
+          body: formData,
+        });
+        console.log(response);
+        if (!response.ok) throw new Error("Network response was not ok");
+
+        const userData = await response.json();
+        profileImage.src = `${userData.avatar}`;
+      } catch (error) {
+        console.error("Error updating profile image:", error);
+      }
+    });
+    container.insertBefore(editProfileImageForm, title);
+
     const mfaStatus = await fetchMFAStatus();
     console.log(mfaStatus);
     const mfaSection = document.getElementById("mfa-section");
@@ -83,6 +114,7 @@ async function fetchUserProfile() {
       method: "GET",
       credentials: "include",
     });
+    console.log(response);
     if (!response.ok) throw new Error("Network response was not ok");
 
     const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
