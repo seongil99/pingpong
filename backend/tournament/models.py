@@ -71,7 +71,7 @@ class TournamentGame(models.Model):
     )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
 
     def __str__(self):
         return f"{self.user_1} is playing against {self.user_2} in a tournament game at {self.created_at}"
@@ -82,5 +82,5 @@ class TournamentQueue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
         unique_together = ['user']

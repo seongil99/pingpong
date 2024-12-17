@@ -4,6 +4,7 @@ from .views import (
     TournamentAllView,
     TournamentViewByTournamentId,
     TournamentViewByUserId,
+    TournamentEventView,
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
         TournamentViewByUserId.as_view(),
         name="tournament-by-user",
     ),
+    path('<int:tournament_id>/event/', TournamentEventView.as_view(), name='tournament-event'),
 ]

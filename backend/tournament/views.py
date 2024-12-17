@@ -9,7 +9,8 @@ from tournament.models import (
     Tournament,
     TournamentMatchParticipants,
 )
-from tournament.serializers import TournamentSerializer
+from tournament.serializers import TournamentSerializer, EventSerializer
+from tournament.utils import build_event_data
 
 
 @extend_schema(
@@ -34,6 +35,20 @@ class TournamentViewByTournamentId(APIView):
         tournament = Tournament.objects.get(tournament_id=tournament_id)
         serializer = TournamentSerializer(tournament)
         return Response(serializer.data)
+
+@extend_schema(
+    responses=EventSerializer,
+)
+class TournamentEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, tournament_id):
+        # tournament_id 기반으로 이벤트 데이터 구성
+        event_data = build_event_data(tournament_id)
+        serializer = EventSerializer(data=event_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
+
 
 @extend_schema(
     responses=TournamentSerializer,

@@ -7,6 +7,29 @@ from tournament.models import (
 )
 
 
+class PlayerSerializer(serializers.Serializer):
+    playerId = serializers.IntegerField()
+    name = serializers.CharField()
+    score = serializers.IntegerField(required=False)
+    status = serializers.CharField(required=False, allow_null=True)
+
+
+class MatchSerializer(serializers.Serializer):
+    matchId = serializers.IntegerField()
+    round = serializers.CharField()
+    startTime = serializers.DateTimeField()
+    endTime = serializers.DateTimeField(allow_null=True)
+    players = PlayerSerializer(many=True)
+
+
+class EventSerializer(serializers.Serializer):
+    eventId = serializers.IntegerField()
+    eventType = serializers.CharField()
+    startDate = serializers.DateTimeField()
+    endDate = serializers.DateTimeField()
+    matches = MatchSerializer(many=True)
+
+
 class TournamentMatchParticipantsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TournamentMatchParticipants
