@@ -52,7 +52,6 @@ class TournamentEventViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        print(data)
 
         # 기본 필드 확인
         self.assertEqual(data["eventId"], self.tournament.tournament_id)
