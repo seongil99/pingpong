@@ -1,19 +1,18 @@
-import environ
 import math
 import random
-import time
 import asyncio
-from backend.socketsend import socket_send
-from ingame.data import gameid_to_task
-from backend.dbAsync import get_game_users
-from pingpong_history.models import PingPongHistory as GameHistory
-from .enums import KeyState
+import logging
+
+import environ
 from django.utils import timezone
 from asgiref.sync import sync_to_async
+from ingame.data import gameid_to_task
 from ingame.models import OneVersusOneGame
+from pingpong_history.models import PingPongHistory as GameHistory
+from backend.socketsend import socket_send
+from backend.dbAsync import get_game_users
 
 from .enums import Game, GameMode
-import logging
 
 logger = logging.getLogger("django")
 
@@ -22,13 +21,17 @@ env = environ.Env()
 PORT = 3000
 
 
-async def set_interval(func, interval):
+async def _set_interval(func, interval):
     while True:
         await func()
         await asyncio.sleep(interval)
 
 
 class Vec3:
+    """
+    커스텀 3d 백터 클래스
+    """
+
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -44,30 +47,41 @@ class Vec3:
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
     def __normalize__(self):
-        len = self.length()
-        if len > 0:
-            self.scale(1 / len)
+        length = self.__length__()
+        if length > 0:
+            self.__scale__(1 / length)
         return self
 
 
 class Ball:
-    def __init__(self, id):
-        self.id = id
+    """
+    공 클래스
+    """
+
+    def __init__(self, ball_id):
+        self.id = ball_id
         self.position = {"x": 0, "y": 6, "z": 0}
         self.velocity = Vec3(0, 0, 0)
         self.summon_direction = True
-        self.powerCounter = 0
+        self.power_counter = 0
         self.radius = Game.BALL_SIZE.value
 
 
 class InMemoryGameState:
+    """
+    게임 상태를 메모리에 저장하는 클래스. 레디스 대신 사용
+    """
+
     game_states = {}
 
     def __init__(self):
         # In-memory store for game states
         pass
 
-    async def new_game(self, game_id, multiOption=False) -> dict:
+    async def new_game(self, game_id, multi_option=False) -> dict:
+        """
+        새 게임을 생성하고 초기 상태를 반환
+        """
         game_state = {
             "render_data": {
                 "oneName": "",
@@ -79,7 +93,7 @@ class InMemoryGameState:
             },
             "one_keystate": {"A": False, "D": False},
             "two_keystate": {"A": False, "D": False},
-            "is_single_player": multiOption == False,
+            "is_single_player": multi_option is False,
             "ai_KeyState": {"A": False, "D": False},
             "gameStart": False,
             "playerOneId": "",
@@ -115,20 +129,24 @@ class InMemoryGameState:
         else:
             raise KeyError(f"Game ID {game_id} not found.")
 
-    def generate_game_id(self):
-        return "game_" + str(len(self.game_states) + 1)
-
 
 class PingPongServer:
+    """
+    핑퐁 게임 서버 클래스
+    """
+
     def __init__(self, sio):
         self.game_state = InMemoryGameState()
         self.sio = sio
 
-    async def add_user(self, game_id, user, multiOption=False):
+    async def add_user(self, game_id, user, multi_option=False):
+        """
+        game_id 를 가지고 있는 게임에 유저를 추가
+        """
         game_state = self.game_state.load_game_state(game_id)
 
-        logger.info(f"user: {user}")
-        if multiOption == False:
+        logger.info("user: %s", user)
+        if multi_option is False:
             game_state["render_data"]["oneName"] = user.username
             game_state["playerOneId"] = user.id
             return
@@ -140,59 +158,62 @@ class PingPongServer:
             game_state["render_data"]["twoName"] = user2.username
             game_state["playerTwoId"] = user2.id
 
-    async def add_game(
-        self, game_id, multi_option, ballCount=1
-    ):  # user_id == user_name, player_id == user.id -> pk
-        # if game doesn't exist == User1
+    async def add_game(self, game_id, multi_option, ball_count=1):
+        """
+        game_id 가 존재하지 않으면 새 게임을 생성
+        """
         game_state = self.game_state.load_game_state(game_id)
-        if game_state == None:
+        if game_state is None:
             game_state = await self.game_state.new_game(game_id, multi_option)
-            for i in range(0, ballCount):
-                self.addBall(game_state)
+            for i in range(0, ball_count):
+                self._add_ball(game_state)
 
     def game_loop(self, game_state):
+        """
+        게임 루프를 asyncio background task 로 실행
+        """
         game_id = game_state["game_id"]
         task_list = []
-        if game_state["is_single_player"] == True:
+        if game_state["is_single_player"] is True:
             task_list.append(
                 asyncio.create_task(
-                    set_interval(
+                    _set_interval(
                         lambda: self.update_ai(game_state), Game.AI_INTERVAL.value
                     )
                 )
             )
         task_list.append(
             asyncio.create_task(
-                set_interval(
+                _set_interval(
                     lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
                 )
             )
         )
         task_list.append(
             asyncio.create_task(
-                set_interval(
+                _set_interval(
                     lambda: self.paddle_loop(game_state), Game.PADDLE_INTERVAL.value
                 )
             )
         )
         gameid_to_task[game_id] = task_list
 
-    def addBall(self, game_state) -> None:
-        ballNum = len(game_state["render_data"]["balls"])
-        ball = Ball(ballNum)
-        self.set_ball_velocity(game_state, ball, 1, True)
+    def _add_ball(self, game_state) -> None:
+        ball_num = len(game_state["render_data"]["balls"])
+        ball = Ball(ball_num)
+        self._set_ball_velocity(game_state, ball, 1, True)
         game_state["render_data"]["balls"].append(ball)
 
-    def set_ball_velocity(self, game_state, ball, powerUp=1, strat=False):
+    def _set_ball_velocity(self, game_state, ball, power_up=1, strat=False):
         MAX_ANGLE = math.pi / 6
         ANGLE = (random.random() * 2 - 1) * MAX_ANGLE
         direction = 1 if ball.summon_direction else -1
         if strat:
             direction = 1 if len(game_state["render_data"]["balls"]) == 1 else -1
-        powerUp = 1 if ball.powerCounter > 1 else powerUp
-        ball.powerCounter = 1 if powerUp == 2 else 0
-        vx = math.sin(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp
-        vz = math.cos(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp * direction
+        power_up = 1 if ball.power_counter > 1 else power_up
+        ball.power_counter = 1 if power_up == 2 else 0
+        vx = math.sin(ANGLE) * Game.CONST_BALL_SPEED.value * power_up
+        vz = math.cos(ANGLE) * Game.CONST_BALL_SPEED.value * power_up * direction
         ball.velocity = Vec3(vx, 0, vz)
 
     async def update_ai(self, game_state):
@@ -362,7 +383,7 @@ class PingPongServer:
             and self.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
         ]
         if len(is_collision) == 1:
-            self.set_ball_velocity(game_state, is_collision[0], 2)
+            self._set_ball_velocity(game_state, is_collision[0], 2)
             logger.info(f"Collision: {is_collision[0].position}")
             await socket_send(
                 game_state["render_data"],
@@ -376,8 +397,8 @@ class PingPongServer:
 
     def reset_ball(self, game_state, ball):
         ball.position = {"x": 0, "y": 5, "z": 0}
-        ball.powerCounter = 0
-        self.set_ball_velocity(game_state, ball)
+        ball.power_counter = 0
+        self._set_ball_velocity(game_state, ball)
 
     def reset_all_balls(self, game_state):
         for ball in self.game_state["balls"]:

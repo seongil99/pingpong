@@ -41,7 +41,7 @@ class GameIO(socketio.AsyncNamespace):
         클라이언트가 연결되었을 때 호출되는 메서드
         """
         # logger.info(f"Client connected: {sid} {auth}")
-        if await self.check_authentication(environ, sid) is False:
+        if await self._check_authentication(environ, sid) is False:
             sio.disconnect(sid)
             return False
 
@@ -60,7 +60,7 @@ class GameIO(socketio.AsyncNamespace):
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
-            if await self.process_authorization(sid, game_id, game_type) is False:
+            if await self._process_authorization(sid, game_id, game_type) is False:
                 return
         except OneVersusOneGame.DoesNotExist:
             logger.info("Game not found: %s", game_id)
@@ -95,13 +95,13 @@ class GameIO(socketio.AsyncNamespace):
         game_state["clients"][sid] = sid
         logger.info("game_state: %s", game_state)
         if game_type == GameMode.PVE.value:
-            await self.single_player_start(game_id)
+            await self._single_player_start(game_id)
             return
         # PVP logic
         if len(game_state["clients"]) > 1:
-            await self.on_game_ready(user2, user, game_state, sid)
+            await self._on_game_ready(user2, user, game_state, sid)
         else:
-            await self.on_first_user_enter(user2, user, game_state, sid)
+            await self._on_first_user_enter(user2, user, game_state, sid)
 
         await socket_send(game_state["render_data"], "gameState", sid, game_id)
 
@@ -109,17 +109,17 @@ class GameIO(socketio.AsyncNamespace):
         """
         클라이언트로부터 키 입력을 받았을 때 호출되는 메서드
         """
-        logger.info(f"Key press: {data}")
+        logger.info("Key press: %s", data)
         if sid not in user_to_game:
-            logger.info(f"User not in game: {sid}")
+            logger.info("User not in game: %s", sid)
             return
         game_id = user_to_game[sid]
         game_state = server.game_state.load_game_state(game_id)
-        if game_state["gameStart"] == False:
+        if game_state["gameStart"] is False:
             return
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
-        logger.info(f"user_id: {user.id}")
+        logger.info("user_id: %s", user.id)
 
         if data["key"] != " ":
             await server.handle_player_input(
@@ -129,7 +129,10 @@ class GameIO(socketio.AsyncNamespace):
             await server.check_powerball(game_state, data)
 
     async def on_disconnect(self, sid):
-        logger.info(f"Client disconnected: {sid}")
+        """
+        클라이언트 연결이 끊겼을 때 호출되는 메서드
+        """
+        logger.info("Client disconnected: %s", sid)
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         if user.id in user_to_socket:
@@ -140,7 +143,7 @@ class GameIO(socketio.AsyncNamespace):
         game_state = game_state_db.load_game_state(game_id)
 
         # 게임이 종료되었을 경우
-        if game_state == None:
+        if game_state is None:
             return
 
         if sid in game_state["clients"]:
@@ -150,7 +153,7 @@ class GameIO(socketio.AsyncNamespace):
         # 게임이 진행중이고고 클라이언트가 모두 나갔을 경우 게임 종료
         if (
             len(game_state["clients"]) == 0
-            and game_state["gameStart"] == True
+            and game_state["gameStart"] is True
             and game.gamemode == GameMode.PVP.value
         ):
             await server.process_abandoned_game(game_state)
@@ -158,100 +161,93 @@ class GameIO(socketio.AsyncNamespace):
 
     ### helper functions
 
-    async def check_authentication(self, environ, sid):
+    async def _check_authentication(self, environ, sid):
         cookies = environ.get("HTTP_COOKIE", "")
         cookie = SimpleCookie()
         cookie.load(cookies)
 
-        logger.info(f"cookie: {cookie}")
+        logger.info("cookie: %s", cookie)
 
         token = cookie.get(settings.REST_AUTH["JWT_AUTH_COOKIE"])
         if not token:
             logger.info("Authentication failed: No token found in cookies")
             return False
-        SECRET_KEY = settings.SECRET_KEY
         try:
-            token_backend = TokenBackend(algorithm="HS256", signing_key=SECRET_KEY)
+            token_backend = TokenBackend(
+                algorithm="HS256", signing_key=settings.SECRET_KEY
+            )
             validated_data = token_backend.decode(token.value)
-            logger.info(f"User authenticated: {validated_data}")
-            user = await get_user(validated_data["user_id"])
+            logger.info("User authenticated: %s", validated_data)
+            user = await User.objects.aget(validated_data["user_id"])
             await sio.save_session(sid, {"user": user}, namespace=default_namespace)
         except (InvalidToken, TokenError, TokenBackendError) as e:
-            logger.info(f"Invalid token: {str(e)}")
+            logger.info("Invalid token: %s", str(e))
             return False  # Deny the connection
 
         logger.info("Connection allowed")
         return True  # Allow the connection
 
-    async def check_authorization(self, sid, game_id):
+    async def _check_authorization(self, sid, game_id):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         user_1, user_2 = await get_game_users(game_id)
         if user in [user_1, user_2]:
-            logger.info(f"Authorization success: {user} in {game_id}")
+            logger.info("Authorization success: %s in %s", user, game_id)
             return True
-        logger.info(f"Authorization failed: {user} not in {game_id}")
+        logger.info("Authorization failed: %s not in %s", user, game_id)
         return False
 
-    async def process_authorization(self, sid, game_id, gameType):
-        if gameType == GameMode.PVE.value:
-            return await self.pve_authorization(sid, game_id)
-        if not await self.check_authorization(sid, game_id):
+    async def _process_authorization(self, sid, game_id, game_type):
+        if game_type == GameMode.PVE.value:
+            return await self._pve_authorization(sid, game_id)
+        if not await self._check_authorization(sid, game_id):
             return False
 
             # enter spectator mode
         game_state = game_state_db.load_game_state(game_id)
-        if game_state and game_state["gameStart"] == True:
+        if game_state and game_state["gameStart"] is True:
             await socket_send(game_state["render_data"], "gameStart", sid, game_id)
         return True
 
-    async def pve_authorization(self, sid, game_id):
+    async def _pve_authorization(self, sid, game_id):
         session = await sio.get_session(sid, namespace=default_namespace)
         user = session["user"]
         try:
             pingpong_history = await PingPongHistory.objects.aget(id=game_id)
         except PingPongHistory.DoesNotExist:
-            logger.info(f"PingPongHistory not found: {game_id}")
+            logger.info("PingPongHistory not found: %s", game_id)
             return False
-        await self.is_pve_auth_condition_valid(user, pingpong_history)
+        await self._is_pve_auth_condition_valid(user, pingpong_history)
 
     @sync_to_async
-    def is_pve_auth_condition_valid(self, user, pingpong_history):
+    def _is_pve_auth_condition_valid(self, user, pingpong_history):
         return (
             pingpong_history
             and pingpong_history.user1 == user
             and not pingpong_history.ended_at
         )
 
-    async def on_game_ready(self, user2, user, game_state, sid):
+    async def _on_game_ready(self, user2, user, game_state, sid):
         logger.info("Two players are ready!")
         game_id = game_state["game_id"]
         if user2 == user:
             await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
         await socket_send(game_state["render_data"], "gameStart", game_id)
-        if game_state["gameStart"] == False:
+        if game_state["gameStart"] is False:
             server.game_loop(game_state)
         game_state["gameStart"] = True
 
-    async def on_first_user_enter(self, user2, user, game_state, sid):
+    async def _on_first_user_enter(self, user2, user, game_state, sid):
         game_id = game_state["game_id"]
         if user2 == user:
             await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
         logger.info("Waiting for another player...")
         await socket_send(game_state["render_data"], "gameWait", game_id, sid)
 
-    async def single_player_start(self, game_id):
+    async def _single_player_start(self, game_id):
         game_state = game_state_db.load_game_state(game_id)
         await socket_send(game_state["render_data"], "gameStart", game_id)
         logger.info("Single player game start")
-        if game_state["gameStart"] == False:
+        if game_state["gameStart"] is False:
             server.game_loop(game_state)
         game_state["gameStart"] = True
-
-
-@sync_to_async
-def get_user(user_id):
-    try:
-        return User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return None
