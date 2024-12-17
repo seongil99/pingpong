@@ -7,20 +7,30 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from users.friends.models import Friend
+from rest_framework.parsers import MultiPartParser, FormParser
+
 from .serializers import UserSearchSerializer
 from .serializers import UserProfileSerializer
+
+import logging
+
+logger = logging.getLogger("django")
 
 
 @extend_schema(tags=["users"])
 class MyProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(
         responses=UserProfileSerializer,
     )
     def get(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user)
+        serializer = UserProfileSerializer(
+            user, context={"request": request}
+        )  # context 추가
         return Response(serializer.data)
 
     @extend_schema(
@@ -29,10 +39,20 @@ class MyProfileView(APIView):
     )
     def patch(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user, data=request.data)
+        data = request.data.copy()
+
+        import os
+
+        if "avatar" in data:
+            extension = os.path.splitext(data["avatar"].name)[1]  # 파일의 확장자 추출
+            data["avatar"].name = f"{user.username}_profile{extension}"
+
+        serializer = UserProfileSerializer(
+            user, data=data, context={"request": request}, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -58,7 +78,6 @@ class UserSearchView(viewsets.ModelViewSet):
     tags=["users"],
 )
 class SearchFriendableView(ListAPIView):
-
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
