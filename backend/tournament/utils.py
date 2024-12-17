@@ -1,8 +1,8 @@
+from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.db.models import Min, Max
 from django.db import transaction
 from django.utils import timezone
-from typing import Optional
 
 from .models import (
     Tournament,
@@ -10,7 +10,7 @@ from .models import (
     TournamentParticipant,
     TournamentGame,
 )
-from pingpong_history.models import PingPongHistory
+from pingpong_history.models import PingPongHistory, PingPongRound
 
 User = get_user_model()
 
@@ -272,3 +272,19 @@ def check_and_advance_round(tournament: Tournament):
         if tournament.round_3_winner:
             tournament.status = 'finished'
             tournament.save()
+
+
+@transaction.atomic
+def create_pingpong_round(history: PingPongHistory, rally: int, start: datetime, end: datetime,
+                          user1_score: int, user2_score: int):
+    """
+    PingPongRound 생성하는 함수
+    """
+    PingPongRound.objects.create(
+        match=history,
+        rally=rally,
+        start=start,
+        end=end,
+        user1_score=user1_score,
+        user2_score=user2_score,
+    )
