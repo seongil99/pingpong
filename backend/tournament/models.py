@@ -60,6 +60,7 @@ class TournamentGame(models.Model):
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_two")
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True)
     status = models.CharField(
         max_length=20,
         default='pending',

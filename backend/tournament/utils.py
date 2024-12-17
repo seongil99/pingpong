@@ -32,10 +32,10 @@ def build_event_data(tournament_id):
     # 전체 startDate/endDate 계산을 위해 min(started_at), max(ended_at) 추출
     # 여기서는 단순히 모든 게임 히스토리의 최소 시작, 최대 종료를 사용
     # ended_at이 null일 수도 있으니 coalesce 필요할 수 있음
-    start_end_info = PingPongHistory.objects.filter(
-        id__in=games.values_list('game_id', flat=True)
-    ).aggregate(min_start=Min('started_at'), max_end=Max('ended_at'))
-
+    start_end_info = TournamentGame.objects.filter(tournament_id=tournament).aggregate(
+        min_start=Min('game_id__started_at'),
+        max_end=Max('game_id__ended_at')
+    )
     overall_start = start_end_info['min_start']
     overall_end = start_end_info['max_end']
 
@@ -221,6 +221,7 @@ def finish_game(game_id: int, user1_score: int, user2_score: int):
 
     t_game.winner = winner
     t_game.status = 'finished'
+    t_game.ended_at = timezone.now()
     t_game.save()
 
     # 토너먼트 우승자 필드 업데이트
