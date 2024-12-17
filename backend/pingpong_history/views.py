@@ -11,16 +11,18 @@ from .serializers import PingPongHistorySerializer
 from ingame.enums import GameMode
 
 
+@extend_schema(
+    responses=PingPongHistorySerializer,
+)
 class PingPongHistoryAllView(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PingPongHistorySerializer
     queryset = PingPongHistory.objects.all()
 
-    def perform_create(self, serializer):
-        # Save the history with the logged-in user
-        serializer.save(user1=self.request.user, gamemode=GameMode.PVE.value)
 
-
+@extend_schema(
+    responses=PingPongHistorySerializer,
+)
 class PingPongHistoryAllViewByUserId(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PingPongHistorySerializer
@@ -32,6 +34,9 @@ class PingPongHistoryAllViewByUserId(ListAPIView):
         ) | PingPongHistory.objects.filter(user2=self.kwargs["user_id"])
 
 
+@extend_schema(
+    responses=PingPongHistorySerializer,
+)
 class PingPongHistoryViewByHistoryId(APIView):
     permission_classes = [IsAuthenticated]
 
