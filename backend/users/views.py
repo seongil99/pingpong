@@ -28,7 +28,9 @@ class MyProfileView(APIView):
     )
     def get(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user, context={'request': request})  # context 추가
+        serializer = UserProfileSerializer(
+            user, context={"request": request}
+        )  # context 추가
         return Response(serializer.data)
 
     @extend_schema(
@@ -45,7 +47,9 @@ class MyProfileView(APIView):
             extension = os.path.splitext(data["avatar"].name)[1]  # 파일의 확장자 추출
             data["avatar"].name = f"{user.username}_profile{extension}"
 
-        serializer = UserProfileSerializer(data=data, context={'request': request}, partial=True)
+        serializer = UserProfileSerializer(
+            user, data=data, context={"request": request}, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

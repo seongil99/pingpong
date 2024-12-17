@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "debug_toolbar",
     # DRF
     "rest_framework",
     "rest_framework.authtoken",
@@ -100,6 +101,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -292,6 +294,12 @@ TWO_FACTOR_SMS_GATEWAY = None
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 LANGUAGE_CODE = "ko-kr"
 

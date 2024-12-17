@@ -9,8 +9,6 @@ logger = logging.getLogger("django")
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    avatar = serializers.ImageField(use_url=True, allow_null=True, allow_empty_file=True)
-
     class Meta:
         model = User
         fields = [
@@ -42,7 +40,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         instance.username = validated_data.get("username", instance.username)
         instance.is_verified = validated_data.get("is_verified", instance.is_verified)
         instance.avatar = validated_data.get("avatar", instance.avatar)
-        logger.info(f"avatar: {instance.avatar}")
         instance.save()
         return instance
 
