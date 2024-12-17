@@ -1,14 +1,13 @@
+import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
 
 from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
-from pingpong_history.models import PingPongHistory
 
-from logging import getLogger
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):

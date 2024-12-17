@@ -18,7 +18,7 @@ from ingame.data import user_to_game, user_to_socket
 from ingame.models import OneVersusOneGame
 from ingame.enums import GameMode
 
-from backend.socketsend import socket_send, default_namespace
+from backend.socketsend import socket_send, DEFAULT_NAMESPACE
 from backend.sio import sio
 from backend.dbAsync import get_game_users
 
@@ -67,7 +67,7 @@ class GameIO(socketio.AsyncNamespace):
             sio.disconnect(sid)
             return
 
-        session = await sio.get_session(sid, namespace=default_namespace)
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
 
         # 여러 소켓이 하나의 유저로 들어올 경우
@@ -117,7 +117,7 @@ class GameIO(socketio.AsyncNamespace):
         game_state = server.game_state.load_game_state(game_id)
         if game_state["gameStart"] is False:
             return
-        session = await sio.get_session(sid, namespace=default_namespace)
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         logger.info("user_id: %s", user.id)
 
@@ -133,7 +133,7 @@ class GameIO(socketio.AsyncNamespace):
         클라이언트 연결이 끊겼을 때 호출되는 메서드
         """
         logger.info("Client disconnected: %s", sid)
-        session = await sio.get_session(sid, namespace=default_namespace)
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         if user.id in user_to_socket:
             del user_to_socket[user.id]
@@ -179,7 +179,7 @@ class GameIO(socketio.AsyncNamespace):
             validated_data = token_backend.decode(token.value)
             logger.info("User authenticated: %s", validated_data)
             user = await User.objects.aget(validated_data["user_id"])
-            await sio.save_session(sid, {"user": user}, namespace=default_namespace)
+            await sio.save_session(sid, {"user": user}, namespace=DEFAULT_NAMESPACE)
         except (InvalidToken, TokenError, TokenBackendError) as e:
             logger.info("Invalid token: %s", str(e))
             return False  # Deny the connection
@@ -188,7 +188,7 @@ class GameIO(socketio.AsyncNamespace):
         return True  # Allow the connection
 
     async def _check_authorization(self, sid, game_id):
-        session = await sio.get_session(sid, namespace=default_namespace)
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         user_1, user_2 = await get_game_users(game_id)
         if user in [user_1, user_2]:
@@ -210,7 +210,7 @@ class GameIO(socketio.AsyncNamespace):
         return True
 
     async def _pve_authorization(self, sid, game_id):
-        session = await sio.get_session(sid, namespace=default_namespace)
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         try:
             pingpong_history = await PingPongHistory.objects.aget(id=game_id)
