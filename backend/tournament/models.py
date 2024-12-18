@@ -27,6 +27,10 @@ class Tournament(models.Model):
             (3, 3),
         ]
     )  # 0: pending, 1: 1st round, 2: 2nd round, 3: 3rd round
+    round_1_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_1_winner", null=True)
+    round_2_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_2_winner", null=True)
+    round_3_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_3_winner", null=True)
+
 
 class TournamentMatchParticipants(models.Model):
     tournament = models.OneToOneField(Tournament, on_delete=models.CASCADE)
@@ -42,6 +46,7 @@ class TournamentMatchParticipants(models.Model):
 class TournamentParticipant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+    is_ready = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ['user', 'tournament']
@@ -53,7 +58,9 @@ class TournamentGame(models.Model):
     tournament_round = models.IntegerField(choices=[(0, 0), (1, 1), (2, 2), (3, 3)])
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_one")
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_two")
+    winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True)
     status = models.CharField(
         max_length=20,
         default='pending',
@@ -65,7 +72,7 @@ class TournamentGame(models.Model):
     )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
 
     def __str__(self):
         return f"{self.user_1} is playing against {self.user_2} in a tournament game at {self.created_at}"
@@ -76,5 +83,5 @@ class TournamentQueue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
         unique_together = ['user']

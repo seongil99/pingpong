@@ -81,17 +81,18 @@ class mfa(APIView):
             data=request.data, context={"user": user}
         )
 
-        if serializer.is_valid():
-            device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
-            if device:
-                device.confirmed = True
-                device.save()
-                return Response(
-                    SimpleResponseSerializer(
-                        {"detail": Details.MFA_ENABLED.value}
-                    ).data,
-                    status=status.HTTP_200_OK,
-                )
+        if serializer.is_valid() == False:
+            return JsonResponse(serializer.errors, status=400)
+
+        otp = serializer.validated_data["otp"]
+        device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+        if device and device.verify_token(otp):
+            device.confirmed = True
+            device.save()
+            return Response(
+                {"detail": Details.MFA_ENABLED.value},
+                status=status.HTTP_200_OK,
+            )
 
         # If validation fails, return error response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -162,6 +163,7 @@ class mfa(APIView):
                 response = Response(content, status=200)
                 self.setJWTToken(request, response)
                 request.session.clear()
+                return response
             return JsonResponse({"status": Errors.INVALID_OTP.value}, status=400)
         return JsonResponse(serializer.errors, status=400)
 
@@ -219,7 +221,7 @@ def qrcode_display(request):
 @extend_schema(tags=["2fa"])
 class CheckLoginStatusView(APIView):
     def get(self, request):
-        if "otp_required" in request.session and request.session["otp_required"]:
+        if "userId" in request.session:
             return Response({"status": "logged in"}, status=200)
         return Response({"status": "logged out"}, status=401)
 

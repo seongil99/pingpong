@@ -1,13 +1,14 @@
 from rest_framework import serializers
+import logging
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+logger = logging.getLogger("django")
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    avatar = serializers.ImageField(use_url=True)
-
     class Meta:
         model = User
         fields = [
@@ -21,7 +22,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "wins",
             "loses",
         ]
-        read_only_fields = ["id", "email"]
+        read_only_fields = [
+            "id",
+            "email",
+            "is_online",
+            "last_seen",
+            "wins",
+            "loses",
+        ]
         extra_kwargs = {
             "username": {"required": False},
             "avatar": {"required": False},

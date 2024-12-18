@@ -5,8 +5,21 @@ from .views import (
     MyProfileView,
 )
 
+user_list = UserSearchView.as_view(
+    {
+        "get": "list",
+    }
+)
+
+user_detail = UserSearchView.as_view(
+    {
+        "get": "retrieve",
+    }
+)
+
 urlpatterns = [
-    path("", UserSearchView.as_view(), name="user-search"),
+    path("", user_list, name="user-search"),
+    path("<int:pk>/", user_detail, name="user-detail"),
     path("accounts/", include("users.accounts.urls")),
     path("me/", MyProfileView.as_view(), name="my-profile"),
     path("friends/", include("users.friends.urls")),

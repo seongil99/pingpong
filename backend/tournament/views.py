@@ -4,12 +4,19 @@ from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 
 from tournament.models import (
     Tournament,
     TournamentMatchParticipants,
 )
-from tournament.serializers import TournamentSerializer
+from tournament.serializers import (
+    TournamentSerializer,
+    EventSerializer,
+    TournamentSessionSerializer,
+)
+
+from tournament.utils import build_event_data
 
 
 @extend_schema(
@@ -36,6 +43,20 @@ class TournamentViewByTournamentId(APIView):
         return Response(serializer.data)
 
 @extend_schema(
+    responses=EventSerializer,
+)
+class TournamentEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, tournament_id):
+        # tournament_id 기반으로 이벤트 데이터 구성
+        event_data = build_event_data(tournament_id)
+        serializer = EventSerializer(data=event_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
+
+
+@extend_schema(
     responses=TournamentSerializer,
 )
 class TournamentViewByUserId(ListAPIView):
@@ -54,3 +75,17 @@ class TournamentViewByUserId(ListAPIView):
         ).values_list('tournament_id', flat=True)
         # 해당 토너먼트들만 필터링하여 반환
         return Tournament.objects.filter(tournament_id__in=tournament_ids)
+
+@extend_schema(
+    responses=TournamentSessionSerializer,
+)
+class TournamentDetailView(APIView):
+    def get(self, request, tournament_id):
+        # pk를 기반으로 Tournament 객체를 가져옴
+        try:
+            tournament = Tournament.objects.get(tournament_id=tournament_id)
+        except Tournament.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TournamentSessionSerializer(tournament)
+        return Response(serializer.data, status=status.HTTP_200_OK)
