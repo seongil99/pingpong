@@ -91,18 +91,21 @@ class InMemoryGameState:
                 "balls": [],
                 "score": {"playerOne": 0, "playerTwo": 0},
             },
-            "one_keystate": {"A": False, "D": False},
-            "two_keystate": {"A": False, "D": False},
+            "game_id": game_id,
             "is_single_player": multi_option is False,
             "ai_KeyState": {"A": False, "D": False},
             "gameStart": False,
+            "clients": {},
+            # 클라이언트에게 보내지 않는 데이터
+            # TODO: 게임 끝날때 보낼 데이터 serializer 에 추가
+            "one_keystate": {"A": False, "D": False},
+            "two_keystate": {"A": False, "D": False},
             "playerOneId": "",
             "playerTwoId": "",
-            "clients": {},
             "rallies": [],
             "current_rally": 0,
-            "game_id": game_id,
             "key_state_lock": asyncio.Lock(),
+            "rally_flag": False,  # paddle to paddle 랠리 확인용 플래그 False = user1, True = user2 면 카운트
         }
         self.save_game_state(game_id, game_state)
         return game_state
@@ -269,12 +272,22 @@ class PingPongServer:
             # )
 
             # Check paddle collisions
-            await self._check_paddle_collision(
-                ball, game_state["render_data"]["playerOne"], game_state
-            )
-            await self._check_paddle_collision(
-                ball, game_state["render_data"]["playerTwo"], game_state
-            )
+            if (
+                await self._check_paddle_collision(
+                    ball, game_state["render_data"]["playerOne"], game_state
+                )
+                and not game_state["rally_flag"]
+            ):
+                game_state["current_rally"] += 1
+                game_state["rally_flag"] = True
+            if (
+                await self._check_paddle_collision(
+                    ball, game_state["render_data"]["playerTwo"], game_state
+                )
+                and game_state["rally_flag"]
+            ):
+                game_state["current_rally"] += 1
+                game_state["rally_flag"] = False
 
             # Check wall collisions
             if abs(ball.position["x"]) > Game.GAME_WIDTH.value / 2 - 2:
@@ -359,7 +372,6 @@ class PingPongServer:
 
         # 3. If the distance is less than or equal to the ball's radius, it's a collision
         if distance <= Game.BALL_SIZE.value:
-            game_state["current_rally"] += 1
             await socket_send(game_state["render_data"], "sound", "ballToWall")
             hit_point_diff = ball.position["x"] - paddle["x"]
             max_bounce_angle = math.pi / 3
@@ -371,6 +383,7 @@ class PingPongServer:
             ball.velocity.x = math.sin(bounce_angle) * speed
             ball.velocity.z = math.cos(bounce_angle) * speed * direction
             ball.velocity.y = min(ball.velocity.y, 0)
+            return True
 
     async def check_powerball(self, game_state, data):
         """

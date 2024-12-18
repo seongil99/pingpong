@@ -312,7 +312,7 @@ auth 는 cookie 로
         "z": 47.93671851836206
       },
       "summon_direction": true,
-      "powerCounter": 0,
+      "power_counter": 0,
       "radius": 5
     }
   ],
