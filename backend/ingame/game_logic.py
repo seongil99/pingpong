@@ -515,8 +515,11 @@ class PingPongServer:
         게임이 종료되지 않은 상태에서 모든 플레이어가 게임을 나갔을 때 호출
         """
         game_id = game_state["game_id"]
-        await self._save_game_history(game_state, game_state["playerOneId"])
+        await self._save_game_history(game_state, None)
         self.game_state.delete_game_state(game_id)
+        task_list = gameid_to_task[game_id]
+        for task in task_list:
+            task.cancel()
 
     async def _save_game_history(self, game_state, winner_id):
         game_id = game_state["game_id"]
@@ -529,7 +532,7 @@ class PingPongServer:
             else sum(game_state["rallies"]) / len(game_state["rallies"])
         )
         game = await GameHistory.objects.aget(id=game_id)
-        winner = await self._get_winner(game, winner_id)
+        winner = None if winner_id is None else await self._get_winner(game, winner_id)
         # Save game history
         game.winner = winner
         game.ended_at = timezone.now()
