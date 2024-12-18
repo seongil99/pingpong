@@ -1,11 +1,12 @@
 import createElement from "../Utils/createElement.js";
-
+import CreateFormSwitch from "./CheckBox.js";
 function createMessageModal(message,callback) {
     // 메시지 표시 영역 생성
+	const hidden = document.getElementById("hidden-input");
 	const modalTitle = createElement(
         "div",
         { class: "modal-title" },
-        createElement("h5", {}, "잠시만 기다려 주세요.")
+        createElement("h5", {}, `잠시만 기다려 주세요. hideen${hidden.value}`)
     );
     const modalBody = createElement(
         "div",
@@ -38,8 +39,10 @@ function createMessageModal(message,callback) {
     const modalContent = createElement(
         "div",
         { class: "modal-content" },
+		modalTitle,
         modalBody,
         modalFooter,
+		CreateFormSwitch(),
     );
 
     // 모달 다이얼로그 생성

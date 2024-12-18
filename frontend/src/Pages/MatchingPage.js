@@ -2,7 +2,6 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import ButtonToMatch from "../Components/ButtonToMatch.js";
 import WaitMacthBox from "../Components/WaitMacthBox.js"
-
 class MatchingPage {
     constructor() {
         this.socket = null;
@@ -27,15 +26,30 @@ class MatchingPage {
             "div",
             {},
         );
+        const hiddenGameId = createElement(
+            'input',
+            {
+                class:"hide",
+                id : "hidden-input"
+            }
+        )
         this.btnContainer = createElement(
             'div',
             {
                 id:"match-btn-container"
             },
-            ButtonToMatch("PVP",()=>{
-                this.connectWebSocket("PVP",this.requestMatch("PVP"));
+            ButtonToMatch("PVP",async()=>{
+                if(!this.socket){
+                this.connectWebSocket("PVP",()=>{
+                    this.requestMatch();
+                });
+                }
+                else{
+                    this.requestMatch();
+                }
                 console.log(this.btnContainer);
                 this.btnContainer.classList.toggle("hide");
+                console.log("버튼클릭");
                 const wait = WaitMacthBox("waiting for PvP User",()=>{
                     this.cancelMatch();
                     this.btnContainer.classList.toggle("hide");
@@ -45,7 +59,7 @@ class MatchingPage {
                 wait.modal.show();
             }),
             ButtonToMatch("tournament",()=>{
-                this.connectWebSocket("tournament",this.requestMatch("tournament"));
+                this.connectWebSocket("tournament",this.requestMatch);
                 this.btnContainer.classList.toggle("hide");
                 const wait = WaitMacthBox("waiting for Tournament Users",()=>{
                     this.cancelMatch();
@@ -66,7 +80,8 @@ class MatchingPage {
             {},
             navBar,
             main,
-            this.btnContainer
+            this.btnContainer,
+            hiddenGameId,
         );
         // this.setupEventListeners();
         return this.container;
@@ -111,7 +126,8 @@ class MatchingPage {
             console.log('socket: ', this.socket);
             console.log("WebSocket 연결이 열렸습니다.");
             this.statusDiv.textContent = "서버와 연결되었습니다.";
-            if (callback) callback();
+            if (callback) 
+                callback();
         };
 
         this.socket.onmessage = (event) => {
@@ -120,27 +136,21 @@ class MatchingPage {
         if (data.type === "waiting_for_match") {
         this.statusDiv.textContent = "상대를 기다리는 중...";
         this.isMatching = true;
-        // this.requestMatchButton.disabled = true;
-        // this.cancelMatchButton.disabled = false;
         const gameUrl = "/palying";
-        const gameId = data.game_id;
-        console.log("매칭성공");
         // window.location.href = `${gameUrl}?gameId=${gameId}`;
-      } else if (data.type === "match_found") {
+    } else if (data.type === "match_found") {
         this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
         this.isMatching = false;
-        // this.requestMatchButton.disabled = false;
-        // this.cancelMatchButton.disabled = true;
+        const hidden = document.getElementById("hidden-input");
+        hidden.value = data.game_id;
       } else if (data.type === "match_canceled") {
         this.statusDiv.textContent = "매칭이 취소되었습니다.";
         this.isMatching = false;
-        // this.requestMatchButton.disabled = false;
-        // this.cancelMatchButton.disabled = true;
       } else if (data.type === "error") {
         this.statusDiv.textContent = `에러 발생: ${data.message}`;
         this.isMatching = false;
-        // this.requestMatchButton.disabled = false;
-        // this.cancelMatchButton.disabled = true;
+      }
+      else if(data.type === "set_option"){
       }
     };
 
@@ -148,8 +158,6 @@ class MatchingPage {
             console.log("WebSocket 연결이 닫혔습니다.", event);
             this.statusDiv.textContent = "서버와의 연결이 끊어졌습니다.";
             this.isMatching = false;
-            // this.requestMatchButton.disabled = false;
-            // this.cancelMatchButton.disabled = true;
         };
 
         this.socket.onerror = (error) => {
@@ -158,11 +166,16 @@ class MatchingPage {
     }
 
     requestMatch() {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        console.log(this);
+        console.log('socket1: ', this.socket);
+        if (this.socket) {
+        console.log('11');
             const message = {
                 type: "request_match",
+                gamemode: "1v1"
             };
             this.socket.send(JSON.stringify(message));
+        console.log('12');
             console.log("매칭 요청을 보냈습니다:", message);
         } else {
             console.error("WebSocket이 연결되지 않았습니다.");
@@ -170,14 +183,17 @@ class MatchingPage {
     }
 
     cancelMatch() {
+        console.log("this is cancel",this.socket);
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             const message = {
                 type: "cancel_match",
             };
             this.socket.send(JSON.stringify(message));
+            this.socket.close();
             console.log("매칭 취소를 보냈습니다:", message);
+
         } else {
-            console.error("WebSocket이 연결되지 않았습니다.");
+            console.error("취소요청 실패");
         }
     }
 

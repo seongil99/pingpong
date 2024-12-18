@@ -1,6 +1,6 @@
 import createElement from "../Utils/createElement.js";
 
-function createButton(params,callback) {
+function createButtonGroup(params,callback) {
     // 왼쪽 버튼 생성
     const matchButton = createElement(
         "button",
@@ -31,4 +31,4 @@ function createButton(params,callback) {
 }
 
 // 실행
-export default createButton;
+export default createButtonGroup;

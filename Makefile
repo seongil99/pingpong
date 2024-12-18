@@ -20,4 +20,7 @@ clean:
 fclean:
 	docker compose down -v
 
+fcleandev:
+	docker compose -f docker-compose.develop.yml down -v
+
 .PHONY: all debug re clean fclean

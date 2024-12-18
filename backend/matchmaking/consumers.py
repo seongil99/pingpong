@@ -25,6 +25,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             await self.accept()
             # 사용자별 그룹에 가입
             self.group_name = f"user_{self.user.id}"
+            logger.info(f"\n\n\nuser_{self.user.id}\n\n\n")
             await self.channel_layer.group_add(self.group_name, self.channel_name)
         else:
             await self.close()
@@ -159,6 +160,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 "opponent_id": event["opponent_id"],
                 "opponent_username": event["opponent_username"],
                 "game_id": event["game_id"],
+                "option_selector": event["option_selector"],
             }
         )
 
