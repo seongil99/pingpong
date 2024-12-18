@@ -1,4 +1,6 @@
+from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
+from click import option
 from django.test import TransactionTestCase, override_settings
 from django.contrib.auth import get_user_model
 from channels.routing import URLRouter
@@ -6,6 +8,7 @@ from django.urls import path
 from channels.auth import AuthMiddlewareStack
 from asgiref.sync import sync_to_async
 
+from pingpong_history.models import PingPongHistory
 from ..consumers import MatchmakingConsumer
 from ..models import MatchRequest
 
@@ -122,3 +125,62 @@ class OneVersusOneMatchmakingConsumerTest(TransactionTestCase):
         self.assertEqual(remaining_requests, 0)
 
         await communicator1.disconnect()
+
+    async def test_set_option(self):
+        # 유저1 접속 및 매칭 요청
+        communicator1 = WebsocketCommunicator(application, "/ws/matchmaking/")
+        communicator1.scope["user"] = self.user1
+        connected1, _ = await communicator1.connect()
+        self.assertTrue(connected1)
+        await communicator1.send_json_to({"type": "request_match", "gamemode": "1v1"})
+        response1 = await communicator1.receive_json_from()
+        self.assertEqual(response1["type"], "waiting_for_match")
+
+        # 유저2 접속 및 매칭 요청
+        communicator2 = WebsocketCommunicator(application, "/ws/matchmaking/")
+        communicator2.scope["user"] = self.user2
+        connected2, _ = await communicator2.connect()
+        self.assertTrue(connected2)
+        await communicator2.send_json_to({"type": "request_match", "gamemode": "1v1"})
+
+        # 유저1 match_found 수신
+        match_found_1 = await communicator1.receive_json_from()
+        self.assertEqual(match_found_1["type"], "match_found")
+        self.assertIn("game_id", match_found_1)
+        game_id = match_found_1["game_id"]
+
+        # 유저2 match_found 수신
+        match_found_2 = await communicator2.receive_json_from()
+        self.assertEqual(match_found_2["type"], "match_found")
+
+        option_selector = await self.get_option_selector(game_id)
+        option_selector_communicator = communicator1 if option_selector == self.user1 else communicator2
+
+        # 유저1이 set_option 요청
+        await option_selector_communicator.send_json_to(
+            {
+                "type": "set_option",
+                "game_id": game_id,
+                "multi_ball": True
+            }
+        )
+
+        # 유저1 응답 수신(설정 성공)
+        response_set_option_1 = await communicator1.receive_json_from()
+        self.assertEqual(response_set_option_1["type"], "set_option")
+        self.assertEqual(response_set_option_1["game_id"], game_id)
+        self.assertTrue(response_set_option_1["multi_ball"])
+
+        # 유저2가 set_option 알림 수신
+        response_set_option_2 = await communicator2.receive_json_from()
+        self.assertEqual(response_set_option_2["type"], "set_option")
+        self.assertEqual(response_set_option_2["game_id"], game_id)
+        self.assertTrue(response_set_option_2["multi_ball"])
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
+
+    @database_sync_to_async
+    def get_option_selector(self, game_id):
+        history = PingPongHistory.objects.get(id=game_id)
+        return history.option_selector

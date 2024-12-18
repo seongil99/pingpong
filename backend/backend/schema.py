@@ -58,6 +58,12 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
 ```json
 { "type": "cancel_match" }
 ```
+
+- **옵션 선택**:
+
+```json
+{ "type": "set_option", "game_id": 1, "multi_ball": true }
+```
     
 **서버 → 클라이언트:**
 
@@ -70,7 +76,7 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
 - **매칭 성공**:
 
 ```json
-{ "type": "match_found", "opponent_id": 1, "opponent_username": "opponent" }
+{ "type": "match_found", "opponent_id": 1, "opponent_username": "opponent", "game_id": 1, "option_selector": true }
 ```
       
 - **매칭 취소**:

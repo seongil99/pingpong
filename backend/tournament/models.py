@@ -60,6 +60,7 @@ class TournamentGame(models.Model):
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_two")
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True)
     status = models.CharField(
         max_length=20,
         default='pending',
@@ -71,7 +72,7 @@ class TournamentGame(models.Model):
     )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
 
     def __str__(self):
         return f"{self.user_1} is playing against {self.user_2} in a tournament game at {self.created_at}"
@@ -82,5 +83,5 @@ class TournamentQueue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
         unique_together = ['user']

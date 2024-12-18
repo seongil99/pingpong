@@ -35,6 +35,19 @@ class PingPongHistory(models.Model):
     gamemode = models.CharField(max_length=255)
     longest_rally = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     average_rally = models.FloatField(null=True, validators=[MinValueValidator(0)])
+    tournament_id = models.ForeignKey(
+        "tournament.Tournament",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    option_selector = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    multi_ball = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
@@ -59,3 +72,15 @@ class PingPongHistory(models.Model):
 
     def __str__(self):
         return f"{self.user1} vs {self.user2} - {self.winner} won"
+
+
+class PingPongRound(models.Model):
+    match = models.ForeignKey(PingPongHistory, on_delete=models.CASCADE, related_name='rounds')
+    user1_score = models.IntegerField(default=0)
+    user2_score = models.IntegerField(default=0)
+    rally = models.IntegerField(default=0)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+
+    class Meta:
+        ordering = ["start"]
