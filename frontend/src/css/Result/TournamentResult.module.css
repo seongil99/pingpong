@@ -1,0 +1,128 @@
+/* 부모 컨테이너 범위 제한 */
+#tournament-results {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    padding: 2rem;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* 헤더 스타일 */
+#tournament-results header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+#tournament-results header h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+#tournament-results header .text-gray-600 {
+    color: #6c757d;
+}
+
+/* 섹션 스타일 */
+#tournament-results section {
+    margin-bottom: 2rem;
+}
+
+#tournament-results h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+/* 카드 디자인 */
+#tournament-results .card {
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#tournament-results .card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+/* 그리드 스타일 */
+#tournament-results .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+#tournament-results .col-lg-6 {
+    flex: 1 1 calc(50% - 1.5rem);
+}
+
+/* 플레이어 정보 */
+#tournament-results .flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#tournament-results .flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+#tournament-results .text-center {
+    text-align: center;
+}
+
+#tournament-results .text-end {
+    text-align: right;
+}
+
+#tournament-results .font-bold {
+    font-weight: bold;
+}
+
+#tournament-results .font-medium {
+    font-weight: 500;
+}
+
+#tournament-results .font-mono {
+    font-family: "Courier New", monospace;
+}
+
+#tournament-results .text-success {
+    color: #198754;
+}
+
+#tournament-results .text-gray-500 {
+    color: #6c757d;
+}
+
+#tournament-results .text-lg {
+    font-size: 1.25rem;
+}
+
+#tournament-results .text-xl {
+    font-size: 1.5rem;
+}
+
+#tournament-results .text-3xl {
+    font-size: 2rem;
+}
+
+/* 이미지 스타일 */
+#tournament-results img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* 반응형 설정 */
+@media screen and (max-width: 768px) {
+    #tournament-results .col-lg-6 {
+        flex: 1 1 100%;
+    }
+}

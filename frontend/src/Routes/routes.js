@@ -10,6 +10,7 @@ const routes = {
     "/settings": () => import("../Pages/SettingsPage.js"),
     "/matching": () => import("../Pages/MatchingPage.js"),
     "/playing": () => import("../Pages/GamePage.js"),
+    "/result" : () => import("../Pages/ResultPage.js")
 };
 
 export default routes;

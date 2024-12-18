@@ -16,3 +16,4 @@
 @import "common.css";
 
 @import "Game/Command.module.css";
+@import "Result/TournamentResult.module.css";

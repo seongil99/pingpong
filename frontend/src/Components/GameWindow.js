@@ -5,23 +5,20 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { io } from "socket.io-client";
 
-// const socket = io('/api/game', {
-//     transports: ['websocket'],
-//     debug: true,
-//     path: '/api/game/socket.io',
-//     query: {
-//         gameId: gameId,
-//         userName: userName,
-//         gameType: gameTypeParam,
-//     }
-// });
+const socket = io('/api/game', {
+    transports: ['websocket'],
+    debug: true,
+    path: '/api/game/socket.io',
+    query: {
+        gameId: gameId,
+        userName: userName,
+        gameType: gameTypeParam,
+    }
+});
 
 const WAIT_GAME = 1;
 const START_GAME = 2;
 const END_GAME = 3;
-const SOUND_BALL = 'public/localdata/sound/ball.mp3';
-const audioListenr = new THREE.AudioListener();
-const basicSound = new THREE.Audio(audioListenr);
 class ImpactEffect {
     constructor(scene) {
         this.scene = scene;
@@ -683,3 +680,6 @@ class PingPongClient {
 // }
 // export default rendGame;
 export default PingPongClient;
+
+
+
