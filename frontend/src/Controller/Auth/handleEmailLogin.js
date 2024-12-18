@@ -3,7 +3,7 @@
 const handleEmailLogin = async () => {
     // const csrfToken = getCSRFToken();
     // console.log("CSRF Token:", csrfToken);
-    const url = "/api/v1/accounts/login/"; // 로그인 API 서버 URL
+    const url = "api/v1/users/accounts/login/"; // 로그인 API 서버 URL
 
     // POST 요청을 통해 서버에 로그인 요청을 보냄
     try {
@@ -15,8 +15,9 @@ const handleEmailLogin = async () => {
             },
             credentials: "include",
             body: JSON.stringify({
-                email: "test@test.com",
-                password: "dkssudgktpdy1234!",
+                "username": "test",
+                "email": "test@example.com",
+                "password": "wert2345"
             }),
         });
 

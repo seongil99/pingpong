@@ -1,4 +1,5 @@
 import createElement from "../Utils/createElement.js";
+import LanguageDropdown from "./LangugeDropDown.js";
 
 const logout = async () => {
     const url = "https://localhost/api/v1/users/accounts/logout/";
@@ -46,7 +47,8 @@ function NavBarList() {
         { class: "navbar-nav" },
         profileBtn,
         settingBtn,
-        logoutBtn
+        logoutBtn,
+        LanguageDropdown()
     );
     return ul;
 }
