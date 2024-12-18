@@ -1,5 +1,5 @@
 import random
-
+from django.utils import timezone
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
@@ -18,6 +18,8 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
         super().__init__(args, kwargs)
         self.group_name = None
         self.user = None
+        self.current_game_id = None
+        self.current_opponent_id = None
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -43,10 +45,12 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
         try:
             if content.get("type") == "request_match":
                 if await self.is_user_in_other_game(self.user.id):
+                    game_id = await self.get_game_id_in_progress(self.user.id)
                     await self.send_json(
                         {
                             "type": "error",
                             "message": "이미 게임 중입니다.",
+                            "game_id": game_id,
                         }
                     )
                     return
@@ -58,7 +62,8 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     if random_val == 0:
                         option_selector = opponent
                     game_id = await create_game_and_get_game_id(self.user, opponent, option_selector)
-                    # 매칭이 성사되었습니다.
+                    self.current_game_id = game_id  # 현재 매칭된 게임 정보 저장
+                    self.current_opponent_id = opponent.id
                     await self.send_json(
                         {
                             "type": "match_found",
@@ -79,6 +84,13 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     )
             elif content.get("type") == "cancel_match":
                 await self.cancel_match()
+                if self.current_game_id and self.current_opponent_id:
+                    await self.channel_layer.group_send(
+                        f"user_{self.current_opponent_id}",
+                        {
+                            "type": "match_canceled",
+                        }
+                    )
                 await self.send_json(
                     {
                         "type": "match_canceled",
@@ -87,7 +99,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             elif content.get("type") == "set_option":
                 game_id = content["game_id"]
                 multiball_option = content["multi_ball"]
-                if not await self.can_user_set_option(game_id):
+                if not await self.can_user_set_option(game_id) and isinstance(multiball_option, bool):
                     await self.send_json(
                         {
                             "type": "error",
@@ -112,6 +124,15 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         "multi_ball": multiball_option,
                     },
                 )
+                await self.create_one_versus_one_game(self.user, opponent_id)
+                await self.channel_layer.group_send(
+                    f"user_{opponent_id}",
+                    {
+                        "type": "force_disconnect",
+                    },
+                )
+                await MatchRequest.objects.filter(user=self.user).adelete()
+                await self.close()
         except Exception as e:
             await self.send_json(
                 {
@@ -159,6 +180,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 "opponent_id": event["opponent_id"],
                 "opponent_username": event["opponent_username"],
                 "game_id": event["game_id"],
+                "option_selector": event["option_selector"],
             }
         )
 
@@ -188,12 +210,50 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def is_user_in_other_game(self, user_id):
         from ingame.models import OneVersusOneGame
-        return OneVersusOneGame.objects.filter(user_1_id=user_id).exists() or \
-            OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+        try:
+            return OneVersusOneGame.objects.filter(user_1_id=user_id).exists() or \
+                OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+        except OneVersusOneGame.DoesNotExist:
+            return False
+
+    @database_sync_to_async
+    def get_game_id_in_progress(self, user_id):
+        from ingame.models import OneVersusOneGame
+        try:
+            game = OneVersusOneGame.objects.get(user_1_id=user_id)
+            return game.game_id
+        except OneVersusOneGame.DoesNotExist:
+            try:
+                game = OneVersusOneGame.objects.get(user_2_id=user_id)
+                return game.game_id
+            except OneVersusOneGame.DoesNotExist:
+                return None
+
+    @database_sync_to_async
+    def create_one_versus_one_game(self, user1, user2):
+        from ingame.models import OneVersusOneGame
+        with transaction.atomic():
+            history = PingPongHistory.objects.get(id=self.current_game_id)
+            game = OneVersusOneGame.objects.create(
+                game_id=history,
+                user_1=user1,
+                user_2=user2,
+                created_at=timezone.now(),
+            )
+        return game.game_id
+
+    async def force_disconnect(self, event):
+        await self.close()
 
     @database_sync_to_async
     def cancel_match(self):
-        MatchRequest.objects.filter(user=self.user).delete()
+        with transaction.atomic():
+            MatchRequest.objects.filter(user=self.user).delete()
+            try :
+                history = PingPongHistory.objects.get(id=self.current_game_id)
+                history.delete()
+            except PingPongHistory.DoesNotExist:
+                pass
 
     @database_sync_to_async
     def get_opponent_id(self, game_id):
