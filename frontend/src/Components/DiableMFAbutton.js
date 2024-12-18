@@ -3,6 +3,10 @@ class DisableMFAbutton extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
   }
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
 
   connectedCallback() {
     this.template();
@@ -10,7 +14,15 @@ class DisableMFAbutton extends HTMLElement {
       .querySelector("button")
       .addEventListener("click", this.handleDisableMFA);
   }
+  connectedCallback() {
+    this.template();
+    this.shadowRoot
+      .querySelector("button")
+      .addEventListener("click", this.handleDisableMFA);
+  }
 
+  template() {
+    this.shadowRoot.innerHTML = `
   template() {
     this.shadowRoot.innerHTML = `
       <style>
@@ -28,7 +40,10 @@ class DisableMFAbutton extends HTMLElement {
       <button>Disable MFA</button>
     `;
   }
+  }
 
+  async handleDisableMFA() {
+    const url = "https://localhost/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
   async handleDisableMFA() {
     const url = "https://localhost/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
 
@@ -40,7 +55,18 @@ class DisableMFAbutton extends HTMLElement {
         },
         credentials: "include",
       });
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
 
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -57,3 +83,4 @@ class DisableMFAbutton extends HTMLElement {
 
 customElements.define("disable-mfa-button", DisableMFAbutton);
 export default DisableMFAbutton;
+

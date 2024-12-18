@@ -2,46 +2,79 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import FriendList from "../Components/FriendList.js";
 import FriendModal from "../Components/FriendModal.js";
+import translater from "../Components/i18nInit.js";
+// import * as i18next from 'i18next';
 
 class HomePage {
-    template() {
+    async template() {
+        // i18next 초기화 대기
+        await translater({
+            "English": {
+                "translation": {
+                    "btn_friend_list": "Friend List",
+                    "btn_close": "Close",
+                    "btn_go_matching": "Go to Matching Page"
+                }
+            },
+            "한국어": {
+                "translation": {
+                    "btn_friend_list": "친구목록",
+                    "btn_close": "X",
+                    "btn_go_matching": "매칭 페이지로 가기"
+                }
+            },
+            "日本語": {
+                "translation": {
+                    "btn_friend_list": "友達リスト",
+                    "btn_close": "閉じる",
+                    "btn_go_matching": "マッチングページへ行く"
+                }
+            }
+        });
+
         const friendToggleBtn = createElement(
             "button",
             {
+                id: "friendToggleBtn",
                 events: {
                     click: () => {
                         const friends = document.querySelector("#friends");
                         const match = document.querySelector(".match-div");
                         friends.classList.toggle("hide");
                         match.classList.toggle("hide");
-                        friendToggleBtn.textContent =
-                            !friends.classList.contains("hide")
-                                ? "X"
-                                : "친구목록";
+                        friendToggleBtn.textContent = !friends.classList.contains("hide")
+                            ? i18next.t("btn_close")
+                            : i18next.t("btn_friend_list");
                     },
                 },
             },
-            "친구목록"
+            i18next.t("btn_friend_list")
         );
-        // 친구 목록 버튼 Div 안에 친구 목록 화면 활성화 버튼 추가
+
         const friendToggle = createElement(
             "div",
             { id: "friend-toggle" },
             friendToggleBtn
         );
-        const friendList = FriendList();
-        // 게임시작 Div에 게임시작 버튼 추가
+
+        const friendList = await FriendList();
+
         const matchingButton = createElement(
             "button",
-            { class: "match-btn navigate", path: "/matching" },
-            "Go to Matching Page"
+            {
+                id: "matchingButton",
+                class: "match-btn navigate",
+                path: "/matching",
+            },
+            i18next.t("btn_go_matching")
         );
+
         const matching = createElement(
             "div",
             { class: "match-div" },
             matchingButton
         );
-        // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가
+
         const main = createElement(
             "main",
             { id: "home-main" },
@@ -49,11 +82,18 @@ class HomePage {
             friendList,
             matching
         );
-        // 컨테이너에 모달, 네비게이션 바, main 요소 추가
+
         const modal = FriendModal();
         const navBar = NavBar();
-        const container = createElement("div", {}, modal, navBar, main);
-        return container; // 컨테이너를 반환
+        const container = createElement(
+            "div",
+            {},
+            modal,
+            navBar,
+            main
+        );
+
+        return container;
     }
 }
 

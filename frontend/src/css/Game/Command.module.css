@@ -1,0 +1,66 @@
+/* Wrapper and container styles */
+.command-body {
+	width: 100%;
+	max-width: fit-content;
+	margin: 0 auto;
+	padding: 0.5rem;
+  }
+  
+  .keyboard-guide-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+  }
+  
+  /* Item styles */
+  .keyboard-guide-item {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	flex-basis: auto;
+	min-width: fit-content;
+	flex-grow: 1;
+	justify-content: center;
+  }
+  
+  .keyboard-guide-label {
+	text-align: left;
+  }
+  
+  .keyboard-guide-key {
+	padding: 0.625rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #1f2937;
+	background-color: #f3f4f6;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	text-align: center;
+	min-width: 48px;
+	transition: background-color 0.2s;
+  }
+  
+  .keyboard-guide-key:hover {
+	background-color: #e5e7eb;
+  }
+  
+  /* Icon styles */
+  .keyboard-guide-icon {
+	width: 1rem;
+	height: 1rem;
+  }
+  
+  .gameWindow{
+	position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+  }
+
+.gameWindow > canvas {
+	height: 100%;
+}

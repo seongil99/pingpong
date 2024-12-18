@@ -1,140 +1,75 @@
 import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
+import ButtonToMatch from "../Components/ButtonToMatch.js";
+import WaitMacthBox from "../Components/WaitMacthBox.js"
 
 class MatchingPage {
     constructor() {
         this.socket = null;
-        this.requestMatchButton = null;
-        this.cancelMatchButton = null;
+        this.btnContainer = null;
         this.isMatching = false;
         this.requestPVEButton = null;
         this.statusDiv = null;
-    }
-
-    ModeComponent(title, isCustom) {
-        const titleLayer = createElement(
-            "div",
-            { class: "matching-mode-title-layer" },
-            title
-        );
-        const general = createElement(
-            "div",
-            {
-                class: "match-mode-selection general",
-                event: {
-                    click: () => {},
-                },
-            },
-            "일반"
-        );
-        const custom = createElement(
-            "div",
-            {
-                class: "match-mode-selection custom",
-                event: {
-                    click: () => {},
-                },
-            },
-            "사용자 설정"
-        );
-        const generalCustomSelection = createElement(
-            "div",
-            {
-                class: "matching-mode-general-custum-selection hide",
-            },
-            general,
-            isCustom ? custom : ""
-        );
-        const modeComponent = createElement(
-            "div",
-            {
-                class: `matching-mode ${
-                    title === "1vs1"
-                        ? "p2p"
-                        : title === "Test"
-                        ? "test"
-                        : "tournament"
-                }`,
-                events: {
-                    mouseenter: (event) => {
-                        event.target
-                            .querySelector(
-                                ".matching-mode-general-custum-selection"
-                            )
-                            .classList.remove("hide");
-                        event.target
-                            .querySelector(".matching-mode-title-layer")
-                            .classList.add("hide");
-                    },
-                    mouseleave: (event) => {
-                        event.target
-                            .querySelector(
-                                ".matching-mode-general-custum-selection"
-                            )
-                            .classList.add("hide");
-                        event.target
-                            .querySelector(".matching-mode-title-layer")
-                            .classList.remove("hide");
-                    },
-                },
-            },
-            titleLayer,
-            generalCustomSelection
-        );
-        return modeComponent;
+        this.container = null;
     }
 
     async template() {
         // 네비게이션 바 추가
         const navBar = NavBar();
-
+        
         // 제목 추가
         const title = createElement(
             "h2",
             { id: "matching-page-title" },
             "Mathching Page"
         );
-
-        // // 매칭 요청 버튼 생성
-        // this.requestMatchButton = createElement(
-        //     "button",
-        //     { id: "request-match-btn" },
-        //     "매칭 요청"
-        // );
-
-        // // 매칭 취소 버튼 생성
-        // this.cancelMatchButton = createElement(
-        //     "button",
-        //     { id: "cancel-match-btn", disabled: "true" },
-        //     "매칭 취소"
-        // );
-
-        // PVE 버튼 생성
-    this.requestPVEButton = document.createElement("button");
-    this.requestPVEButton.id = "requestPVEButton";
-    this.requestPVEButton.textContent = "PVE 게임 시작";
-    this.container.appendChild(this.requestPVEButton);
-
-        // 상태 표시 영역 생성
-        // this.statusDiv = createElement("div", { id: "status" }, []);
-
-        const matchModes = createElement(
+        this.statusDiv = createElement(
             "div",
-            { id: "matching-modes" },
-            this.ModeComponent("1vs1", true),
-            this.ModeComponent("토너먼트", true),
-            this.ModeComponent("Test", false)
+            {},
         );
+        this.btnContainer = createElement(
+            'div',
+            {
+                id:"match-btn-container"
+            },
+            ButtonToMatch("PVP",()=>{
+                this.connectWebSocket("PVP",this.requestMatch("PVP"));
+                console.log(this.btnContainer);
+                this.btnContainer.classList.toggle("hide");
+                const wait = WaitMacthBox("waiting for PvP User",()=>{
+                    this.cancelMatch();
+                    this.btnContainer.classList.toggle("hide");
+                    this.container.removeChild(wait.element);
+                })
+                this.container.append(wait.element);
+                wait.modal.show();
+            }),
+            ButtonToMatch("tournament",()=>{
+                this.connectWebSocket("tournament",this.requestMatch("tournament"));
+                this.btnContainer.classList.toggle("hide");
+                const wait = WaitMacthBox("waiting for Tournament Users",()=>{
+                    this.cancelMatch();
+                    this.btnContainer.classList.toggle("hide");
+                    this.container.removeChild(wait.element);
+                })
+                this.container.append(wait.element);
+                wait.modal.show();
+            }
+        ));
         const main = createElement(
             "main",
             { id: "matching-main" },
             title,
-            matchModes
         );
-        const container = createElement("div", {}, navBar, main);
-        // 이벤트 리스너 및 웹소켓 설정
+        this.container = createElement(
+            "div",
+            {},
+            navBar,
+            main,
+            this.btnContainer
+        );
         // this.setupEventListeners();
-        return container;
+        return this.container;
     }
 
     // setupEventListeners() {
@@ -165,84 +100,86 @@ class MatchingPage {
     //     });
     // }
 
-    // connectWebSocket(callback) {
-    //     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    //     const wsUrl = `${protocol}://${window.location.host}/api/ws/matchmaking/`;
-    //     this.socket = new WebSocket(wsUrl);
+    connectWebSocket(type,callback) {
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = type === 'PVP' ?
+        `${protocol}://${window.location.host}/api/ws/matchmaking/` :
+        `${protocol}://${window.location.host}/api/ws/tournament/matchmaking/`;
+        this.socket = new WebSocket(wsUrl);
 
-    //     this.socket.onopen = () => {
-    //         console.log("WebSocket 연결이 열렸습니다.");
-    //         this.statusDiv.textContent = "서버와 연결되었습니다.";
-    //         if (callback) callback();
-    //     };
+        this.socket.onopen = () => {
+            console.log('socket: ', this.socket);
+            console.log("WebSocket 연결이 열렸습니다.");
+            this.statusDiv.textContent = "서버와 연결되었습니다.";
+            if (callback) callback();
+        };
 
-    //     this.socket.onmessage = (event) => {
-    //         const data = JSON.parse(event.data);
-    //         console.log("수신한 데이터:", data);
+        this.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("수신한 데이터:", data);
+        if (data.type === "waiting_for_match") {
+        this.statusDiv.textContent = "상대를 기다리는 중...";
+        this.isMatching = true;
+        // this.requestMatchButton.disabled = true;
+        // this.cancelMatchButton.disabled = false;
+        const gameUrl = "/palying";
+        const gameId = data.game_id;
+        console.log("매칭성공");
+        // window.location.href = `${gameUrl}?gameId=${gameId}`;
+      } else if (data.type === "match_found") {
+        this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
+        this.isMatching = false;
+        // this.requestMatchButton.disabled = false;
+        // this.cancelMatchButton.disabled = true;
+      } else if (data.type === "match_canceled") {
+        this.statusDiv.textContent = "매칭이 취소되었습니다.";
+        this.isMatching = false;
+        // this.requestMatchButton.disabled = false;
+        // this.cancelMatchButton.disabled = true;
+      } else if (data.type === "error") {
+        this.statusDiv.textContent = `에러 발생: ${data.message}`;
+        this.isMatching = false;
+        // this.requestMatchButton.disabled = false;
+        // this.cancelMatchButton.disabled = true;
+      }
+    };
 
-    //   if (data.type === "waiting_for_match") {
-    //     this.statusDiv.textContent = "상대를 기다리는 중...";
-    //     this.isMatching = true;
-    //     this.requestMatchButton.disabled = true;
-    //     this.cancelMatchButton.disabled = false;
-    //     const gameUrl = "/api/static/public/index.html";
-    //     const gameId = data.game_id;
-    //     window.location.href = `${gameUrl}?gameId=${gameId}`;
-    //   } else if (data.type === "match_found") {
-    //     this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
-    //     this.isMatching = false;
-    //     this.requestMatchButton.disabled = false;
-    //     this.cancelMatchButton.disabled = true;
-    //   } else if (data.type === "match_canceled") {
-    //     this.statusDiv.textContent = "매칭이 취소되었습니다.";
-    //     this.isMatching = false;
-    //     this.requestMatchButton.disabled = false;
-    //     this.cancelMatchButton.disabled = true;
-    //   } else if (data.type === "error") {
-    //     this.statusDiv.textContent = `에러 발생: ${data.message}`;
-    //     this.isMatching = false;
-    //     this.requestMatchButton.disabled = false;
-    //     this.cancelMatchButton.disabled = true;
-    //   }
-    // };
+        this.socket.onclose = (event) => {
+            console.log("WebSocket 연결이 닫혔습니다.", event);
+            this.statusDiv.textContent = "서버와의 연결이 끊어졌습니다.";
+            this.isMatching = false;
+            // this.requestMatchButton.disabled = false;
+            // this.cancelMatchButton.disabled = true;
+        };
 
-    //     this.socket.onclose = (event) => {
-    //         console.log("WebSocket 연결이 닫혔습니다.", event);
-    //         this.statusDiv.textContent = "서버와의 연결이 끊어졌습니다.";
-    //         this.isMatching = false;
-    //         this.requestMatchButton.disabled = false;
-    //         this.cancelMatchButton.disabled = true;
-    //     };
+        this.socket.onerror = (error) => {
+            console.error("WebSocket 에러 발생:", error);
+        };
+    }
 
-    //     this.socket.onerror = (error) => {
-    //         console.error("WebSocket 에러 발생:", error);
-    //     };
-    // }
+    requestMatch() {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const message = {
+                type: "request_match",
+            };
+            this.socket.send(JSON.stringify(message));
+            console.log("매칭 요청을 보냈습니다:", message);
+        } else {
+            console.error("WebSocket이 연결되지 않았습니다.");
+        }
+    }
 
-    // requestMatch() {
-    //     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-    //         const message = {
-    //             type: "request_match",
-    //             gamemode: "1v1", // 필요한 게임 모드로 설정
-    //         };
-    //         this.socket.send(JSON.stringify(message));
-    //         console.log("매칭 요청을 보냈습니다:", message);
-    //     } else {
-    //         console.error("WebSocket이 연결되지 않았습니다.");
-    //     }
-    // }
+    cancelMatch() {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const message = {
+                type: "cancel_match",
+            };
+            this.socket.send(JSON.stringify(message));
+            console.log("매칭 취소를 보냈습니다:", message);
+        } else {
+            console.error("WebSocket이 연결되지 않았습니다.");
+        }
+    }
 
-    // cancelMatch() {
-    //     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-    //         const message = {
-    //             type: "cancel_match",
-    //         };
-    //         this.socket.send(JSON.stringify(message));
-    //         console.log("매칭 취소를 보냈습니다:", message);
-    //     } else {
-    //         console.error("WebSocket이 연결되지 않았습니다.");
-    //     }
-    // }
 }
-
 export default MatchingPage;
