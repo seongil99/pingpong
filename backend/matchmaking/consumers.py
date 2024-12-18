@@ -1,5 +1,5 @@
 import random
-
+from django.utils import timezone
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
@@ -124,6 +124,15 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         "multi_ball": multiball_option,
                     },
                 )
+                await self.create_one_versus_one_game(self.user, opponent_id)
+                await self.channel_layer.group_send(
+                    f"user_{opponent_id}",
+                    {
+                        "type": "force_disconnect",
+                    },
+                )
+                await MatchRequest.objects.filter(user=self.user).adelete()
+                await self.close()
         except Exception as e:
             await self.send_json(
                 {
@@ -219,6 +228,22 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 return game.game_id
             except OneVersusOneGame.DoesNotExist:
                 return None
+
+    @database_sync_to_async
+    def create_one_versus_one_game(self, user1, user2):
+        from ingame.models import OneVersusOneGame
+        with transaction.atomic():
+            history = PingPongHistory.objects.get(self.current_game_id)
+            game = OneVersusOneGame.objects.create(
+                game_id=history,
+                user_1=user1,
+                user_2=user2,
+                created_at=timezone.now(),
+            )
+        return game.game_id
+
+    async def force_disconnect(self, event):
+        await self.close()
 
     @database_sync_to_async
     def cancel_match(self):
