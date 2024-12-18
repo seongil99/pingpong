@@ -208,13 +208,18 @@ def finish_game(game_id: int, user1_score: int, user2_score: int):
     history.ended_at = timezone.now()
 
     # 승자 결정
+    # 패자, 무승부는 TournamentParticipant에서 삭제
     if user1_score > user2_score:
         winner = history.user1
+        TournamentParticipant.objects.filter(user=history.user2, tournament=t_game.tournament_id).delete()
     elif user2_score > user1_score:
         winner = history.user2
+        TournamentParticipant.objects.filter(user=history.user1, tournament=t_game.tournament_id).delete()
     else:
         # 무승부 처리 (둘 다 draw 상태)
         winner = None
+        TournamentParticipant.objects.filter(user=history.user1, tournament=t_game.tournament_id).delete()
+        TournamentParticipant.objects.filter(user=history.user2, tournament=t_game.tournament_id).delete()
 
     history.winner = winner
     history.save()
