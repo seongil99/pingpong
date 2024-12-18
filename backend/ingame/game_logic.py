@@ -2,13 +2,16 @@ import math
 import random
 import asyncio
 import logging
-
 import environ
+
+import ipdb
 from django.utils import timezone
+from django.db import transaction
 from asgiref.sync import sync_to_async
 from ingame.data import gameid_to_task
 from ingame.models import OneVersusOneGame
 from pingpong_history.models import PingPongHistory as GameHistory
+from users.models import User
 from backend.socketsend import socket_send
 from backend.dbAsync import get_game_users
 
@@ -23,7 +26,10 @@ PORT = 3000
 
 async def _set_interval(func, interval):
     while True:
-        await func()
+        try:
+            await func()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         await asyncio.sleep(interval)
 
 
@@ -100,10 +106,11 @@ class InMemoryGameState:
             # TODO: 게임 끝날때 보낼 데이터 serializer 에 추가
             "one_keystate": {"A": False, "D": False},
             "two_keystate": {"A": False, "D": False},
-            "playerOneId": "",
-            "playerTwoId": "",
+            "playerOneId": -1,
+            "playerTwoId": -1,
             "rallies": [],
             "current_rally": 0,
+            "game_start_lock": asyncio.Lock(),
             "key_state_lock": asyncio.Lock(),
             "rally_flag": False,  # paddle to paddle 랠리 확인용 플래그 False = user1, True = user2 면 카운트
         }
@@ -175,6 +182,7 @@ class PingPongServer:
         """
         게임 루프를 asyncio background task 로 실행
         """
+        logger.info("start game loop")
         game_id = game_state["game_id"]
         task_list = []
         if game_state["is_single_player"] is True:
@@ -258,6 +266,7 @@ class PingPongServer:
             await self.handle_player_input(game_state, "ai", "D", True)
 
     async def _update_physics(self, game_state):
+        logger.info("updating physics...")
         if not game_state["gameStart"]:
             return
         game_id = game_state["game_id"]
@@ -314,35 +323,42 @@ class PingPongServer:
                 # Check if someone has won the set
                 if (
                     game_state["render_data"]["score"]["playerOne"]
-                    >= Game.GAME_SET_SCORE.value
-                    or game_state["render_data"]["score"]["playerTwo"]
-                    >= Game.GAME_SET_SCORE.value
+                    < 1  # Game.GAME_SET_SCORE.value
+                    and game_state["render_data"]["score"]["playerTwo"]
+                    < 1  # Game.GAME_SET_SCORE.value
                 ):
-                    winner = (
-                        game_state["render_data"]["oneName"]
-                        if game_state["render_data"]["score"]["playerOne"]
-                        > game_state["render_data"]["score"]["playerTwo"]
-                        else game_state["render_data"]["twoName"]
-                    )
-                    winner_id = (
-                        game_state["playerOneId"]
-                        if game_state["render_data"]["score"]["playerOne"]
-                        > game_state["render_data"]["score"]["playerTwo"]
-                        else game_state["playerTwoId"]
-                    )
-                    await socket_send(
-                        game_state["render_data"],
-                        "gameEnd",
-                        game_id,
-                        f"Winner is {winner}",
-                    )
-                    game_state["gameStart"] = False
-                    await self._game_finish(game_state, winner_id)
+                    if game_state["gameStart"]:
+                        await socket_send(game_state["render_data"], "score", game_id)
+                        self._reset_ball(game_state, ball)
                     return
 
-                if game_state["gameStart"]:
-                    await socket_send(game_state["render_data"], "score", game_id)
-                    self._reset_ball(game_state, ball)
+                winner = (
+                    game_state["render_data"]["oneName"]
+                    if game_state["render_data"]["score"]["playerOne"]
+                    > game_state["render_data"]["score"]["playerTwo"]
+                    else game_state["render_data"]["twoName"]
+                )
+                winner_id = (
+                    game_state["playerOneId"]
+                    if game_state["render_data"]["score"]["playerOne"]
+                    > game_state["render_data"]["score"]["playerTwo"]
+                    else game_state["playerTwoId"]
+                )
+
+                await game_state["game_start_lock"].acquire()
+                if game_state["gameStart"] is False:
+                    game_state["game_start_lock"].release()
+                    return
+                game_state["gameStart"] = False
+                game_state["game_start_lock"].release()
+                await socket_send(
+                    game_state["render_data"],
+                    "gameEnd",
+                    game_id,
+                    f"Winner is {winner}",
+                )
+                await self._game_finish(game_state, winner_id)
+                return
 
         await self._broadcast_game_state(game_state)
 
@@ -498,14 +514,14 @@ class PingPongServer:
 
     async def _game_finish(self, game_state, winner_id):
         await self._save_game_history(game_state, winner_id)
+
         game_id = game_state["game_id"]
-        self.game_state.delete_game_state(game_id)
         if game_state["is_single_player"] is False:
             try:
-                game = await OneVersusOneGame.objects.aget(game_id=game_id)
-                await game.adelete()
+                await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
             except OneVersusOneGame.DoesNotExist:
                 logger.info(f"Game not found: {game_id}")
+        self.game_state.delete_game_state(game_id)
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
@@ -519,7 +535,7 @@ class PingPongServer:
         self.game_state.delete_game_state(game_id)
         task_list = gameid_to_task[game_id]
         for task in task_list:
-            task.cancel()
+            task.cancel("abandoned cancel")
 
     async def _save_game_history(self, game_state, winner_id):
         game_id = game_state["game_id"]
@@ -531,25 +547,22 @@ class PingPongServer:
             if len(game_state["rallies"]) == 0
             else sum(game_state["rallies"]) / len(game_state["rallies"])
         )
-        game = await GameHistory.objects.aget(id=game_id)
-        winner = None if winner_id is None else await self._get_winner(game, winner_id)
+        winner = None if winner_id == (-1) else await User.objects.aget(id=winner_id)
         # Save game history
+        game = await GameHistory.objects.aget(id=game_id)
         game.winner = winner
         game.ended_at = timezone.now()
         game.user1_score = game_state["render_data"]["score"]["playerOne"]
         game.user2_score = game_state["render_data"]["score"]["playerTwo"]
         game.longest_rally = longest_rally
         game.average_rally = average_rally
+
         await game.asave()
         if game.gamemode == GameMode.PVP.value:
             asyncio.gather(
                 self._update_wins_losses(game.user1, winner),
                 self._update_wins_losses(game.user2, winner),
             )
-
-    @sync_to_async
-    def _get_winner(self, game, winner_id):
-        return game.user1 if game.user1.id == winner_id else game.user2
 
     async def _update_wins_losses(self, user, winner):
         if user == winner:

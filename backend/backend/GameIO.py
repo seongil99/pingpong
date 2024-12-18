@@ -7,9 +7,7 @@ from rest_framework_simplejwt.exceptions import (
     TokenError,
     TokenBackendError,
 )
-from asgiref.sync import sync_to_async
 from django.conf import settings
-from django.contrib.auth import get_user_model
 import socketio
 
 from pingpong_history.models import PingPongHistory
@@ -17,14 +15,13 @@ from ingame.game_logic import PingPongServer
 from ingame.data import user_to_game, user_to_socket
 from ingame.models import OneVersusOneGame
 from ingame.enums import GameMode
+from users.models import User
 
 from backend.socketsend import socket_send, DEFAULT_NAMESPACE
 from backend.sio import sio
 from backend.dbAsync import get_game_users
 
-
 logger = logging.getLogger("django")
-User = get_user_model()
 
 server = PingPongServer(sio)
 game_state_db = server.game_state
@@ -45,28 +42,6 @@ class GameIO(socketio.AsyncNamespace):
             sio.disconnect(sid)
             return False
 
-        query = environ.get("QUERY_STRING", "")
-        params = parse_qs(query)
-        game_id = params.get("gameId", [""])[0]
-        game = await PingPongHistory.objects.aget(id=game_id)
-        game_type = game.gamemode
-        if game.ended_at is not None:
-            logger.info("Game already ended: %s", game_id)
-            sio.emit(
-                "gameEnd", room=sid, namespace="/api/game"
-            )  # TODO: 게임이 끝났다고 알림
-            sio.disconnect(sid)
-            return
-        # upon successful authentication, enter game room
-        await sio.enter_room(sid, game_id, namespace="/api/game")
-        try:
-            if await self._process_authorization(sid, game_id, game_type) is False:
-                return
-        except OneVersusOneGame.DoesNotExist:
-            logger.info("Game not found: %s", game_id)
-            sio.disconnect(sid)
-            return
-
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
 
@@ -74,27 +49,58 @@ class GameIO(socketio.AsyncNamespace):
         if user.id in user_to_socket:
             sio.disconnect(sid)
             return
+
+        query = environ.get("QUERY_STRING", "")
+        params = parse_qs(query)
+        game_id = params.get("gameId", [""])[0]
+
+        try:
+            int(game_id)
+            game: PingPongHistory = await PingPongHistory.objects.aget(id=game_id)
+        except Exception as e:
+            logger.error(str(e), exc_info=True)
+            sio.disconnect(sid)
+            return
+
+        if not game or game.ended_at is not None:
+            logger.info("Game already ended: %s", game_id)
+            await sio.emit(
+                "gameEnd", room=sid, namespace="/api/game"
+            )  # TODO: 게임이 끝났다고 알림
+            sio.disconnect(sid)
+            return
+        # upon successful authentication, enter game room
+        await sio.enter_room(sid, game_id, namespace="/api/game")
+        try:
+            if await self._process_authorization(sid, game_id, game.gamemode) is False:
+                return
+        except OneVersusOneGame.DoesNotExist:
+            logger.info("Game not found: %s", game_id)
+            sio.disconnect(sid)
+            return
+
         user_to_socket[user.id] = sid
         # enter game room
-
         # save user sid to game_id
         user_to_game[sid] = game_id
-        if game_type == GameMode.PVE.value:
-            await server.add_game(game_id, game_type == GameMode.PVP.value)
-            await server.add_user(game_id, user, game_type == GameMode.PVP.value)
+        if game.gamemode == GameMode.PVE.value:
+            await server.add_game(game_id, game.gamemode == GameMode.PVP.value)
+            await server.add_user(game_id, user, game.gamemode == GameMode.PVP.value)
         else:
             # 게임이 존재하지 않을 경우 연결 종료
             user1, user2 = await get_game_users(game_id)
         # add user's active socket to user_to_socket
-        if game_type == GameMode.PVP.value:
+        if game.gamemode == GameMode.PVP.value:
             await server.add_game(
-                game_id, game_type == "PVP"
+                game_id, game.gamemode == "PVP"
             )  # 유저이름 변경 필요 받아야 할듯
-            await server.add_user(game_id, user, game_type == "PVP")
+            await server.add_user(game_id, user, game.gamemode == "PVP")
+
         game_state = game_state_db.load_game_state(game_id)
         game_state["clients"][sid] = sid
         logger.info("game_state: %s", game_state)
-        if game_type == GameMode.PVE.value:
+
+        if game.gamemode == GameMode.PVE.value:
             await self._single_player_start(game_id)
             return
         # PVP logic
@@ -135,8 +141,10 @@ class GameIO(socketio.AsyncNamespace):
         logger.info("Client disconnected: %s", sid)
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
+        # user.id 는 바뀌지 않음
         if user.id in user_to_socket:
             del user_to_socket[user.id]
+        # 유저가 spectator 유저일 경우 user_to_game 을 등록하지 않음
         if sid not in user_to_game:
             return
         game_id = user_to_game[sid]
@@ -151,12 +159,16 @@ class GameIO(socketio.AsyncNamespace):
 
         game = await PingPongHistory.objects.aget(id=game_id)
         # 게임이 진행중이고고 클라이언트가 모두 나갔을 경우 게임 종료
+        await game_state["game_start_lock"].acquire()
         if (
             len(game_state["clients"]) == 0
             and game_state["gameStart"] is True
             and game.gamemode == GameMode.PVP.value
         ):
+            game_state["gameStart"] = False
+            game_state["game_start_lock"].release()
             await server.process_abandoned_game(game_state)
+        game_state["game_start_lock"].release()
         del user_to_game[sid]
 
     ### helper functions
@@ -211,21 +223,12 @@ class GameIO(socketio.AsyncNamespace):
 
     async def _pve_authorization(self, sid, game_id):
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
-        user = session["user"]
+        user: User = session["user"]
         try:
-            pingpong_history = await PingPongHistory.objects.aget(id=game_id)
+            await PingPongHistory.objects.aget(id=game_id, user1=user)
         except PingPongHistory.DoesNotExist:
             logger.info("PingPongHistory not found: %s", game_id)
             return False
-        await self._is_pve_auth_condition_valid(user, pingpong_history)
-
-    @sync_to_async
-    def _is_pve_auth_condition_valid(self, user, pingpong_history):
-        return (
-            pingpong_history
-            and pingpong_history.user1 == user
-            and not pingpong_history.ended_at
-        )
 
     async def _on_game_ready(self, user2, user, game_state, sid):
         logger.info("Two players are ready!")
