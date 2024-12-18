@@ -32,6 +32,19 @@ class PingPongHistory(models.Model):
     gamemode = models.CharField(max_length=255)
     longest_rally = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     average_rally = models.FloatField(null=True, validators=[MinValueValidator(0)])
+    tournament_id = models.ForeignKey(
+        "tournament.Tournament",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    option_selector = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    multi_ball = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
