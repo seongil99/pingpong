@@ -233,7 +233,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def create_one_versus_one_game(self, user1, user2):
         from ingame.models import OneVersusOneGame
         with transaction.atomic():
-            history = PingPongHistory.objects.get(self.current_game_id)
+            history = PingPongHistory.objects.get(id=self.current_game_id)
             game = OneVersusOneGame.objects.create(
                 game_id=history,
                 user_1=user1,
