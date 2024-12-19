@@ -1,7 +1,7 @@
 import createElement from "../Utils/createElement.js";
 
 class StartPage {
-    async template() {
+    async template(pathParam, queryParam) {
         const transcendentTitle = createElement("h1", {}, "ft_transcendence");
 
         // go to Login Page or 2FA Page or Main Page

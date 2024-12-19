@@ -4,7 +4,7 @@ import ButtonToMatch from "../Components/ButtonToMatch.js";
 import WaitMatchBox from "../Components/WaitMacthBox.js";
 
 class MatchingPage {
-    constructor() {
+    constructor(pathParam, queryParam) {
         this.socket = null;
         this.container = null;
         this.hiddenInput = null;

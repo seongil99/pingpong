@@ -14,10 +14,6 @@ export const routes = {
     "/profile/:userId": () => import("../Pages/ProfilePage.js"),
     "/profile/:userId/stat": () => import("../Pages/ProfilePage.js"),
     "/profile/:userId/history": () => import("../Pages/ProfilePage.js"),
-    "/profile/:userId/history/match/:matchId": () =>
-        import("../Pages/ProfilePage.js"),
-    "/profile/:userId/history/tournament/:tournamenetId": () =>
-        import("../Pages/ProfilePage.js"),
     "/settings": () => import("../Pages/SettingsPage.js"),
     "/matching": () => import("../Pages/MatchingPage.js"),
     "/result/:id" : () => import("../Pages/ResultPage.js"),
@@ -51,8 +47,6 @@ export const dynamicRoutes = new Map([
             "/profile/:userId",
             "/profile/:userId/stat",
             "/profile/:userId/history",
-            "/profile/:userId/history/match/:matchId",
-            "/profile/:userId/history/tournament/:tournamenetId",
         ],
     ],
     ["/playing", ["/playing/:id"]],

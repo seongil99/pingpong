@@ -2,8 +2,11 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import FetchUserData from "../Controller/Profile/FetchUserData.js";
 import FetchOneUserGameHistory from "../Controller/Profile/FetchOneUserGameHistory.js";
+import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
 
 class ProfilePage {
+    #offset;
+    #limit;
     #UserProfile = (userData) => {
         const profileUserImg = createElement(
             "img",
@@ -110,7 +113,6 @@ class ProfilePage {
         const stat = createElement(
             "div",
             { id: "profile-user-stat-description" },
-            gameWinRate,
             gameCount,
             winRate,
             winLoseCount,
@@ -122,7 +124,8 @@ class ProfilePage {
     };
 
     #HistoryListItem = async (session, userid) => {
-        const opponentId = session.user1 !== userid ? user1 : user2;
+        const opponentId =
+            session.user1 !== userid ? session.user1 : session.user2;
         const opponentData = await FetchUserData(opponentId);
         const gameResult = createElement(
             "span",
@@ -177,20 +180,184 @@ class ProfilePage {
     };
 
     #HistoryDescription = (userHistoryData, userid) => {
+        let curPageBlock = 0;
+        let curPage = 1;
+        const pageBlocks = [];
+        const pageListContent = [];
+        const pageItems = [];
+        for (
+            let i = 1;
+            this.#limit &&
+            i <=
+                Math.floor(userHistoryData.count / this.#limit) +
+                    (userHistoryData.count % this.#limit);
+            i++
+        ) {
+            const curLimit =
+                userHistoryData.count - this.#limit * i >= this.#limit
+                    ? this.#limit
+                    : userHistoryData.count - this.#limit * i;
+            pageItems.append(
+                createElement("button", {
+                    id: `page${i}`,
+                    offset: `${this.#limit * (i - 1) + 1}`,
+                    limit: `${curLimit}`,
+                    events: {
+                        click: (event) => {
+                            const list = document.getElementById(
+                                "history-description-list"
+                            );
+                            list.removeChild(list.lastChild);
+                            list.appendChild(pageListContent[i - 1]);
+                            this.#offset = `${this.#limit * (i - 1) + 1}`;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        },
+                    },
+                })
+            );
+            const content = createElement(
+                "div",
+                { class: "history-description-pagination-content-list" },
+                []
+            );
+            for (let j = 0; j < curLimit; j++) {
+                content.appendChild(
+                    this.#HistoryListItem(
+                        userHistoryData.results[curLimit * (i - 1) + j],
+                        userid
+                    )
+                );
+            }
+            pageListContent.append(content);
+            if (
+                !(i % 5) ||
+                userHistoryData.count - this.#limit * i < this.#limit
+            ) {
+                const pageBlock = createElement(
+                    "div",
+                    { class: "history-description-pagination-pages" },
+                    []
+                );
+                for (let item of pageItems) {
+                    pageBlock.appendChild(item);
+                }
+                pageBlocks.append(pageBlock);
+            }
+        }
+        curPageBlock = this.#limit
+            ? Math.floor(Math.floor(this.#offset / this.#limit) / 5)
+            : 0;
+        curPage = this.#limit
+            ? Math.floor(this.#offset / this.#limit) +
+              (this.#offset % this.#limit)
+            : 1;
+        const pageNumsDiv = createElement(
+            "div",
+            { id: "history-description-pagination-nums-div" },
+            pageBlocks[curPageBlock]
+        );
+        const leftBtn = createElement(
+            "button",
+            {
+                class: "history-description-pagination-left-btn",
+                events: {
+                    click: () => {
+                        if (curPageBlock - 1 >= 0) {
+                            curPageBlock -= 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 5;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
+            "<"
+        );
+        const rightBtn = createElement(
+            "button",
+            {
+                class: "history-description-pagination-right-btn",
+                events: {
+                    click: () => {
+                        if (
+                            curPageBlock + 1 <=
+                            Math.floor(userHistoryData.count / this.#limit) +
+                                (userHistoryData.count % this.#limit)
+                        ) {
+                            curPageBlock += 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 1;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
+            ">"
+        );
+        const pagination = createElement(
+            "div",
+            { id: "history-description-pagination" },
+            leftBtn,
+            pageNumsDiv,
+            rightBtn
+        );
         const historyList = createElement(
             "ul",
             { id: "history-description-list" },
-            []
+            pageListContent[curPage]
         );
-        for (let idx = 0; idx < userHistoryData.count; idx++) {
-            historyList.appendChild(
-                this.#HistoryListItem(userHistoryData.results[idx], userid)
-            );
-        }
         const history = createElement(
             "div",
             { id: "history-description" },
-            historyList
+            historyList,
+            pagination
         );
         return history;
     };
@@ -209,6 +376,11 @@ class ProfilePage {
                         description.appendChild(
                             this.#StatDescription(userHistoryData, userid)
                         );
+                        window.history.pushState(
+                            {},
+                            `/profile/${userid}/stat`,
+                            window.location.origin + `/profile/${userid}/stat`
+                        );
                     },
                 },
             },
@@ -220,11 +392,18 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: () => {
-                        stat.classList.add("hide");
-                        history.classList.remove("hide");
+                        const description = document.querySelector(
+                            "#profile-stat-or-history-description"
+                        );
                         description.removeChild(description.lastElementChild);
                         description.appendChild(
                             this.#HistoryDescription(userHistoryData, userid)
+                        );
+                        window.history.pushState(
+                            {},
+                            `/profile/${userid}/history`,
+                            window.location.origin +
+                                `/profile/${userid}/history`
                         );
                     },
                 },
@@ -240,9 +419,30 @@ class ProfilePage {
         return btnSet;
     };
 
-    async template() {
-        let userid = 1;
-        const user = await FetchUserData(userid);
+    #validateQueryParam(userHistoryData, queryParam) {
+        const regex = /^[1-9]\d*$/;
+        const offsetValue = queryParam.get("offset");
+        const limitValue = queryParam.get("limit");
+        this.#offset = regex.test(offsetValue) ? parseInt(offsetValue) : 1;
+        this.#limit = regex.test(limitValue)
+            ? parseInt(limitValue)
+            : userHistoryData.count;
+        if (this.#offset <= 0) this.#offset = 1;
+        else if (this.#offset > userHistoryData.count)
+            this.#offset = userHistoryData.count;
+        if (this.#limit <= 0 || this.#limit > userHistoryData.count)
+            this.#limit = userHistoryData.count;
+    }
+
+    async template(pathParam, queryParam) {
+        const [_, path, userId, info] = pathParam;
+        let user;
+        console.log(pathParam);
+        if (pathParam.length === 2) {
+            user = await fetchUserProfile();
+        } else {
+            user = await FetchUserData(parseInt(userId));
+        }
         const navBar = NavBar();
         const profileTitle = createElement(
             "h1",
@@ -251,6 +451,7 @@ class ProfilePage {
         );
         const userProfile = this.#UserProfile(user);
         const userHistoryData = await FetchOneUserGameHistory(user.id);
+        this.#validateQueryParam(userHistoryData, queryParam);
         const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(
             userHistoryData,
             user.id
@@ -258,8 +459,11 @@ class ProfilePage {
         const description = createElement(
             "div",
             { id: "profile-stat-or-history-description" },
-            this.#StatDescription(userHistoryData, user.id)
+            info !== "history"
+                ? this.#StatDescription(userHistoryData, user.id)
+                : this.#HistoryDescription(userHistoryData, user.id)
         );
+
         const main = createElement(
             "main",
             { id: "profile-main" },

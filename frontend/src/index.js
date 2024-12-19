@@ -3,7 +3,7 @@ import {routes, routeChecker, staticRoutes, dynamicRoutes} from "./Routes/routes
 import { handleClick } from "./Utils/clickHandler.js";
 import data from "./Translate/data.js"
 
-const router = new Router(routes);
+const router = new Router();
 window.router = router;
 i18next.init(
 	{
