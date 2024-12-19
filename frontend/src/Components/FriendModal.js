@@ -22,7 +22,11 @@ const FriendModal = () => {
         { class: "friend-modal-message" },
         "유저를 검색해보세요."
     );
-    const searchInput = createElement("input", { class: "friend-search-input" }, "");
+    const searchInput = createElement(
+        "input",
+        { class: "friend-search-input" },
+        ""
+    );
     const searchOrAddBtn = createElement(
         "button",
         {
@@ -125,8 +129,9 @@ const FriendModal = () => {
                         document.querySelector(".modal").classList.add("hide");
                     }
                     document.querySelector(".friend-search-input").value = "";
-                    document.querySelector(".friend-modal-message").textContent =
-                        "유저를 검색해보세요.";
+                    document.querySelector(
+                        ".friend-modal-message"
+                    ).textContent = "유저를 검색해보세요.";
                 },
             },
         },

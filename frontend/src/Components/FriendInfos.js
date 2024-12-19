@@ -1,9 +1,10 @@
 import createElement from "../Utils/createElement.js";
 import DeleteFriend from "../Controller/Friends/DeleteFriends.js";
+import DeleteFriend from "../Controller/Friends/DeleteFriends.js";
 
 // User Data Parameter 생략. API 연동 작업 때 추가 예정. 만약 추가하면 삭제 처리도 충분히 쉽게 할 수 있음
 const FriendInfos = (dataRef) => {
-    console.log('dataRef: ', dataRef);
+    console.log("dataRef: ", dataRef);
     const friendImg = createElement(
         "img",
         { src: "", alt: "", class: "friend-img" },

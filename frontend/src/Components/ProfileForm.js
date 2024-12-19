@@ -1,68 +1,89 @@
 import createElement from "../Utils/createElement.js";
+import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
+import updateUserProfile from "../Controller/Settings/updateUserProfile.js";
 
-const ProfileForm = () => {
-    let data = { name: "jonghopa", email: "jonghopa@student.42seoul.kr" };
-    const editIcon = createElement(
-        "span",
-        { style: { color: "white" } },
+const ProfileForm = async () => {
+    let data = await fetchUserProfile();
+    const openFileBtn = createElement(
+        "button",
+        {
+            id: "open-file-btn",
+            events: {
+                click: () => {
+                    const fileInput = document.getElementById("img-input");
+                    fileInput.click(); // 숨겨진 파일 입력을 트리거
+                },
+            },
+        },
         "Edit"
     );
-    const editBg = createElement("button", { class: "edit-bg hide" }, editIcon);
+    const imgInput = createElement(
+        "input",
+        {
+            type: "file",
+            id: "img-input",
+            accept: "image/*",
+            events: {
+                change: (event) => {
+                    const file = event.target.files[0]; // 선택된 파일 가져오기
+                    if (!file || file.size > 1000000) return;
+                    // 이미지 파일만 허용: MIME 타입 체크
+                    if (!file.type.startsWith("image/")) {
+                        alert("이미지 파일만 선택해주세요.");
+                        this.value = ""; // 선택 초기화
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const profileImg = document.querySelector(
+                            ".settings-profile-image > img"
+                        );
+                        profileImg.src = e.target.result;
+                        data.avatar = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+            },
+        },
+        []
+    );
+    const editBg = createElement(
+        "button",
+        { class: "edit-bg hide" },
+        openFileBtn
+    );
     const realImg = createElement(
         "img",
-        { src: "/src/Components/profile.png", alt: "real" },
+        { src: data?.avatar, alt: "Real Image" },
         []
     );
     const profileImg = createElement(
         "div",
         { class: "settings-profile-image" },
         editBg,
-        realImg
+        realImg,
+        imgInput
     );
-    const idText = createElement("h3", {}, "Good Boy");
-    const nameInputLegend = createElement(
-        "label",
-        { for: "account-name" },
-        "Name: "
+    const usernameInfo = createElement(
+        "h3",
+        { class: "username-info" },
+        data?.username
     );
-    const nameInput = createElement(
+    const usernameInput = createElement(
         "input",
-        { type: "text", id: "account-name", value: data.name, readonly: true },
+        { class: "username-input hide", type: "text", maxlength: 20 },
         ""
     );
-    const nameInputBox = createElement(
-        "p",
-        { class: "input-box" },
-        nameInputLegend,
-        nameInput
+    const emailInfo = createElement(
+        "span",
+        { class: "email-info" },
+        data?.email
     );
-    const emailInputLegend = createElement(
-        "label",
-        { for: "account-email" },
-        "E-mail: "
-    );
-    const emailInput = createElement(
-        "input",
-        {
-            type: "email",
-            id: "account-email",
-            value: data.email,
-            readonly: true,
-        },
-        ""
-    );
-    const emailInputBox = createElement(
-        "p",
-        { class: "input-box" },
-        emailInputLegend,
-        emailInput
-    );
-    const profileInputs = createElement(
+    const profileInfos = createElement(
         "div",
-        { class: "settings-profile-inputs" },
-        idText,
-        nameInputBox,
-        emailInputBox
+        { class: "settings-profile-infos" },
+        usernameInfo,
+        emailInfo
     );
     const editBtn = createElement(
         "button",
@@ -77,9 +98,6 @@ const ProfileForm = () => {
                         .querySelector(".profile-cancel-btn")
                         .classList.remove("hide");
                     document.querySelector(".edit-bg").classList.remove("hide");
-                    document
-                        .querySelectorAll(".input-box > input")
-                        .forEach((input) => (input.readOnly = false));
 
                     event.target.classList.add("hide");
                 },
@@ -92,22 +110,7 @@ const ProfileForm = () => {
         {
             class: "settings-btn profile-save-btn hide",
             events: {
-                click: (event) => {
-                    const inputs =
-                        document.querySelectorAll(".input-box > input");
-                    const email = inputs[1];
-                    const emailRegex = /^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
-                    if (!emailRegex.test(email.value)) {
-                        console.error("Invalid Email");
-                        return;
-                    }
-                    // updateProfileInfos({
-                    //     name: inputs[0].value,
-                    //     email: inputs[1].value,
-                    // });
-                    data.name = inputs[0].value;
-                    data.email = inputs[1].value;
-                    inputs.forEach((input) => (input.readOnly = true));
+                click: async (event) => {
                     document
                         .querySelector(".profile-cancel-btn")
                         .classList.add("hide");
@@ -115,7 +118,16 @@ const ProfileForm = () => {
                         .querySelector(".profile-edit-btn")
                         .classList.remove("hide");
                     document.querySelector(".edit-bg").classList.add("hide");
+                    updateUserProfile(data);
                     event.target.classList.add("hide");
+                    data = await fetchUserProfile();
+                    document.querySelector(".username-info").textContent =
+                        data?.username;
+                    document.querySelector(".email-info").textContent =
+                        data?.email;
+                    document.querySelector(
+                        ".settings-profile-image > img"
+                    ).textContent = data?.avatar;
                 },
             },
         },
@@ -127,11 +139,6 @@ const ProfileForm = () => {
             class: "settings-btn profile-cancel-btn hide",
             events: {
                 click: (event) => {
-                    const inputs =
-                        document.querySelectorAll(".input-box > input");
-                    inputs[0].value = data.name;
-                    inputs[1].value = data.email;
-                    inputs.forEach((input) => (input.readOnly = true));
                     document
                         .querySelector(".profile-save-btn")
                         .classList.add("hide");
@@ -156,7 +163,7 @@ const ProfileForm = () => {
         "div",
         { class: "settings-profile-content" },
         profileImg,
-        profileInputs
+        profileInfos
     );
     const profileForm = createElement(
         "form",

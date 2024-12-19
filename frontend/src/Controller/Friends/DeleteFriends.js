@@ -1,4 +1,4 @@
-export async function deleteFriend(params) {
+async function deleteFriend(params) {
     console.log('delete params: ', params);
 
     const url = "/api/v1/users/friends/" + params +"/";

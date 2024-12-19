@@ -1,7 +1,9 @@
 import createElement from "../Utils/createElement.js";
 import AuthenticatorGuideStep from "./AuthenticatorGuideStep.js";
+import MfaQRcode from "../Components/MfaQRcode.js";
+import enableMfa from "../Controller/Auth/enableMFA.js";
 
-const SettingsModal = () => {
+const SettingsModal = async () => {
     const enableTitle = createElement(
         "h1",
         { class: "two-auth-enable-title" },
@@ -9,7 +11,7 @@ const SettingsModal = () => {
     );
     const stepOne = createElement(
         "p",
-        { class: "step-one" },
+        { class: "authenticator-guide-step-content" },
         "휴대전화나 태블릿에 ",
         createElement("a", { href: "#" }, "Google 인증"),
         ", ",
@@ -21,22 +23,28 @@ const SettingsModal = () => {
         " 앱을 다운로드하여 설치합니다."
     );
     const stepTwo = createElement(
-        "ul",
-        {},
+        "div",
+        { class: "authenticator-guide-step-content" },
         "인증 앱을 열고 다음을 수행합니다.",
-        createElement("li", {}, '앱 오른쪽 상단의 "+" 아이콘을 누릅니다.'),
         createElement(
-            "li",
+            "ul",
             {},
-            "휴대전화 카메라를 사용하여 이미지를 왼쪽으로 스캔합니다."
+            createElement("li", {}, '앱 오른쪽 상단의 "+" 아이콘을 누릅니다.'),
+            createElement(
+                "li",
+                {},
+                "휴대전화 카메라를 사용하여 이미지를 왼쪽으로 스캔합니다."
+            )
         ),
-        "(",
-        createElement("a", {}, "이 바코드를 스캔할 수 없나요?"),
-        ")"
+        createElement(
+            "a",
+            { class: "authenticator-qrcode-scan-guide" },
+            "이 바코드를 스캔할 수 없나요?"
+        )
     );
     const stepThree = createElement(
         "div",
-        {},
+        { class: "authenticator-guide-step-content" },
         "위의 바코드가 스캔되면 앱에서 생성한 6자리 인증 코드를 입력합니다.",
         createElement(
             "form",
@@ -47,27 +55,87 @@ const SettingsModal = () => {
                     },
                 },
             },
-            createElement("input", { placeholder: "코드" }, ""),
-            createElement("button", { type: "submit" }, "코드 확인 및 활성화")
+            createElement(
+                "input",
+                {
+                    id: "otp-number-input",
+                    placeholder: "코드",
+                    maxlength: 6,
+                    events: {
+                        input: (event) => {
+                            const value = event.target.value;
+                            const filteredValue = value.replace(/[^0-9]/g, ""); // 숫자만 남김
+                            // 입력값이 필터링된 값과 다르면 업데이트
+                            if (value !== filteredValue) {
+                                event.target.value = filteredValue;
+                            }
+                        },
+                    },
+                },
+                ""
+            ),
+            createElement(
+                "button",
+                {
+                    type: "submit",
+                    class: "otp-submit-btn",
+                    events: {
+                        click: (event) => {
+                            enableMfa(
+                                document.querySelector("#otp-number-input")
+                                    .value
+                            );
+                        },
+                    },
+                },
+                "코드 확인 및 활성화"
+            )
         )
     );
+    const qrcode = await MfaQRcode();
     const guide = createElement(
         "div",
         { class: "authenticator-guide" },
         AuthenticatorGuideStep(
-            "/src/Components/profile.png",
+            createElement(
+                "div",
+                { class: "authenticator-guide-step-img-div" },
+                createElement(
+                    "img",
+                    {
+                        src: "/src/Media/step1.png",
+                        class: "authenticator-guide-step-img",
+                    },
+                    []
+                )
+            ),
             1,
             "Download App",
             stepOne
         ),
         AuthenticatorGuideStep(
-            "/src/Components/profile.png",
+            createElement(
+                "div",
+                { class: "authenticator-guide-step-img-div" },
+                qrcode
+            ),
             2,
             "Scan The QR Code",
             stepTwo
         ),
         AuthenticatorGuideStep(
-            "/src/Components/profile.png",
+            createElement(
+                "div",
+                { class: "authenticator-guide-step-img-div" },
+                createElement(
+                    "img",
+                    {
+                        src: "/src/Media/step3.png",
+                        class: "authenticator-guide-step-img",
+                    },
+                    []
+                )
+            ),
             3,
             "Input Authentication Code",
             stepThree
@@ -105,12 +173,18 @@ const SettingsModal = () => {
         enableTitle,
         twoAuthAuthenticatorBtn
     );
+    const inactiveAccountCaution = createElement(
+        "div",
+        { class: "inactive-account-caution hide" },
+        "비활성화?"
+    );
     const prevBtn = createElement(
         "button",
         {
             class: "settings-modal-prev-btn hide",
             events: {
                 click: (event) => {
+                    document.querySelector("#otp-number-input").value = "";
                     document
                         .querySelector(".two-auth-authenticator-guide")
                         .classList.add("hide");
@@ -134,6 +208,7 @@ const SettingsModal = () => {
             class: "settings-modal-cancel-btn",
             events: {
                 click: () => {
+                    document.querySelector("#otp-number-input").value = "";
                     document.querySelector(".modal").classList.add("hide");
                     document
                         .querySelector(".two-auth-package")
@@ -154,11 +229,6 @@ const SettingsModal = () => {
             },
         },
         "Cancel"
-    );
-    const inactiveAccountCaution = createElement(
-        "div",
-        { class: "inactive-account-caution hide" },
-        "비활성화?"
     );
     const settingsBtnSet = createElement(
         "div",

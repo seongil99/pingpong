@@ -2,7 +2,8 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import ProfileForm from "../Components/ProfileForm.js";
 import SettingsModal from "../Components/SettingsModal.js";
-import fetchMFAStatus from "../Controller/Auth/fetchMFAStatus.js";
+import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
+import disableMFA from "../Controller/Auth/disableMFA.js";
 
 class SettingsPage {
     async template() {
@@ -21,24 +22,29 @@ class SettingsPage {
             { class: "settings-section-title" },
             "Inactive Account"
         );
-        const editProfileForm = ProfileForm();
-        const mfaStatus = await fetchMFAStatus();
+        const editProfileForm = await ProfileForm();
+        const mfaStatus = await detectMfaEnabled();
         const twoAuthBtn = createElement(
             "button",
             {
-                class: "settings-btn",
+                class: "settings-btn two-auth-btn",
                 events: {
-                    click: () => {
-                        document
-                            .querySelector(".modal")
-                            .classList.remove("hide");
-                        document
-                            .querySelector(".two-auth-package")
-                            .classList.remove("hide");
+                    click: async () => {
+                        const mfaStatusAgain = await detectMfaEnabled();
+                        if (mfaStatusAgain.status === "enabled") {
+                            disableMFA();
+                        } else {
+                            document
+                                .querySelector(".modal")
+                                .classList.remove("hide");
+                            document
+                                .querySelector(".two-auth-package")
+                                .classList.remove("hide");
+                        }
                     },
                 },
             },
-            `2FA ${mfaStatus === "enabled" ? "Disable" : "Enable"}`
+            `2FA ${mfaStatus.status === "enabled" ? "Disable" : "Enable"}`
         );
         const inactiveBtn = createElement(
             "button",
@@ -78,7 +84,7 @@ class SettingsPage {
             title3,
             inactiveBtn
         );
-        const modal = SettingsModal();
+        const modal = await SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
             "h1",

@@ -4,6 +4,6 @@ export const handleClick = (e, router) => {
   if (target) {
     e.preventDefault();
     const pathname = target.getAttribute("path");
-    router.navigate(pathname); // 경로 변경 및 렌더링
+    router.navigate(pathname, false); // 경로 변경 및 렌더링
   }
 };

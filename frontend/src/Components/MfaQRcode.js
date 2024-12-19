@@ -1,20 +1,19 @@
-// export const qrcodeImage = `<img src="https://localhost/api/v1/accounts/2fa_qr" alt="2fa QR code">`;
-
+import createElement from "../Utils/createElement.js";
 import fetchQRcode from "../Controller/Auth/fetchQRCode.js";
 
-const mfaQRCode = () => {
+const MfaQRcode = async () => {
+    const qrcodeImg = await fetchQRcode();
     const qrcode = createElement(
         "img",
         {
-            src: "",
-            alt: "QR Code",
+            src: qrcodeImg.qrcode,
+            alt: "2FA QR Code",
+            class: "authenticator-guide-step-img",
             id: "mfa-qrcode",
-            style: { width: "150px", height: "150px" },
         },
         []
     );
-    fetchQRcode;
     return qrcode;
 };
 
-export default mfaQRCode;
+export default MfaQRcode;

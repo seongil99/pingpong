@@ -82,4 +82,4 @@ class FortyTwoLogin(
                 "detail": "User is not active",
                 "status": "activation_required",  # 요거는 원하는걸로 바꿔줌
             }
-        return JsonResponse(contents, status=401)
+        return JsonResponse(contents, status=200)

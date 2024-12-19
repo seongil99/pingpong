@@ -1,4 +1,5 @@
 import createElement from "../Utils/createElement.js";
+import FetchFriends from "../Controller/Friends/FetchFriends.js";
 import FriendInfos from "./FriendInfos.js";
 import FetchFriends from "../Controller/Friends/FetchFriends.js";
 async function FriendList() {

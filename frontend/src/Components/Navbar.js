@@ -39,9 +39,10 @@ function NavBarList() {
     logoutBtn.onclick = async () => {
         const response = await logout();
         if (response.ok) {
-            document.getElementById("h2").textContent = i18next.t("logout_success");
+            alert("logout success!!");
+            window.router.navigate("/", false);
         } else {
-            document.getElementById("h2").textContent = i18next.t("logout_fail");
+            alert("logout fail");
         }
     };
     const ul = createElement(

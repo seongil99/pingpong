@@ -15,6 +15,6 @@ const fetchUserProfile = async () => {
     } catch (error) {
         console.error("Error fetching user profile:", error);
     }
-}
+};
 
 export default fetchUserProfile;

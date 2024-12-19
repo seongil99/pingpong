@@ -130,6 +130,7 @@ button {
     font-size: 18px;
     padding: 5px 7px;
 }
+button,
 a {
     cursor: pointer;
 }
@@ -139,8 +140,10 @@ html {
 .hide {
     display: none;
 }
+
 #home-main,
 #settings-main,
+#profile-main,
 #matching-main {
     display: flex;
     flex-direction: column;

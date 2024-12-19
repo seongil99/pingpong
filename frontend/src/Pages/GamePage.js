@@ -7,18 +7,19 @@ import GameCommandInfo from "../Components/GameCommand.js";
 import { io } from "socket.io-client";
 
 class GamePage {
-    async template(){ 
+    async template(pathParam, queryParam) {
+        const [_, gameId] = pathParam;
         const socket = io('/api/game', {
             transports: ['websocket'],
             debug: true,
             path: '/api/game/socket.io',
             query: {
-                gameId: 1,
+                gameId: gameId,
                 userName: "aa",
                 gameType: "aa",
             }
         });
-        const game = new GameWindow(socket,true);
+        const game = new GameWindow(parseInt(socket, true));
         // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가
         const main = createElement(
             "div",
@@ -27,7 +28,7 @@ class GamePage {
             game.makeWindow()
         );
         // 컨테이너에 모달, 네비게이션 바, main 요소 추가
-        const container = createElement("div", {},  main);
+        const container = createElement("div", {}, main);
         return container; // 컨테이너를 반환
     }
 }

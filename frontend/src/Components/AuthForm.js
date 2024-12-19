@@ -96,12 +96,14 @@ const AuthForm = () => {
                     const codeNumbers =
                         document.querySelectorAll(".code-number");
                     if (mask != 0b111111) {
+                        console.log("Nope: ", mask);
                         return;
                     }
-                    let otp = 0;
+                    let otp = "";
                     codeNumbers.forEach((value) => {
-                        otp = otp * 10 + parseInt(value.value);
+                        otp += value.value;
                     });
+                    console.log(otp);
                     verifyOTP(otp); // Call the method to verify OTP
                     codeNumbers.forEach((value) => (value.value = ""));
                     mask = 0;

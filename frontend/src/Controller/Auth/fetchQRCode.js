@@ -1,16 +1,18 @@
-const fetchQRcode = () => {
+const fetchQRcode = async () => {
     // URL to your QR code API endpoint
-    const apiUrl = "/api/v1/accounts/mfa/qrcode/";
-
-    fetch(apiUrl, {
-        method: "GET",
-        credentials: "include", // Include cookies if needed
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            document.querySelector("#mfa-qrcode").src = data.qrcode;
+    try {
+        const response = await fetch("/api/v1/users/accounts/mfa/qrcode/", {
+            method: "GET",
+            credentials: "include", // Include cookies if needed
         })
-        .catch((error) => console.error("Error fetching QR code:", error));
+        if (!response.ok) {
+            throw Error("No Data");
+        }
+        const data = response.json();
+        return (data);
+    } catch (error) {
+        console.error("Error fetching QR Code: ", error);
+    }
 };
 
 export default fetchQRcode;
