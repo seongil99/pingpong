@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from backend.GameIO import GameIO
-from socketio import AsyncNamespace
 
 @pytest.mark.asyncio
 async def test_check_authentication_success():
