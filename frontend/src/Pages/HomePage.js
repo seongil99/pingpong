@@ -11,6 +11,12 @@ class HomePage {
         await translater({
             "English": {
                 "translation": {
+                    "nav_home": "Home",
+                    "nav_profile": "Profile",
+                    "nav_settings": "Settings",
+                    "nav_logout": "Log out",
+                    "logout_success": "Logout successful",
+                    "logout_fail": "Logout failed",
                     "btn_friend_list": "Friend List",
                     "btn_close": "Close",
                     "btn_go_matching": "Go to Matching Page"
@@ -18,6 +24,12 @@ class HomePage {
             },
             "한국어": {
                 "translation": {
+                    "nav_home": "홈",
+                    "nav_profile": "프로필",
+                    "nav_settings": "설정",
+                    "nav_logout": "로그아웃",
+                    "logout_success": "로그아웃 성공",
+                    "logout_fail": "로그아웃 실패",
                     "btn_friend_list": "친구목록",
                     "btn_close": "X",
                     "btn_go_matching": "매칭 페이지로 가기"
@@ -25,6 +37,12 @@ class HomePage {
             },
             "日本語": {
                 "translation": {
+                    "nav_home": "ホーム",
+                    "nav_profile": "プロフィール",
+                    "nav_settings": "設定",
+                    "nav_logout": "ログアウト",
+                    "logout_success": "ログアウト成功",
+                    "logout_fail": "ログアウト失敗",
                     "btn_friend_list": "友達リスト",
                     "btn_close": "閉じる",
                     "btn_go_matching": "マッチングページへ行く"

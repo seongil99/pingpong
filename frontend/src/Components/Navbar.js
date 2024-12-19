@@ -11,7 +11,9 @@ const logout = async () => {
         const response = await fetch(url, {
             method: "POST",
             credentials: "include", // 쿠키 전송 허용
-            "X-CSRFToken": csrftoken, // CSRF 토큰을 헤더에 포함
+            headers: {
+                "X-CSRFToken": csrftoken, // CSRF 토큰을 헤더에 포함
+            },
         });
         return response;
     } catch (error) {
@@ -19,27 +21,27 @@ const logout = async () => {
     }
 };
 
-function NavBarItem(p, text) {
+function NavBarItem(p, i18nKey) {
     const a = createElement(
         "a",
-        { class: "nav-link navigate", path: p },
-        text
+        { class: "nav-link navigate", path: p, "data-i18n": i18nKey },
+        i18next.t(i18nKey)
     );
     const li = createElement("li", { class: "nav-item" }, a);
     return li;
 }
 
 function NavBarList() {
-    const profileBtn = NavBarItem("/profile", "Profile");
-    const settingBtn = NavBarItem("/settings", "Setting");
-    const logoutBtn = NavBarItem("", "Log out");
+    const profileBtn = NavBarItem("/profile", "nav_profile");
+    const settingBtn = NavBarItem("/settings", "nav_settings");
+    const logoutBtn = NavBarItem("", "nav_logout");
     logoutBtn.lastElementChild.classList.remove("navigate");
-    logoutBtn.onClick = async () => {
+    logoutBtn.onclick = async () => {
         const response = await logout();
         if (response.ok) {
-            document.getElementById("h2").textContent = " logout success";
+            document.getElementById("h2").textContent = i18next.t("logout_success");
         } else {
-            document.getElementById("h2").textContent = " logout fail";
+            document.getElementById("h2").textContent = i18next.t("logout_fail");
         }
     };
     const ul = createElement(
@@ -56,8 +58,8 @@ function NavBarList() {
 function NavBar() {
     const homeTitle = createElement(
         "a",
-        { class: "navbar-title navbar-brand navigate", path: "/home" },
-        "ft_transcendence"
+        { class: "navbar-title navbar-brand navigate", path: "/home", "data-i18n": "nav_home" },
+        i18next.t("nav_home")
     );
     const navBarIcon = createElement(
         "span",
