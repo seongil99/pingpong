@@ -61,7 +61,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 if opponent:
                     random_val = random.Random().randint(0, 1)
                     option_selector = self.user if random_val == 1 else opponent
-                    game_id = await create_game_and_get_game_id(self.user, opponent, option_selector)
+                    game_id = await create_game_and_get_game_id(
+                        self.user, opponent, option_selector
+                    )
                     self.current_game_id = game_id
                     self.current_opponent_id = opponent.id
                     await self.send_json(
@@ -73,23 +75,28 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                             "option_selector": option_selector == self.user,
                         }
                     )
-                    await self.notify_opponent(opponent, game_id, option_selector == opponent)
+                    await self.notify_opponent(
+                        opponent, game_id, option_selector == opponent
+                    )
                 else:
                     await self.send_json({"type": "waiting_for_match"})
             elif msg_type == "cancel_match":
                 await self.cancel_match()
                 if self.current_game_id and self.current_opponent_id:
                     await self.channel_layer.group_send(
-                        f"user_{self.current_opponent_id}",
-                        {"type": "match_canceled"}
+                        f"user_{self.current_opponent_id}", {"type": "match_canceled"}
                     )
                 await self.send_json({"type": "match_canceled"})
             elif msg_type == "set_option":
                 game_id = content["game_id"]
                 multiball_option = content["multi_ball"]
                 # 옵션 설정 가능 여부 및 multiball_option 검증
-                if not await self.can_user_set_option(game_id) or not isinstance(multiball_option, bool):
-                    await self.send_json({"type": "error", "message": "옵션을 선택할 수 없습니다."})
+                if not await self.can_user_set_option(game_id) or not isinstance(
+                    multiball_option, bool
+                ):
+                    await self.send_json(
+                        {"type": "error", "message": "옵션을 선택할 수 없습니다."}
+                    )
                     return
                 multiball_option = await self.save_multi_ball(game_id, multiball_option)
                 opponent_id = await self.get_opponent_id(game_id)
@@ -198,18 +205,22 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def is_user_in_other_game(self, user_id):
         from ingame.models import OneVersusOneGame
-        return OneVersusOneGame.objects.filter(user_1_id=user_id).exists() or \
-            OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+
+        return (
+            OneVersusOneGame.objects.filter(user_1_id=user_id).exists()
+            or OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+        )
 
     @database_sync_to_async
     def get_game_id_in_progress(self, user_id):
         from ingame.models import OneVersusOneGame
+
         game = OneVersusOneGame.objects.filter(user_1_id=user_id).first()
         if game:
-            return game.game_id
+            return game.game_id.id
         game = OneVersusOneGame.objects.filter(user_2_id=user_id).first()
         if game:
-            return game.game_id
+            return game.game_id.id
         return None
 
     @database_sync_to_async

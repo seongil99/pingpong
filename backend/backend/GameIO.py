@@ -192,8 +192,8 @@ class GameIO(socketio.AsyncNamespace):
             logger.info("User authenticated: %s", validated_data)
             user = await User.objects.aget(id=validated_data["user_id"])
             await sio.save_session(sid, {"user": user}, namespace=DEFAULT_NAMESPACE)
-        except (InvalidToken, TokenError, TokenBackendError) as e:
-            logger.info("Invalid token: %s", str(e))
+        except Exception as e:
+            logger.info("%s", str(e))
             return False  # Deny the connection
 
         logger.info("Connection allowed")
@@ -254,5 +254,3 @@ class GameIO(socketio.AsyncNamespace):
         if game_state["gameStart"] is False:
             server.game_loop(game_state)
         game_state["gameStart"] = True
-
-    # 서버 접근 원자성 보장 함수
