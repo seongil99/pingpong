@@ -13,7 +13,7 @@ from backend.socketsend import socket_send
 from backend.dbAsync import get_game_users
 from tournament.models import TournamentGame, TournamentMatchParticipants
 from django.db import transaction
-
+from asgiref.sync import sync_to_async
 from .enums import Game, GameMode
 
 logger = logging.getLogger("django")
@@ -560,6 +560,7 @@ class PingPongServer:
         for task in task_list:
             task.cancel()
 
+    @sync_to_async
     def _update_tournament(self, game, winner_id):
         TournamentGame.objects.filter(game_id=game.id).update(
             status="finished",
@@ -587,28 +588,26 @@ class PingPongServer:
             if tournament.current_round == 1:
                 user1 = tournament_participants.user3_id
                 user2 = tournament_participants.user4_id
-                TournamentGame.objects.create(
-                    tournament_id=tournament,
-                    tournament_round=1,
-                    user_1_id=tournament_participants.user3_id,
-                    user_2_id=tournament_participants.user4_id,
-                )
+                next_round = 1
             else:
+                next_round = 2
                 user1 = tournament.round_1_winner
                 user2 = tournament.round_2_winner
-                TournamentGame.objects.create(
-                    tournament_id=tournament,
-                    tournament_round=2,
-                    user_1_id=tournament.round_1_winner,
-                    user_2_id=tournament.round_2_winner,
-                )
-            GameHistory.objects.create(
+            game_id = GameHistory.objects.create(
                 user1_id=user1,
                 user2_id=user2,
                 gamemode=GameMode.PVP.value,
                 tournament_id=tournament,
                 option_selector_id=tournament_participants.user1_id,
                 multi_ball=tournament.multi_ball,
+            )
+            TournamentGame.objects.create(
+                game_id=game_id,
+                tournament_id=tournament,
+                tournament_round=next_round,
+                user_1_id=tournament.round_1_winner,
+                user_2_id=tournament.round_2_winner,
+                choices="ongoing",
             )
 
     async def _clean_one_v_one_game(self, game_id):
