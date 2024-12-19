@@ -262,7 +262,7 @@ class PingPongServer:
             await self.handle_player_input(game_state, "ai", "D", True)
 
     async def _update_physics(self, game_state):
-        # logger.info("updating physics...")
+        logger.info("updating physics...")
         if not game_state["gameStart"]:
             return
         game_id = game_state["game_id"]

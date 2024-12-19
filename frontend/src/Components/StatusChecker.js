@@ -1,9 +1,6 @@
 function connect() {
-  const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-const host = window.location.host;
-const socket = new WebSocket(`${protocol}${host}/api/online-status/`);
-  // const socket = new WebSocket("/api/online-status/");
-  let retryDelay = 5;
+  const socket = new WebSocket("wss://localhost/api/online-status/");
+  let retryDelay = 5 * 1000;
 
   socket.onopen = () => {
     console.log("Connected");

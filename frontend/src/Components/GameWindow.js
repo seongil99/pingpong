@@ -349,7 +349,7 @@ class PingPongClient {
         this.makeGuideLines();
         this.animate = this.animate.bind(this);
         this.animate();
-        // this.setupSocketListeners();
+        this.setupSocketListeners();
     }
     makeWindow() {
         return createElement('div',{class :'gameWindow'},this.renderer.domElement);

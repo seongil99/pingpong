@@ -51,7 +51,7 @@ class MatchingPage {
           () => {
             this.cancelMatch();
             this.btnContainer.classList.toggle("hide");
-            this.container.removeChild(this.wait.element);
+            this.wait.modal.dispose();
           },
           this.socket,
         );
@@ -66,7 +66,7 @@ class MatchingPage {
           () => {
             this.cancelMatch();
             this.btnContainer.classList.toggle("hide");
-            this.container.removeChild(this.wait.element);
+            this.wait.modal.dispose();
           },
           this.socket,
         );
