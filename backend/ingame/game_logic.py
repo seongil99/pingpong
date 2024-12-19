@@ -177,8 +177,6 @@ class PingPongServer:
         game_id 를 가지고 있는 게임에 유저를 추가
         """
         game_state = self.game_state.load_game_state(game_id)
-
-        logger.info("user: %s", user)
         if multi_option is False:
             game_state["render_data"]["oneName"] = user.username
             game_state["playerOneId"] = user.id
@@ -191,13 +189,17 @@ class PingPongServer:
             game_state["render_data"]["twoName"] = user2.username
             game_state["playerTwoId"] = user2.id
 
-    async def add_game(self, game_id, multi_option, ball_count=1):
+    async def add_game(self, game):
         """
         game_id 가 존재하지 않으면 새 게임을 생성
         """
-        game_state = self.game_state.load_game_state(game_id)
+        ball_count = 2 if game.multi_ball else 1
+        game_state = self.game_state.load_game_state(str(game.id))
         if game_state is None:
-            game_state = await self.game_state.new_game(game_id, multi_option)
+            game_state = await self.game_state.new_game(
+                str(game.id), game.gamemode == GameMode.PVP.value
+            )
+
             for i in range(0, ball_count):
                 self._add_ball(game_state)
 
@@ -563,8 +565,10 @@ class PingPongServer:
         """
         게임이 종료되지 않은 상태에서 모든 플레이어가 게임을 나갔을 때 호출
         """
+        logger.info("Abandoned game: %s", game_state["game_id"])
         game_id = game_state["game_id"]
         await self._save_game_history(game_state, None)
+        await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)
         task_list = gameid_to_task[game_id]
         for task in task_list:
@@ -573,7 +577,12 @@ class PingPongServer:
     async def _save_game_history(self, game_state, winner_id):
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)
-        winner = None if winner_id == (-1) else await User.objects.aget(id=winner_id)
+        logger.info("winner: %s", winner_id)
+        winner = (
+            None
+            if (winner_id is None) or (winner_id == -1)
+            else await User.objects.aget(id=winner_id)
+        )
         await self._save_pingpong_history(game_state, winner, game)
         await self._update_rounds(game_state)
         if game.gamemode == GameMode.PVP.value:

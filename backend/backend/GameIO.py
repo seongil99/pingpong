@@ -53,7 +53,6 @@ class GameIO(socketio.AsyncNamespace):
         query = environ.get("QUERY_STRING", "")
         params = parse_qs(query)
         game_id = params.get("gameId", [""])[0]
-
         try:
             int(game_id)
             game: PingPongHistory = await PingPongHistory.objects.aget(id=game_id)
@@ -84,21 +83,18 @@ class GameIO(socketio.AsyncNamespace):
         # save user sid to game_id
         user_to_game[sid] = game_id
         if game.gamemode == GameMode.PVE.value:
-            await server.add_game(game_id, game.gamemode == GameMode.PVP.value)
+            await server.add_game(game)
             await server.add_user(game_id, user, game.gamemode == GameMode.PVP.value)
         else:
             # 게임이 존재하지 않을 경우 연결 종료
             user1, user2 = await get_game_users(game_id)
         # add user's active socket to user_to_socket
         if game.gamemode == GameMode.PVP.value:
-            await server.add_game(
-                game_id, game.gamemode == "PVP"
-            )  # 유저이름 변경 필요 받아야 할듯
-            await server.add_user(game_id, user, game.gamemode == "PVP")
+            await server.add_game(game)  # 유저이름 변경 필요 받아야 할듯
+            await server.add_user(game_id, user, game.gamemode == GameMode.PVP.value)
 
         game_state = game_state_db.load_game_state(game_id)
         game_state["clients"][sid] = sid
-        logger.info("game_state: %s", game_state)
 
         if game.gamemode == GameMode.PVE.value:
             await self._single_player_start(game_id)
@@ -166,7 +162,6 @@ class GameIO(socketio.AsyncNamespace):
             and game.gamemode == GameMode.PVP.value
         ):
             game_state["gameStart"] = False
-            game_state["game_start_lock"].release()
             await server.process_abandoned_game(game_state)
         game_state["game_start_lock"].release()
         del user_to_game[sid]
