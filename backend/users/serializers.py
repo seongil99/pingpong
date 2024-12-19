@@ -60,5 +60,5 @@ class UserStatusSerializer(serializers.ModelSerializer):
 class CurrentGameSerializer(serializers.Serializer):
     game_id = serializers.IntegerField()
     tournament_id = serializers.IntegerField(allow_null=True)
-    status = serializers.ChoiceField(choices=["pending", "ongoing", "finished", None], allow_null=True)
+    status = serializers.ChoiceField(choices=["pending", "ongoing", "finished"], allow_null=True)
     round = serializers.IntegerField(allow_null=True)
