@@ -10,7 +10,7 @@ from django.db import transaction
 from asgiref.sync import sync_to_async
 from ingame.data import gameid_to_task
 from ingame.models import OneVersusOneGame
-from pingpong_history.models import PingPongHistory as GameHistory
+from pingpong_history.models import PingPongHistory as GameHistory, PingPongRound
 from users.models import User
 from backend.socketsend import socket_send
 from backend.dbAsync import get_game_users
@@ -108,8 +108,15 @@ class InMemoryGameState:
             "two_keystate": {"A": False, "D": False},
             "playerOneId": -1,
             "playerTwoId": -1,
-            "rallies": [],
-            "current_rally": 0,
+            "rounds": [],  # round = {"rally", "start", "end", "score1", "score2"}
+            "current_round_data": {
+                "rally": 0,
+                "start": None,
+                "end": None,
+                "score1": 0,
+                "score2": 0,
+            },
+            "current_round": 0,
             "game_start_lock": asyncio.Lock(),
             "key_state_lock": asyncio.Lock(),
             "rally_flag": False,  # paddle to paddle 랠리 확인용 플래그 False = user1, True = user2 면 카운트
@@ -138,6 +145,25 @@ class InMemoryGameState:
             del self.game_states[game_id]
         else:
             raise KeyError(f"Game ID {game_id} not found.")
+
+    @staticmethod
+    def reset_current_round(game_state):
+        game_state["current_round_data"] = {
+            "rally": 0,
+            "start": timezone.now(),
+            "end": None,
+            "score1": 0,
+            "score2": 0,
+        }
+
+    @staticmethod
+    def save_current_round(game_state):
+        current_round_data = game_state["current_round_data"]
+        current_round_data["score1"] = game_state["render_data"]["score"]["playerOne"]
+        current_round_data["score2"] = game_state["render_data"]["score"]["playerTwo"]
+        current_round_data["end"] = timezone.now()
+        game_state["rounds"].append(current_round_data)
+        logger.info("save round data: %s", current_round_data)
 
 
 class PingPongServer:
@@ -184,6 +210,7 @@ class PingPongServer:
         """
         logger.info("start game loop")
         game_id = game_state["game_id"]
+        InMemoryGameState.reset_current_round(game_state)
         task_list = []
         if game_state["is_single_player"] is True:
             task_list.append(
@@ -283,7 +310,8 @@ class PingPongServer:
                 )
                 and not game_state["rally_flag"]
             ):
-                game_state["current_rally"] += 1
+                current_round_data = game_state["current_round_data"]
+                current_round_data["rally"] += 1
                 game_state["rally_flag"] = True
             if (
                 await self._check_paddle_collision(
@@ -291,7 +319,8 @@ class PingPongServer:
                 )
                 and game_state["rally_flag"]
             ):
-                game_state["current_rally"] += 1
+                current_round_data = game_state["current_round_data"]
+                current_round_data["rally"] += 1
                 game_state["rally_flag"] = False
 
             # Check wall collisions
@@ -307,14 +336,13 @@ class PingPongServer:
                 or ball.position["y"] < 0
                 or ball.position["y"] > 20
             ):
-                game_state["rallies"].append(game_state["current_rally"])
-                game_state["current_rally"] = 0
                 if ball.position["z"] > 0:
                     game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = True
                 else:
                     game_state["render_data"]["score"]["playerOne"] += 1
                     ball.summon_direction = False
+                self._save_round_data(game_state)
 
                 # Check if someone has won the set
                 if (
@@ -359,6 +387,10 @@ class PingPongServer:
                 return
 
         await self._broadcast_game_state(game_state)
+
+    def _save_round_data(self, game_state):
+        InMemoryGameState.save_current_round(game_state)
+        InMemoryGameState.reset_current_round(game_state)
 
     async def _check_paddle_collision(self, ball, paddle, game_state):
         # 1. Find the closest point on the paddle to the ball
@@ -512,17 +544,23 @@ class PingPongServer:
 
     async def _game_finish(self, game_state, winner_id):
         await self._save_game_history(game_state, winner_id)
-
         game_id = game_state["game_id"]
+
         if game_state["is_single_player"] is False:
-            try:
-                await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
-            except OneVersusOneGame.DoesNotExist:
-                logger.info(f"Game not found: {game_id}")
+            self._clean_one_v_one_game(game_id)
+
         self.game_state.delete_game_state(game_id)
+
+        # clean up tasks
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
+
+    async def _clean_one_v_one_game(self, game_id):
+        try:
+            await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
+        except OneVersusOneGame.DoesNotExist:
+            logger.info("Game not found: %s", game_id)
 
     async def process_abandoned_game(self, game_state):
         """
@@ -537,30 +575,50 @@ class PingPongServer:
 
     async def _save_game_history(self, game_state, winner_id):
         game_id = game_state["game_id"]
-        longest_rally = (
-            0 if len(game_state["rallies"]) == 0 else max(game_state["rallies"])
-        )
-        average_rally = (
-            0
-            if len(game_state["rallies"]) == 0
-            else sum(game_state["rallies"]) / len(game_state["rallies"])
-        )
-        winner = None if winner_id == (-1) else await User.objects.aget(id=winner_id)
-        # Save game history
         game = await GameHistory.objects.aget(id=game_id)
+        winner = None if winner_id == (-1) else await User.objects.aget(id=winner_id)
+        await self._save_pingpong_history(game_state, winner, game)
+        await self._update_rounds(game_state)
+        if game.gamemode == GameMode.PVP.value:
+            self._update_wins_losses(game, winner)
+
+    async def _save_pingpong_history(self, game_state, winner, game):
+        if len(game_state["rounds"]) == 0:
+            all_rallies = [game_state["current_round_data"]["rally"]]
+        else:
+            all_rallies = [round_data["rally"] for round_data in game_state["rounds"]]
+        longest_rally = max(all_rallies)
+        average_rally = sum(all_rallies) / len(all_rallies)
+        # Save game history
         game.winner = winner
         game.ended_at = timezone.now()
         game.user1_score = game_state["render_data"]["score"]["playerOne"]
         game.user2_score = game_state["render_data"]["score"]["playerTwo"]
         game.longest_rally = longest_rally
         game.average_rally = average_rally
-
         await game.asave()
-        if game.gamemode == GameMode.PVP.value:
-            asyncio.gather(
-                self._update_wins_losses(game.user1, winner),
-                self._update_wins_losses(game.user2, winner),
+
+    def _update_wins_losses(self, game, winner):
+        asyncio.gather(
+            self._update_wins_losses(game.user1, winner),
+            self._update_wins_losses(game.user2, winner),
+        )
+
+    async def _update_rounds(self, game_state):
+        rounds = game_state["rounds"]
+        game_id = game_state["game_id"]
+        round_list = []
+        for _round in rounds:
+            round_model = PingPongRound(
+                match_id=game_id,
+                user1_score=_round["score1"],
+                user2_score=_round["score2"],
+                rally=_round["rally"],
+                start=_round["start"],
+                end=_round["end"],
             )
+            round_list.append(round_model)
+        await PingPongRound.objects.abulk_create(round_list)
 
     async def _update_wins_losses(self, user, winner):
         if user == winner:
