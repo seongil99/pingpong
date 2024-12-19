@@ -47,7 +47,7 @@ class MatchingPage {
             this.cancelMatch();
             this.toggleButtonContainer();
             waitBox.modal.dispose();
-        }, this.socket);
+        }, this.socket,this.tournamentId);
         this.container.append(waitBox.element);
         waitBox.modal.show();
         return waitBox;
@@ -59,7 +59,7 @@ class MatchingPage {
 
     connectWebSocket(callback) {
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        const endpoint = this.matchType === "PVP" ? "matchmaking" : this.tournamentId ? "tournament/matchmaking": `tournament/game/${this.tournamentId}/`;
+        const endpoint = this.matchType === "PVP" ? "matchmaking" : !this.tournamentId ? "tournament/matchmaking": `tournament/game/${this.tournamentId}`;
         const wsUrl = `${protocol}://${window.location.host}/api/ws/${endpoint}/`;
 
         this.socket = new WebSocket(wsUrl);
@@ -87,6 +87,10 @@ class MatchingPage {
             "set_option": () => this.navigateToGame(this.matchType ==="PVP" ? data.game_id : data.tournament_id),
             "already_joined": () => this.navigateToGame(data.game_id),
             "match_waiting": () => console.log("waiting for tounament"),
+            "game_started" : () => {
+                this.matchType = "PVP";
+                this.navigateToGame(data.game_id);
+            }
         };
 
         (messageHandlers[data.type] || (() => console.warn("Unhandled message type:", data.type)))();
@@ -100,19 +104,26 @@ class MatchingPage {
         if(data.option_selector){
             const optionForm = document.getElementById("form-target");
             optionForm.classList.remove("hide");
-            this.hiddenInput.value = data.game_id;
+            console.log('op select in this.tournamentId: ', this.tournamentId);
+            this.hiddenInput.value = `${this.matchType},${data.game_id}`;
         }
         console.log(`Match found! Opponent: ${data.opponent_username}`);
-        if(this.type === "tournament"){
+        if(this.matchType === "tournament" && !this.tournamentId){
+            console.log("before set id",data.tournament_id);
             this.tournamentId = data.tournament_id;
+            this.hiddenInput.value = `${this.matchType},${this.tournamentId}`; 
+            console.log('this.tournamentId: ', this.tournamentId);
         }
-        else
+        else if(this.matchType === "PVP")
             this.hiddenInput.value = data.game_id;
     }
 
     navigateToGame(gameId) {
-        this.waitModal.modal.dispose();
-        this.container.removeChild(this.waitModal.element);
+        if(this.waitModal){
+            this.waitModal.modal.dispose();
+            this.container.removeChild(this.waitModal.element);
+            this.waitModal = null;
+        }
     if(this.matchType === "PVP")
         window.router.navigate(`/playing/${gameId}`, false);
     else{

@@ -1,7 +1,7 @@
 // Bootstrap Form Switch 생성 함수
 import createElement from "../Utils/createElement.js";
 
-function createFormSwitch(socket) {
+function createFormSwitch(socket,tournamentId) {
     // 스위치 입력 생성
     const formCheckInput = createElement(
         "input",
@@ -48,13 +48,25 @@ function createFormSwitch(socket) {
                     ()=>{
 						console.log("this is secondcallback ",this,"hiddenvalue" ,socket);
 						if (socket) {
-								const v = document.getElementById("hidden-input");
-								console.log("what is value", v);
-								const message = {
-									type: "set_option",
-									game_id: parseInt(v.value),
-									multi_ball : formCheckInput.checked,
-								};
+								const v = document.getElementById("hidden-input").value;
+                                let message = null;
+                                const vData = String(v).split(',');
+								console.log("what is value", vData);
+                                console.log("tonerment id", tournamentId);
+                                if(vData[0] !=="tournament"){
+                                    message = {
+                                        type: "set_option",
+                                        game_id: parseInt(vData[1]),
+                                        multi_ball : formCheckInput.checked,
+                                    };
+                                }
+                                else{
+                                    message = {
+                                        type: "set_option",
+                                        tournament_id: parseInt(vData[1]),
+                                        multi_ball : formCheckInput.checked,
+                                    };
+                                }
 								console.log("before sned message ",message);
 								socket.send(JSON.stringify(message));            
 							}
