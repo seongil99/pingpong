@@ -8,7 +8,7 @@ const FetchUserData = async (userid) => {
             throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        data.avatar = data.avatar.replace("http://", "https://");
+        data.avatar = data.avatar?.replace("http://", "https://");
         return data;
     } catch (error) {
         console.error(error);
