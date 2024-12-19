@@ -32,7 +32,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
-        await self.cancel_match()
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         if text_data:
@@ -113,7 +112,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 )
 
                 # 게임 생성 후 상대방 강제 종료 예시
-                logger.info("create 1v1 table")
                 await self.create_one_versus_one_game(self.user, opponent)
                 await self.channel_layer.group_send(
                     f"user_{opponent_id}",
@@ -180,6 +178,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def force_disconnect(self, event):
+        await MatchRequest.objects.filter(user=self.user).adelete()
         await self.close()
 
     @database_sync_to_async
@@ -215,7 +214,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_one_versus_one_game(self, user1, user2):
         from ingame.models import OneVersusOneGame
-        logger.info(f"current game id {self.current_game_id}")
         with transaction.atomic():
             history = PingPongHistory.objects.get(id=self.current_game_id)
             game = OneVersusOneGame.objects.create(
@@ -230,8 +228,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def cancel_match(self):
         with transaction.atomic():
             MatchRequest.objects.filter(user=self.user).delete()
-            if self.current_game_id:
-                PingPongHistory.objects.filter(id=self.current_game_id).delete()
 
     @database_sync_to_async
     def get_opponent_id(self, game_id):

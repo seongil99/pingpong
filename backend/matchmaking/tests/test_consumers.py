@@ -1,6 +1,5 @@
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
-from click import option
 from django.test import TransactionTestCase, override_settings
 from django.contrib.auth import get_user_model
 from channels.routing import URLRouter
@@ -8,6 +7,7 @@ from django.urls import path
 from channels.auth import AuthMiddlewareStack
 from asgiref.sync import sync_to_async
 
+from ingame.models import OneVersusOneGame
 from pingpong_history.models import PingPongHistory
 from ..consumers import MatchmakingConsumer
 from ..models import MatchRequest
@@ -177,8 +177,19 @@ class OneVersusOneMatchmakingConsumerTest(TransactionTestCase):
         self.assertEqual(response_set_option_2["game_id"], game_id)
         self.assertTrue(response_set_option_2["multi_ball"])
 
+        # 데이터베이스에 게임이 존재하는 지 확인
+        history = await sync_to_async(PingPongHistory.objects.filter(id=game_id).exists)()
+        ovo = await sync_to_async(OneVersusOneGame.objects.filter(game_id=game_id).exists)()
+        self.assertTrue(history)
+        self.assertTrue(ovo)
+
         await communicator1.disconnect()
         await communicator2.disconnect()
+
+        history = await sync_to_async(PingPongHistory.objects.filter(id=game_id).exists)()
+        ovo = await sync_to_async(OneVersusOneGame.objects.filter(game_id=game_id).exists)()
+        self.assertTrue(history)
+        self.assertTrue(ovo)
 
     @database_sync_to_async
     def get_option_selector(self, game_id):
