@@ -143,6 +143,18 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
 
 ```
 
+- **옵션 선택**:
+    
+```json
+    
+{
+"type": "set_option",
+"tournament_id": 1,
+"multi_ball": true
+}
+    
+```
+
 **서버 → 클라이언트:**
 
 - **매칭 대기 중**:
@@ -157,7 +169,12 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
 
 ```json
 
-{ "type": "match_found", "opponents": ["opponent1", "opponent2", "opponent3"], "tournament_id": 1 }
+{ 
+"type": "match_found", 
+"opponents": ["opponent1", "opponent2", "opponent3"], 
+"tournament_id": 1,
+"option_selector": true,
+}
 
 ```
 
@@ -167,6 +184,14 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
 
 { "type": "match_canceled" }
 
+```
+
+- **강제 접속 종료**:
+    
+```json
+    
+{ "type": "force_disconnect" }
+    
 ```
 
 - **에러**:
