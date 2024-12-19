@@ -200,8 +200,28 @@ class ProfilePage {
             pageItems.append(
                 createElement("button", {
                     id: `page${i}`,
-                    offset: `${limit * (i - 1)} + 1`,
+                    offset: `${this.#limit * (i - 1) + 1}`,
                     limit: `${curLimit}`,
+                    events: {
+                        click: (event) => {
+                            const list = document.getElementById(
+                                "history-description-list"
+                            );
+                            list.removeChild(list.lastChild);
+                            list.appendChild(pageListContent[i - 1]);
+                            this.#offset = `${this.#limit * (i - 1) + 1}`;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        },
+                    },
                 })
             );
             const content = createElement(
@@ -242,17 +262,83 @@ class ProfilePage {
             : 1;
         const pageNumsDiv = createElement(
             "div",
-            { class: "history-description-pagination-nums-div" },
+            { id: "history-description-pagination-nums-div" },
             pageBlocks[curPageBlock]
         );
         const leftBtn = createElement(
             "button",
-            { class: "history-description-pagination-left-btn" },
+            {
+                class: "history-description-pagination-left-btn",
+                events: {
+                    click: () => {
+                        if (curPageBlock - 1 >= 0) {
+                            curPageBlock -= 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 5;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
             "<"
         );
         const rightBtn = createElement(
             "button",
-            { class: "history-description-pagination-right-btn" },
+            {
+                class: "history-description-pagination-right-btn",
+                events: {
+                    click: () => {
+                        if (
+                            curPageBlock + 1 <=
+                            Math.floor(userHistoryData.count / this.#limit) +
+                                (userHistoryData.count % this.#limit)
+                        ) {
+                            curPageBlock += 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 1;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
             ">"
         );
         const pagination = createElement(
