@@ -6,6 +6,7 @@ from channels.routing import URLRouter
 from django.urls import path
 from channels.auth import AuthMiddlewareStack
 
+from ingame.models import OneVersusOneGame
 from tournament.consumers import TournamentMatchingConsumer
 from tournament.models import Tournament, TournamentParticipant, TournamentGame, TournamentQueue
 
@@ -258,7 +259,8 @@ class TournamentMatchingConsumerTest(TransactionTestCase):
         await selector_communicator.send_json_to({
             "type": "set_option",
             "tournament_id": tournament_id,
-            "multi_ball": True
+            "multi_ball": True,
+            "game_id": None
         })
 
         # 모든 유저가 set_option 이벤트를 수신해야 함
@@ -267,6 +269,7 @@ class TournamentMatchingConsumerTest(TransactionTestCase):
         self.assertEqual(set_option_resp_selector["type"], "set_option")
         self.assertEqual(set_option_resp_selector["tournament_id"], tournament_id)
         self.assertTrue(set_option_resp_selector["multi_ball"])
+        self.assertIsNotNone(set_option_resp_selector["game_id"])
 
         # 나머지 유저들
         others = [c for c in [communicator1, communicator2, communicator3, communicator4] if c != selector_communicator]
@@ -275,12 +278,18 @@ class TournamentMatchingConsumerTest(TransactionTestCase):
             self.assertEqual(set_option_resp["type"], "set_option")
             self.assertEqual(set_option_resp["tournament_id"], tournament_id)
             self.assertTrue(set_option_resp["multi_ball"])
+            self.assertIsNotNone(set_option_resp["game_id"])
 
         # 통신 종료
         await communicator1.disconnect()
         await communicator2.disconnect()
         await communicator3.disconnect()
         await communicator4.disconnect()
+
+        # OneVersusOneGame 객체 확인
+        game = await OneVersusOneGame.objects.filter(game_id_id=set_option_resp_selector["game_id"]).afirst()
+        self.assertIsNotNone(game)
+
 
     async def test_force_disconnect_when_option_selector_leaves(self):
         # 1. 4명 매칭

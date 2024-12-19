@@ -24,7 +24,6 @@ class Tournament(models.Model):
             (0, 0),
             (1, 1),
             (2, 2),
-            (3, 3),
         ]
     )  # 0: pending, 1: 1st round, 2: 2nd round, 3: 3rd round
     round_1_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_1_winner", null=True)
@@ -57,7 +56,7 @@ class TournamentParticipant(models.Model):
 class TournamentGame(models.Model):
     game_id = models.OneToOneField(PingPongHistory, on_delete=models.CASCADE)
     tournament_id = models.ForeignKey(Tournament, on_delete=models.CASCADE)
-    tournament_round = models.IntegerField(choices=[(0, 0), (1, 1), (2, 2), (3, 3)])
+    tournament_round = models.IntegerField(choices=[(0, 0), (1, 1), (2, 2)])
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_one")
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tournament_game_player_two")
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)

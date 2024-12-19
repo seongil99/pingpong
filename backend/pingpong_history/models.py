@@ -63,11 +63,13 @@ class PingPongHistory(models.Model):
     def save(self, *args, **kwargs):
         if self.gamemode == GameMode.PVE.value:
             self.user2 = None
-        elif self.user1.id > self.user2.id:
-            # 사용자 순서 교환
-            self.user1, self.user2 = self.user2, self.user1
-            # 점수도 교환 (필요한 경우)
-            self.user1_score, self.user2_score = self.user2_score, self.user1_score
+        # user2가 None이 아닐 때만 순서 변경 로직 실행
+        if self.user1 is not None and self.user2 is not None:
+            if self.user1.id > self.user2.id:
+                # 사용자 순서 교환
+                self.user1, self.user2 = self.user2, self.user1
+                # 점수도 교환 (필요한 경우)
+                self.user1_score, self.user2_score = self.user2_score, self.user1_score
         super().save(*args, **kwargs)
 
     def __str__(self):
