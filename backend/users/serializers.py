@@ -55,3 +55,10 @@ class UserStatusSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "is_account_active"]
         read_only_fields = ["id", "username"]
+
+
+class CurrentGameSerializer(serializers.Serializer):
+    game_id = serializers.IntegerField()
+    tournament_id = serializers.IntegerField(allow_null=True)
+    status = serializers.ChoiceField(choices=["pending", "ongoing", "finished", None], allow_null=True)
+    round = serializers.IntegerField(allow_null=True)
