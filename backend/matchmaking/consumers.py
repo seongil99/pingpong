@@ -1,10 +1,11 @@
 import random
-from django.utils import timezone
 import logging
+from django.utils import timezone
+from django.db import transaction
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.db import transaction
 
+from pingpong_history.models import PingPongHistory
 from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
 
@@ -22,7 +23,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated and not await self.is_duplicate_user(self.user.id):
+        if self.user.is_authenticated and not await self.is_duplicate_user(
+            self.user.id
+        ):
             await self.accept()
             # 사용자별 그룹에 가입
             self.group_name = f"user_{self.user.id}"
@@ -60,7 +63,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     option_selector = self.user
                     if random_val == 0:
                         option_selector = opponent
-                    game_id = await create_game_and_get_game_id(self.user, opponent, option_selector)
+                    game_id = await create_game_and_get_game_id(
+                        self.user, opponent, option_selector
+                    )
                     self.current_game_id = game_id  # 현재 매칭된 게임 정보 저장
                     self.current_opponent_id = opponent.id
                     await self.send_json(
@@ -73,7 +78,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         }
                     )
                     # 상대방에게도 매칭 결과를 전송합니다.
-                    await self.notify_opponent(opponent, game_id, option_selector == opponent)
+                    await self.notify_opponent(
+                        opponent, game_id, option_selector == opponent
+                    )
                 else:
                     # 대기열에 추가되었습니다.
                     await self.send_json(
@@ -88,7 +95,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         f"user_{self.current_opponent_id}",
                         {
                             "type": "match_canceled",
-                        }
+                        },
                     )
                 await self.send_json(
                     {
@@ -98,7 +105,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             elif content.get("type") == "set_option":
                 game_id = content["game_id"]
                 multiball_option = content["multi_ball"]
-                if not await self.can_user_set_option(game_id) and isinstance(multiball_option, bool):
+                if not await self.can_user_set_option(game_id) and isinstance(
+                    multiball_option, bool
+                ):
                     await self.send_json(
                         {
                             "type": "error",
@@ -209,15 +218,19 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def is_user_in_other_game(self, user_id):
         from ingame.models import OneVersusOneGame
+
         try:
-            return OneVersusOneGame.objects.filter(user_1_id=user_id).exists() or \
-                OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+            return (
+                OneVersusOneGame.objects.filter(user_1_id=user_id).exists()
+                or OneVersusOneGame.objects.filter(user_2_id=user_id).exists()
+            )
         except OneVersusOneGame.DoesNotExist:
             return False
 
     @database_sync_to_async
     def get_game_id_in_progress(self, user_id):
         from ingame.models import OneVersusOneGame
+
         try:
             game = OneVersusOneGame.objects.get(user_1_id=user_id)
             return game.game_id
@@ -231,6 +244,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_one_versus_one_game(self, user1, user2):
         from ingame.models import OneVersusOneGame
+
         with transaction.atomic():
             history = PingPongHistory.objects.get(id=self.current_game_id)
             game = OneVersusOneGame.objects.create(
@@ -248,7 +262,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def cancel_match(self):
         with transaction.atomic():
             MatchRequest.objects.filter(user=self.user).delete()
-            try :
+            try:
                 history = PingPongHistory.objects.get(id=self.current_game_id)
                 history.delete()
             except PingPongHistory.DoesNotExist:
