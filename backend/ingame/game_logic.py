@@ -11,6 +11,8 @@ from pingpong_history.models import PingPongHistory as GameHistory, PingPongRoun
 from users.models import User
 from backend.socketsend import socket_send
 from backend.dbAsync import get_game_users
+from tournament.models import TournamentGame, TournamentMatchParticipants
+from django.db import transaction
 
 from .enums import Game, GameMode
 
@@ -558,13 +560,56 @@ class PingPongServer:
         for task in task_list:
             task.cancel()
 
-    async def _update_tournament(self, game, winner_id):
-        tournament = await game.tournament
-        if winner_id == game.user1.id:
-            tournament.user1_score += 1
-        else:
-            tournament.user2_score += 1
-        await tournament.asave()
+    def _update_tournament(self, game, winner_id):
+        TournamentGame.objects.filter(game_id=game.id).update(
+            status="finished",
+            ended_at=timezone.now(),
+            winner_id=winner_id,
+        )
+        with transaction.atomic():
+            tournament_game = TournamentGame.objects.get(game_id=game.id)
+            tournament = game.tournament
+            if tournament_game.tournament_round == 1:
+                if tournament.round_1_winner is None:
+                    tournament.round_1_winner.id = winner_id
+                else:
+                    tournament.round_2_winner.id = winner_id
+                    tournament.current_round = 2
+            else:
+                tournament.round_3_winner.id = winner_id
+                tournament.status = "finished"
+            tournament.save()
+
+        tournament_participants = TournamentMatchParticipants.objects.get(
+            tournament_id=tournament
+        )
+        if tournament.status != "finished":
+            if tournament.current_round == 1:
+                user1 = tournament_participants.user3_id
+                user2 = tournament_participants.user4_id
+                TournamentGame.objects.create(
+                    tournament_id=tournament,
+                    tournament_round=1,
+                    user_1_id=tournament_participants.user3_id,
+                    user_2_id=tournament_participants.user4_id,
+                )
+            else:
+                user1 = tournament.round_1_winner
+                user2 = tournament.round_2_winner
+                TournamentGame.objects.create(
+                    tournament_id=tournament,
+                    tournament_round=2,
+                    user_1_id=tournament.round_1_winner,
+                    user_2_id=tournament.round_2_winner,
+                )
+            GameHistory.objects.create(
+                user1_id=user1,
+                user2_id=user2,
+                gamemode=GameMode.PVP.value,
+                tournament_id=tournament,
+                option_selector_id=tournament_participants.user1_id,
+                multi_ball=tournament.multi_ball,
+            )
 
     async def _clean_one_v_one_game(self, game_id):
         try:
