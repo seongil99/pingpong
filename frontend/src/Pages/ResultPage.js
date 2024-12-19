@@ -58,7 +58,7 @@ class TournamentPage {
         return createElement(
             "header",
             { class: "text-center mb-5" },
-            createElement("h1", { class: "text-3xl font-bold mb-3" }, "Tournament Results"),
+            createElement("h1", { class: "text-3xl font-bold mb-3" }, `${localStorage.getItem("matchType")} Results`),
             createElement(
                 "div",
                 { class: "text-gray-600" },
