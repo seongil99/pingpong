@@ -47,7 +47,7 @@ class PingPongHistory(models.Model):
         null=True,
         blank=True,
     )
-    multi_ball = models.BooleanField(default=False)
+    multi_ball = models.BooleanField(default=None, null=True, blank=True)
 
     class Meta:
         constraints = [
