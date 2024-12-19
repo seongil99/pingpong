@@ -91,6 +91,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     return
                 multiball_option = await self.save_multi_ball(game_id, multiball_option)
                 opponent_id = await self.get_opponent_id(game_id)
+                opponent = await self.get_opponent(game_id)
 
                 # 현재 유저에게 알림
                 await self.send_json(
@@ -112,7 +113,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 )
 
                 # 게임 생성 후 상대방 강제 종료 예시
-                await self.create_one_versus_one_game(self.user, opponent_id)
+                await self.create_one_versus_one_game(self.user, opponent)
                 await self.channel_layer.group_send(
                     f"user_{opponent_id}",
                     {"type": "force_disconnect"},
@@ -238,6 +239,14 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             return history.user2.id
         else:
             return history.user1.id
+
+    @database_sync_to_async
+    def get_opponent(self, game_id):
+        history = PingPongHistory.objects.get(id=game_id)
+        if history.user1 == self.user:
+            return history.user2
+        else:
+            return history.user1
 
     @database_sync_to_async
     def save_multi_ball(self, game_id, option):
