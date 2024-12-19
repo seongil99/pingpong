@@ -15,10 +15,13 @@ test_channel_layers = {
 
 @override_settings(CHANNEL_LAYERS=test_channel_layers)
 class TestGameIODisconnect(TransactionTestCase):
-    async def asyncSetUp(self):
+    def setUp(self):
         """Set up async test fixtures."""
-        self.user = await User.objects.acreate_user(
-            username="testuser", password="password"
+        self.user = User.objects.create(
+            username="testuser", password="password", email="a"
+        )
+        self.user2 = User.objects.create(
+            username="testuser2", password="password", email="b"
         )
         self.sid = "test_sid"
 
@@ -32,7 +35,7 @@ class TestGameIODisconnect(TransactionTestCase):
         self.assertNotIn(self.user.id, user_to_socket)
 
     async def test_disconnect_removes_user_from_game(self):
-        game_id = "test_game_id"
+        game_id = "0"
         user_to_game[self.sid] = game_id
         game_io = GameIO("/test")
 
@@ -42,7 +45,7 @@ class TestGameIODisconnect(TransactionTestCase):
         self.assertNotIn(self.sid, user_to_game)
 
     async def test_disconnect_updates_game_state(self):
-        game_id = "test_game_id"
+        game_id = "0"
         user_to_game[self.sid] = game_id
         game_state = {
             "clients": {self.sid: self.sid},
@@ -50,7 +53,9 @@ class TestGameIODisconnect(TransactionTestCase):
             "game_start_lock": AsyncMock(),
         }
         game_state_db.load_game_state = AsyncMock(return_value=game_state)
-        await PingPongHistory.objects.acreate(id=game_id, gamemode=GameMode.PVP.value)
+        await PingPongHistory.objects.acreate(
+            id=game_id, gamemode=GameMode.PVP.value, user1=self.user, user2=self.user2
+        )
 
         game_io = GameIO("/test")
         with patch("backend.GameIO.sio.get_session", return_value={"user": self.user}):
@@ -63,11 +68,9 @@ class TestGameIODisconnect(TransactionTestCase):
 
 @override_settings(REST_AUTH={"JWT_AUTH_COOKIE": "jwt-auth"})
 class TestGameIO(TransactionTestCase):
-    async def asyncSetUp(self):
+    def setUp(self):
         """Set up async test fixtures."""
-        self.user = await User.objects.acreate_user(
-            username="testuser", password="password"
-        )
+        self.user = User.objects.create(username="testuser", password="password")
         self.sid = "test_sid"
 
     async def test_check_authentication_success(self):
@@ -77,7 +80,7 @@ class TestGameIO(TransactionTestCase):
         with patch(
             "backend.GameIO.TokenBackend.decode", return_value={"user_id": self.user.id}
         ), patch("backend.GameIO.sio.save_session", new_callable=AsyncMock):
-            game_io = GameIO("/test")
+            game_io = GameIO("/api/game")
             result = await game_io._check_authentication(environ, self.sid)
             self.assertTrue(result)
 

@@ -192,7 +192,7 @@ class GameIO(socketio.AsyncNamespace):
             logger.info("User authenticated: %s", validated_data)
             user = await User.objects.aget(id=validated_data["user_id"])
             await sio.save_session(sid, {"user": user}, namespace=DEFAULT_NAMESPACE)
-        except (InvalidToken, TokenError, TokenBackendError, User.DoesNotExist) as e:
+        except Exception as e:
             logger.info("%s", str(e))
             return False  # Deny the connection
 

@@ -4,10 +4,7 @@ import asyncio
 import logging
 import environ
 
-import ipdb
 from django.utils import timezone
-from django.db import transaction
-from asgiref.sync import sync_to_async
 from ingame.data import gameid_to_task
 from ingame.models import OneVersusOneGame
 from pingpong_history.models import PingPongHistory as GameHistory, PingPongRound
