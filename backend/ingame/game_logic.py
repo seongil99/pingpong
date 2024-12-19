@@ -1,18 +1,21 @@
-import environ
 import math
 import random
-import time
 import asyncio
-from backend.socketsend import socket_send
-from ingame.data import gameid_to_task
-from backend.dbAsync import get_game_users, delete_game
-from pingpong_history.models import PingPongHistory as GameHistory
-from .enums import KeyState
-from django.utils import timezone
-from asgiref.sync import sync_to_async
-
-from .enums import Game
 import logging
+import environ
+
+import ipdb
+from django.utils import timezone
+from django.db import transaction
+from asgiref.sync import sync_to_async
+from ingame.data import gameid_to_task
+from ingame.models import OneVersusOneGame
+from pingpong_history.models import PingPongHistory as GameHistory
+from users.models import User
+from backend.socketsend import socket_send
+from backend.dbAsync import get_game_users
+
+from .enums import Game, GameMode
 
 logger = logging.getLogger("django")
 
@@ -21,26 +24,20 @@ env = environ.Env()
 PORT = 3000
 
 
-async def set_interval(func, interval):
+async def _set_interval(func, interval):
     while True:
-        start_time = time.perf_counter()
-        await func()
-        elapsed_time = (
-            time.perf_counter() - start_time
-        ) * 1_000_000  # Convert to microseconds
+        try:
+            await func()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         await asyncio.sleep(interval)
 
 
-# Example usage:
-def print_message():
-    print("This function runs every 0.5 seconds.")
-
-
-# Run the async function
-# asyncio.run(set_interval(print_message, 0.5))  # Calls `print_message` every 0.5 seconds
-
-
 class Vec3:
+    """
+    커스텀 3d 백터 클래스
+    """
+
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -56,30 +53,41 @@ class Vec3:
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
     def __normalize__(self):
-        len = self.length()
-        if len > 0:
-            self.scale(1 / len)
+        length = self.__length__()
+        if length > 0:
+            self.__scale__(1 / length)
         return self
 
 
 class Ball:
-    def __init__(self, id):
-        self.id = id
+    """
+    공 클래스
+    """
+
+    def __init__(self, ball_id):
+        self.id = ball_id
         self.position = {"x": 0, "y": 6, "z": 0}
         self.velocity = Vec3(0, 0, 0)
         self.summon_direction = True
-        self.powerCounter = 0
+        self.power_counter = 0
         self.radius = Game.BALL_SIZE.value
 
 
 class InMemoryGameState:
+    """
+    게임 상태를 메모리에 저장하는 클래스. 레디스 대신 사용
+    """
+
     game_states = {}
 
     def __init__(self):
         # In-memory store for game states
         pass
 
-    async def new_game(self, game_id, multiOption=False) -> dict:
+    async def new_game(self, game_id, multi_option=False) -> dict:
+        """
+        새 게임을 생성하고 초기 상태를 반환
+        """
         game_state = {
             "render_data": {
                 "oneName": "",
@@ -89,18 +97,22 @@ class InMemoryGameState:
                 "balls": [],
                 "score": {"playerOne": 0, "playerTwo": 0},
             },
-            "one_keystate": {"A": False, "D": False},
-            "two_keystate": {"A": False, "D": False},
-            "is_single_player": multiOption == False,
+            "game_id": game_id,
+            "is_single_player": multi_option is False,
             "ai_KeyState": {"A": False, "D": False},
             "gameStart": False,
-            "playerOneId": "",
-            "playerTwoId": "",
             "clients": {},
+            # 클라이언트에게 보내지 않는 데이터
+            # TODO: 게임 끝날때 보낼 데이터 serializer 에 추가
+            "one_keystate": {"A": False, "D": False},
+            "two_keystate": {"A": False, "D": False},
+            "playerOneId": -1,
+            "playerTwoId": -1,
             "rallies": [],
             "current_rally": 0,
-            "game_id": game_id,
+            "game_start_lock": asyncio.Lock(),
             "key_state_lock": asyncio.Lock(),
+            "rally_flag": False,  # paddle to paddle 랠리 확인용 플래그 False = user1, True = user2 면 카운트
         }
         self.save_game_state(game_id, game_state)
         return game_state
@@ -127,20 +139,24 @@ class InMemoryGameState:
         else:
             raise KeyError(f"Game ID {game_id} not found.")
 
-    def generate_game_id(self):
-        return "game_" + str(len(self.game_states) + 1)
-
 
 class PingPongServer:
+    """
+    핑퐁 게임 서버 클래스
+    """
+
     def __init__(self, sio):
         self.game_state = InMemoryGameState()
         self.sio = sio
 
-    async def add_user(self, game_id, user, multiOption=False):
+    async def add_user(self, game_id, user, multi_option=False):
+        """
+        game_id 를 가지고 있는 게임에 유저를 추가
+        """
         game_state = self.game_state.load_game_state(game_id)
 
-        logger.info(f"user: {user}")
-        if multiOption == False:
+        logger.info("user: %s", user)
+        if multi_option is False:
             game_state["render_data"]["oneName"] = user.username
             game_state["playerOneId"] = user.id
             return
@@ -152,62 +168,66 @@ class PingPongServer:
             game_state["render_data"]["twoName"] = user2.username
             game_state["playerTwoId"] = user2.id
 
-    async def add_game(
-        self, game_id, multi_option, ballCount=1
-    ):  # user_id == user_name, player_id == user.id -> pk
-        # if game doesn't exist == User1
+    async def add_game(self, game_id, multi_option, ball_count=1):
+        """
+        game_id 가 존재하지 않으면 새 게임을 생성
+        """
         game_state = self.game_state.load_game_state(game_id)
-        if game_state == None:
+        if game_state is None:
             game_state = await self.game_state.new_game(game_id, multi_option)
-            for i in range(0, ballCount):
-                self.addBall(game_state)
+            for i in range(0, ball_count):
+                self._add_ball(game_state)
 
     def game_loop(self, game_state):
+        """
+        게임 루프를 asyncio background task 로 실행
+        """
+        logger.info("start game loop")
         game_id = game_state["game_id"]
         task_list = []
-        if game_state["is_single_player"] == True:
+        if game_state["is_single_player"] is True:
             task_list.append(
                 asyncio.create_task(
-                    set_interval(
-                        lambda: self.update_ai(game_state), Game.AI_INTERVAL.value
+                    _set_interval(
+                        lambda: self._update_ai(game_state), Game.AI_INTERVAL.value
                     )
                 )
             )
         task_list.append(
             asyncio.create_task(
-                set_interval(
-                    lambda: self.update_physics(game_state), Game.PHYSICS_INTERVAL.value
+                _set_interval(
+                    lambda: self._update_physics(game_state),
+                    Game.PHYSICS_INTERVAL.value,
                 )
             )
         )
         task_list.append(
             asyncio.create_task(
-                set_interval(
-                    lambda: self.paddle_loop(game_state), Game.PADDLE_INTERVAL.value
+                _set_interval(
+                    lambda: self._paddle_loop(game_state), Game.PADDLE_INTERVAL.value
                 )
             )
         )
         gameid_to_task[game_id] = task_list
 
-    def addBall(self, game_state) -> None:
-        ballNum = len(game_state["render_data"]["balls"])
-        ball = Ball(ballNum)
-        self.set_ball_velocity(game_state, ball, 1, True)
+    def _add_ball(self, game_state) -> None:
+        ball_num = len(game_state["render_data"]["balls"])
+        ball = Ball(ball_num)
+        self._set_ball_velocity(game_state, ball, 1, True)
         game_state["render_data"]["balls"].append(ball)
 
-    def set_ball_velocity(self, game_state, ball, powerUp=1, strat=False):
-        MAX_ANGLE = math.pi / 6
-        ANGLE = (random.random() * 2 - 1) * MAX_ANGLE
+    def _set_ball_velocity(self, game_state, ball, power_up=1, strat=False):
+        angle = (random.random() * 2 - 1) * Game.MAX_ANGLE.value
         direction = 1 if ball.summon_direction else -1
         if strat:
             direction = 1 if len(game_state["render_data"]["balls"]) == 1 else -1
-        powerUp = 1 if ball.powerCounter > 1 else powerUp
-        ball.powerCounter = 1 if powerUp == 2 else 0
-        vx = math.sin(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp
-        vz = math.cos(ANGLE) * Game.CONST_BALL_SPEED.value * powerUp * direction
+        power_up = 1 if ball.power_counter > 1 else power_up
+        ball.power_counter = 1 if power_up == 2 else 0
+        vx = math.sin(angle) * Game.CONST_BALL_SPEED.value * power_up
+        vz = math.cos(angle) * Game.CONST_BALL_SPEED.value * power_up * direction
         ball.velocity = Vec3(vx, 0, vz)
 
-    async def update_ai(self, game_state):
+    async def _update_ai(self, game_state):
         # logger.info("updating ai...")
         ball_position = game_state["render_data"]["balls"]
         target = 0
@@ -241,7 +261,8 @@ class PingPongServer:
                 game_state["ai_KeyState"]["D"] = True
             await self.handle_player_input(game_state, "ai", "D", True)
 
-    async def update_physics(self, game_state):
+    async def _update_physics(self, game_state):
+        # logger.info("updating physics...")
         if not game_state["gameStart"]:
             return
         game_id = game_state["game_id"]
@@ -256,12 +277,22 @@ class PingPongServer:
             # )
 
             # Check paddle collisions
-            await self.check_paddle_collision(
-                ball, game_state["render_data"]["playerOne"], game_state
-            )
-            await self.check_paddle_collision(
-                ball, game_state["render_data"]["playerTwo"], game_state
-            )
+            if (
+                await self._check_paddle_collision(
+                    ball, game_state["render_data"]["playerOne"], game_state
+                )
+                and not game_state["rally_flag"]
+            ):
+                game_state["current_rally"] += 1
+                game_state["rally_flag"] = True
+            if (
+                await self._check_paddle_collision(
+                    ball, game_state["render_data"]["playerTwo"], game_state
+                )
+                and game_state["rally_flag"]
+            ):
+                game_state["current_rally"] += 1
+                game_state["rally_flag"] = False
 
             # Check wall collisions
             if abs(ball.position["x"]) > Game.GAME_WIDTH.value / 2 - 2:
@@ -288,39 +319,48 @@ class PingPongServer:
                 # Check if someone has won the set
                 if (
                     game_state["render_data"]["score"]["playerOne"]
-                    >= Game.GAME_SET_SCORE.value
-                    or game_state["render_data"]["score"]["playerTwo"]
-                    >= Game.GAME_SET_SCORE.value
+                    # < 1
+                    < Game.GAME_SET_SCORE.value
+                    and game_state["render_data"]["score"]["playerTwo"]
+                    # < 1
+                    < Game.GAME_SET_SCORE.value
                 ):
-                    winner = (
-                        game_state["render_data"]["oneName"]
-                        if game_state["render_data"]["score"]["playerOne"]
-                        > game_state["render_data"]["score"]["playerTwo"]
-                        else game_state["render_data"]["twoName"]
-                    )
-                    winnerId = (
-                        game_state["playerOneId"]
-                        if game_state["render_data"]["score"]["playerOne"]
-                        > game_state["render_data"]["score"]["playerTwo"]
-                        else game_state["playerTwoId"]
-                    )
-                    await socket_send(
-                        game_state["render_data"],
-                        "gameEnd",
-                        game_id,
-                        f"Winner is {winner}",
-                    )
-                    game_state["gameStart"] = False
-                    await self.game_finish(game_state, winnerId)
+                    if game_state["gameStart"]:
+                        await socket_send(game_state["render_data"], "score", game_id)
+                        self._reset_ball(game_state, ball)
                     return
 
-                if game_state["gameStart"]:
-                    await socket_send(game_state["render_data"], "score", game_id)
-                    self.reset_ball(game_state, ball)
+                winner = (
+                    game_state["render_data"]["oneName"]
+                    if game_state["render_data"]["score"]["playerOne"]
+                    > game_state["render_data"]["score"]["playerTwo"]
+                    else game_state["render_data"]["twoName"]
+                )
+                winner_id = (
+                    game_state["playerOneId"]
+                    if game_state["render_data"]["score"]["playerOne"]
+                    > game_state["render_data"]["score"]["playerTwo"]
+                    else game_state["playerTwoId"]
+                )
 
-        await self.broadcast_game_state(game_state)
+                await game_state["game_start_lock"].acquire()
+                if game_state["gameStart"] is False:
+                    game_state["game_start_lock"].release()
+                    return
+                game_state["gameStart"] = False
+                game_state["game_start_lock"].release()
+                await socket_send(
+                    game_state["render_data"],
+                    "gameEnd",
+                    game_id,
+                    f"Winner is {winner}",
+                )
+                await self._game_finish(game_state, winner_id)
+                return
 
-    async def check_paddle_collision(self, ball, paddle, game_state):
+        await self._broadcast_game_state(game_state)
+
+    async def _check_paddle_collision(self, ball, paddle, game_state):
         # 1. Find the closest point on the paddle to the ball
         closest_point = {
             "x": max(
@@ -346,7 +386,6 @@ class PingPongServer:
 
         # 3. If the distance is less than or equal to the ball's radius, it's a collision
         if distance <= Game.BALL_SIZE.value:
-            game_state["current_rally"] += 1
             await socket_send(game_state["render_data"], "sound", "ballToWall")
             hit_point_diff = ball.position["x"] - paddle["x"]
             max_bounce_angle = math.pi / 3
@@ -358,8 +397,12 @@ class PingPongServer:
             ball.velocity.x = math.sin(bounce_angle) * speed
             ball.velocity.z = math.cos(bounce_angle) * speed * direction
             ball.velocity.y = min(ball.velocity.y, 0)
+            return True
 
     async def check_powerball(self, game_state, data):
+        """
+        스페이스 입력시 파워볼인지 확인하고 파워볼이면 공의 속도를 높임
+        """
         game_id = game_state["game_id"]
         player = (
             game_state["render_data"]["playerOne"]
@@ -370,11 +413,11 @@ class PingPongServer:
         is_collision = [
             ball
             for ball in game_state["render_data"]["balls"]
-            if self.is_in_range(int(ball.position["x"]), int(player["x"]), 10)
-            and self.is_in_range(int(ball.position["z"]), int(player["z"]), 10)
+            if self._is_in_range(int(ball.position["x"]), int(player["x"]), 10)
+            and self._is_in_range(int(ball.position["z"]), int(player["z"]), 10)
         ]
         if len(is_collision) == 1:
-            self.set_ball_velocity(game_state, is_collision[0], 2)
+            self._set_ball_velocity(game_state, is_collision[0], 2)
             logger.info(f"Collision: {is_collision[0].position}")
             await socket_send(
                 game_state["render_data"],
@@ -383,19 +426,19 @@ class PingPongServer:
                 is_collision[0].position,
             )
 
-    def is_in_range(self, number, target, range):
+    def _is_in_range(self, number, target, range):
         return abs(number - target) <= range
 
-    def reset_ball(self, game_state, ball):
+    def _reset_ball(self, game_state, ball):
         ball.position = {"x": 0, "y": 5, "z": 0}
-        ball.powerCounter = 0
-        self.set_ball_velocity(game_state, ball)
+        ball.power_counter = 0
+        self._set_ball_velocity(game_state, ball)
 
     def reset_all_balls(self, game_state):
-        for ball in self.game_state["balls"]:
-            self.reset_ball(game_state, ball)
+        for ball in game_state["balls"]:
+            self._reset_ball(game_state, ball)
 
-    def handle_ai_input(self, game_state, key, pressed):
+    def _handle_ai_input(self, game_state, key, pressed):
         player = game_state["render_data"]["playerTwo"]
         if key == "A" and pressed:
             player["x"] -= Game.MOVE_SPEED.value
@@ -407,7 +450,7 @@ class PingPongServer:
             min(Game.GAME_WIDTH.value / 2 - 10, player["x"]),
         )
 
-    async def broadcast_game_state(self, game_state):
+    async def _broadcast_game_state(self, game_state):
         # logger.info("Broadcasting game state...")
         game_id = game_state["game_id"]
         await socket_send(game_state["render_data"], "gameState", game_id)
@@ -422,7 +465,7 @@ class PingPongServer:
         if player_id == "ai":
             # AI 플레이어의 입력 처리
             logger.info(f"AI key state: {game_state['two_keystate']}")
-            self.handle_ai_input(game_state, key, pressed)
+            self._handle_ai_input(game_state, key, pressed)
         elif player_id == game_state["playerOneId"]:
             # 첫 번째 플레이어의 입력 처리
             game_state["one_keystate"][key] = pressed
@@ -434,20 +477,20 @@ class PingPongServer:
             # 플레이어 ID를 찾을 수 없으므로 처리하지 않음
         game_state["key_state_lock"].release()
 
-    async def paddle_loop(self, game_state):
-        playerOne = game_state["render_data"]["playerOne"]
-        oneName = game_state["render_data"]["oneName"]
-        playerTwo = game_state["render_data"]["playerTwo"]
-        twoName = game_state["render_data"]["twoName"]
-        await self.process_paddle_move(
-            game_state, oneName, playerOne, game_state["one_keystate"]
+    async def _paddle_loop(self, game_state):
+        player_one = game_state["render_data"]["playerOne"]
+        one_name = game_state["render_data"]["oneName"]
+        player_two = game_state["render_data"]["playerTwo"]
+        two_name = game_state["render_data"]["twoName"]
+        await self._process_paddle_move(
+            game_state, one_name, player_one, game_state["one_keystate"]
         )
-        await self.process_paddle_move(
-            game_state, twoName, playerTwo, game_state["two_keystate"]
+        await self._process_paddle_move(
+            game_state, two_name, player_two, game_state["two_keystate"]
         )
 
-    async def process_paddle_move(self, game_state, playerName, player, key):
-        if playerName == "ai":
+    async def _process_paddle_move(self, game_state, player_name, player, key):
+        if player_name == "ai":
             return
         await game_state["key_state_lock"].acquire()
         # logger.info(f"key: {key}")
@@ -467,47 +510,61 @@ class PingPongServer:
             min(Game.GAME_WIDTH.value / 2 - 10, player["x"]),
         )
 
-    async def game_finish(self, game_state, winnerId):
-        await save_game_history(game_state, winnerId)
-        self.game_state.delete_game_state(game_state["game_id"])
-        task_list = gameid_to_task[game_state["game_id"]]
-        if (
-            game_state["is_single_player"] == True
-            and await delete_game(game_state["game_id"]) == False
-        ):
-            logger.error("Failed to delete game")
+    async def _game_finish(self, game_state, winner_id):
+        await self._save_game_history(game_state, winner_id)
+
+        game_id = game_state["game_id"]
+        if game_state["is_single_player"] is False:
+            try:
+                await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
+            except OneVersusOneGame.DoesNotExist:
+                logger.info(f"Game not found: {game_id}")
+        self.game_state.delete_game_state(game_id)
+        task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
 
     async def process_abandoned_game(self, game_state):
+        """
+        게임이 종료되지 않은 상태에서 모든 플레이어가 게임을 나갔을 때 호출
+        """
         game_id = game_state["game_id"]
-        
-        await socket_send(
-            game_state["render_data"], "gameEnd", game_id, "Opponent has left the game"
+        await self._save_game_history(game_state, None)
+        self.game_state.delete_game_state(game_id)
+        task_list = gameid_to_task[game_id]
+        for task in task_list:
+            task.cancel("abandoned cancel")
+
+    async def _save_game_history(self, game_state, winner_id):
+        game_id = game_state["game_id"]
+        longest_rally = (
+            0 if len(game_state["rallies"]) == 0 else max(game_state["rallies"])
         )
+        average_rally = (
+            0
+            if len(game_state["rallies"]) == 0
+            else sum(game_state["rallies"]) / len(game_state["rallies"])
+        )
+        winner = None if winner_id == (-1) else await User.objects.aget(id=winner_id)
+        # Save game history
+        game = await GameHistory.objects.aget(id=game_id)
+        game.winner = winner
+        game.ended_at = timezone.now()
+        game.user1_score = game_state["render_data"]["score"]["playerOne"]
+        game.user2_score = game_state["render_data"]["score"]["playerTwo"]
+        game.longest_rally = longest_rally
+        game.average_rally = average_rally
 
-@sync_to_async
-def save_game_history(game_state, winnerId):
-    game_id = game_state["game_id"]
-    longest_rally = max(game_state["rallies"])
-    average_rally = sum(game_state["rallies"]) / len(game_state["rallies"])
-    game = GameHistory.objects.get(id=game_id)
-    winner = game.user1 if game.user1.id == winnerId else game.user2
-    # Save game history
-    game.winner = winner
-    game.ended_at = timezone.now()
-    game.user1_score = game_state["render_data"]["score"]["playerOne"]
-    game.user2_score = game_state["render_data"]["score"]["playerTwo"]
-    game.longest_rally = longest_rally
-    game.average_rally = average_rally
-    game.save()
-    update_wins_losses(game.user1, winner)
+        await game.asave()
+        if game.gamemode == GameMode.PVP.value:
+            asyncio.gather(
+                self._update_wins_losses(game.user1, winner),
+                self._update_wins_losses(game.user2, winner),
+            )
 
-
-@sync_to_async
-def update_wins_losses(user, winner):
-    if user == winner:
-        user.wins += 1
-    else:
-        user.loses += 1
-    user.save()
+    async def _update_wins_losses(self, user, winner):
+        if user == winner:
+            user.wins += 1
+        else:
+            user.loses += 1
+        await user.asave()

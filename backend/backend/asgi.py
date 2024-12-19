@@ -7,16 +7,14 @@ For more information on this file, see
 https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
+import logging
 import os
 
+import socketio
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from backend.GameIO import GameIO
-from backend.sio import sio
-import socketio
 
-import logging
 from django.urls import path, re_path
 
 from users.status.routing import websocket_urlpatterns as status_websocket_urlpatterns
@@ -24,6 +22,8 @@ from matchmaking.routing import (
     websocket_urlpatterns as matchmaking_websocket_urlpatterns,
 )
 from tournament.routing import websocket_urlpatterns as tournament_websocket_urlpatterns
+from backend.GameIO import GameIO
+from backend.sio import sio
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 logger = logging.getLogger("django")

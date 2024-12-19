@@ -1,7 +1,7 @@
+import logging
+import requests
 from allauth.socialaccount.providers.oauth2.views import OAuth2LoginView, OAuth2CallbackView, OAuth2Adapter
 from .provider import FortyTwoProvider
-import requests
-import logging
 
 logger = logging.getLogger(__name__)
 
