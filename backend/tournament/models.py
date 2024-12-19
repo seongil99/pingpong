@@ -30,6 +30,8 @@ class Tournament(models.Model):
     round_1_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_1_winner", null=True)
     round_2_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_2_winner", null=True)
     round_3_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="round_3_winner", null=True)
+    multi_ball = models.BooleanField(default=False)
+    option_selector = models.ForeignKey(User, on_delete=models.CASCADE, related_name="option_selector", null=True)
 
 
 class TournamentMatchParticipants(models.Model):
