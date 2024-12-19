@@ -1,3 +1,6 @@
+import logging
+
+from rest_framework import status
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
@@ -6,14 +9,12 @@ from rest_framework.viewsets import ModelViewSet
 from dj_rest_auth.jwt_auth import JWTCookieAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.contrib.auth import get_user_model
-from users.serializers import UserStatusSerializer
-from rest_framework import status
 
+from users.serializers import UserStatusSerializer
 from users.accounts.utils import setAccessToken
 
 User = get_user_model()
 
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,10 @@ class VerifyView(APIView):
     tags=["accounts"],
 )
 class AccountActiveView(GenericAPIView):
+    """
+    유저 계정 활성화 상태를 변경합니다.
+    """
+
     queryset = User.objects.all()
     serializer_class = UserStatusSerializer
 

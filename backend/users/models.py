@@ -8,6 +8,9 @@ from users.manages import UserManager
 
 # Create your models here.
 class User(AbstractUser):
+    """
+    유저 모델델
+    """
     username = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(_("email address"), unique=True)
     is_verified = models.BooleanField(default=False)

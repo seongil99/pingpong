@@ -5,6 +5,9 @@ from ingame.enums import GameMode
 
 
 class PingPongHistory(models.Model):
+    """
+    탁구 게임 기록 모델
+    """
     id = models.AutoField(primary_key=True)
     user1 = models.ForeignKey(
         User,

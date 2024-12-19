@@ -330,6 +330,8 @@ SPECTACULAR_SETTINGS = {
         **matchmaking_schema,
         **tournament_matchmaking_schema,
         **tournament_game_schema,
+        **ingame_ws_schema,
+        **online_check_schema,
     },
 }
 

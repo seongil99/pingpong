@@ -1,16 +1,16 @@
 import random
+import logging
 from django.utils import timezone
+from django.db import transaction
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.db import transaction
 
+from pingpong_history.models import PingPongHistory
 from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
-from pingpong_history.models import PingPongHistory
 
-from logging import getLogger
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
@@ -23,7 +23,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated and not await self.is_duplicate_user(self.user.id):
+        if self.user.is_authenticated and not await self.is_duplicate_user(
+            self.user.id
+        ):
             await self.accept()
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -213,6 +215,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_one_versus_one_game(self, user1, user2):
         from ingame.models import OneVersusOneGame
+
         with transaction.atomic():
             history = PingPongHistory.objects.get(id=self.current_game_id)
             game = OneVersusOneGame.objects.create(

@@ -78,6 +78,8 @@ class MatchingPage {
     this.requestPVEButton.addEventListener("click", async () => {
       let response = await fetch("/api/v1/pingpong-history/", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gamemode: "PVE" }),
       });
       if (response.status === 201) {
         const data = await response.json();

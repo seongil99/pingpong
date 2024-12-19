@@ -260,3 +260,177 @@ WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
         },
     },
 }
+
+ingame_ws_schema = {
+    "/api/game": {
+        "get": {
+            "operationId": "connect_game",
+            "summary": "Ping Pong 게임 WebSocket 연결",
+            "description": """
+이 엔드포인트는 게임 클라이언트와 연결을 설정하고, 게임에 대한 인증 및 참여를 처리합니다.
+
+### WebSocket 연결
+
+WebSocket 클라이언트는 다음 URL로 연결해야 합니다:
+
+`wss://example.com/api/game`
+
+### 메시지 형식
+
+**클라이언트 → 서버:**
+
+- **연결 요청:**
+```json
+{
+  "type": "connect",
+  "gameId": "1234abcd",
+}
+```
+auth 는 cookie 로
+
+**서버 → 클라이언트: (data)**
+- **render_data:**
+```json
+{
+  "oneName": "minsepar",
+  "twoName": "ai",
+  "playerOne": {
+    "x": -40,
+    "y": 6,
+    "z": 100
+  },
+  "playerTwo": {
+    "x": 40,
+    "y": 6,
+    "z": -100
+  },
+  "balls": [
+    {
+      "id": 0,
+      "position": {
+        "x": 6.983907988413103,
+        "y": 5,
+        "z": 125.31975672627348
+      },
+      "velocity": {
+        "x": -14.2151685776611,
+        "y": 0,
+        "z": 47.93671851836206
+      },
+      "summon_direction": true,
+      "power_counter": 0,
+      "radius": 5
+    }
+  ],
+  "score": {
+    "playerOne": 1,
+    "playerTwo": 3
+  },
+}
+```
+- **게임 시작 알림 (gameStart):**
+```json
+{
+  "type": "gameStart",
+  { render_data }
+}
+```
+- **점수 알림 (score):**
+```json
+{
+  "type": "score"
+  { render_data }
+}
+```
+- **게임 대기 알림 (gameWait):**
+```json
+{
+  "type": "gameWait",
+}
+```
+- **게임 종료 알림 (gameEnd):**
+```json
+{
+  "type": "gameEnd",
+  "txt": "winner is ai"
+}
+```
+- **두 번째 플레이어 입장 알림 (secondPlayer):**
+```json
+{
+  "type": "secondPlayer",
+}
+```
+**클라이언트 → 서버:**
+
+- **키 입력 이벤트:**
+```json
+{
+  "type": "keyPress",
+  "key": " ",
+  "pressed": true
+}
+```
+**서버 → 클라이언트:**
+
+- **게임 상태 (gameState):**
+```json
+{
+  "type": "gameState"
+  { render_data }
+}
+
+```
+
+""",
+            "tags": ["Game"],
+            "servers": [{"url": "wss://example.com"}],
+            "responses": {
+                "101": {"description": "Switching Protocols"},
+                "400": {"description": "Bad Request"},
+                "401": {"description": "Unauthorized"},
+                "404": {"description": "Game Not Found"},
+            },
+        },
+    }
+}
+
+online_check_schema = {
+    "/api/online-status/": {
+        "get": {
+            "tags": ["Online Status"],
+            "operationId": "checkOnlineStatus",
+            "description": """
+1. **Connect**
+   - **Purpose**: Establishes a WebSocket connection and marks the user as online if they are authenticated.
+   - **Operation ID**: `connectOnlineStatus`
+   - **Tags**: ["Online Status"]
+   - **Responses**:
+     - **101**: Indicates a successful protocol switch to WebSocket.
+     - **401**: Indicates the user is unauthorized and not authenticated.
+
+2. **Disconnect**
+   - **Purpose**: Handles WebSocket disconnection and marks the user as offline if authenticated.
+   - **Operation ID**: `disconnectOnlineStatus`
+   - **Tags**: ["Online Status"]
+   - **Responses**:
+     - **200**: Confirms successful disconnection.
+
+3. **Messages**
+   - **Heartbeat**
+     - **Purpose**: Receives a heartbeat message from the client to ensure the connection is active.
+     - **Operation ID**: `receiveHeartbeatMessage`
+     - **Tags**: ["Online Status"]
+     - **Payload**:
+       - **Type**: Object
+       - **Properties**:
+         - **type**: A string that specifies the type of message, restricted to the value `"heartbeat"`.
+       - **Required Fields**:
+         - `type`
+     - **Responses**:
+       - **200**: Acknowledges that the heartbeat message was received and processed successfully.
+
+            """,
+        }
+    }
+}

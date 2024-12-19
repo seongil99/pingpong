@@ -1,3 +1,5 @@
+import math
+import random
 from enum import Enum
 
 
@@ -15,6 +17,8 @@ class Game(Enum):
     AI_INTERVAL = 1 / 10
     PHYSICS_INTERVAL = 1 / 60
     PADDLE_INTERVAL = 1 / 30
+    MAX_ANGLE = math.pi / 6
+    
 
 
 class GameMode(Enum):

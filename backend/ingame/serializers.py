@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from backend.json_mixin import CamelCaseSerializerMixin
+
 
 class Vec3Serializer(serializers.Serializer):
     x = serializers.FloatField()
@@ -7,16 +9,16 @@ class Vec3Serializer(serializers.Serializer):
     z = serializers.FloatField()
 
 
-class BallSerializer(serializers.Serializer):
+class BallSerializer(CamelCaseSerializerMixin, serializers.Serializer):
     id = serializers.IntegerField()
     position = serializers.DictField()
     velocity = Vec3Serializer()
     summon_direction = serializers.BooleanField()
-    powerCounter = serializers.IntegerField()
+    power_counter = serializers.IntegerField()
     radius = serializers.FloatField()
 
 
-class gameStateSerializer(serializers.Serializer):
+class gameStateSerializer(CamelCaseSerializerMixin, serializers.Serializer):
     oneName = serializers.CharField()
     twoName = serializers.CharField()
     playerOne = Vec3Serializer()
