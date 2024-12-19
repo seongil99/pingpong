@@ -9,6 +9,8 @@ const fetchUserProfile = async () => {
         const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
         // Populate the profile info
 
+        userData.avatar = userData.avatar.replace("http://", "https://");
+
         return userData;
     } catch (error) {
         console.error("Error fetching user profile:", error);

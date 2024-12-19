@@ -6,6 +6,10 @@ async function searchFriends(params) {
             "Content-Type": "application/json",
         }
     })).json();
+    response.results.map(v=>{
+        v.avatar = v.avatar.replace("http://", "https://");
+    })
+    console.log('response: ', response);
     return response.results;
 }
 

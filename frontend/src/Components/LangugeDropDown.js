@@ -94,7 +94,7 @@ function createLanguageDropdown() {
 
 // 언어 변경 함수
 function changeLanguage(lang) {
-	localStorage.setItem("lang",lang);
+	i18next.changeLanguage(lang);
 }
 
 // 실행

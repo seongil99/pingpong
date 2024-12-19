@@ -10,7 +10,7 @@ from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
 
 
-logger = getLogger("django")
+logger = logging.getLogger("django")
 
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):

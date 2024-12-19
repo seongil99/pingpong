@@ -11,6 +11,9 @@ const fetchFriends = async () => {
             throw new Error("Not OK! Status Code: ", response.status);
         }
         const json = await response.json();
+        json.results.map(v => {
+            v.friend_user.avatar = v.friend_user.avatar.replace("http://", "https://");
+        });
         return json.results;
     } catch (error) {
         console.error("Error: ", error);
