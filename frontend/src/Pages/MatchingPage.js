@@ -7,7 +7,6 @@ class MatchingPage {
     constructor(pathParam, queryParam) {
         this.socket = null;
         this.container = null;
-        this.hiddenInput = null;
         this.waitModal = null;
         this.matchType = null;
         this.tournamentId = null;
@@ -16,7 +15,6 @@ class MatchingPage {
     async template() {
         const navBar = NavBar();
         const title = createElement("h2", { id: "matching-page-title" }, "Matching Page");
-        this.hiddenInput = createElement("input", { class: "hide", id: "hidden-input", value: "none" });
 
         const pvpButton = this.createMatchButton("PVP", "waiting for PvP User");
         const tournamentButton = this.createMatchButton("tournament", "waiting for Tournament Users");
@@ -24,7 +22,7 @@ class MatchingPage {
         const buttonContainer = createElement("div", { id: "match-btn-container" }, pvpButton, tournamentButton);
 
         const main = createElement("main", { id: "matching-main" }, title, buttonContainer);
-        this.container = createElement("div", {}, navBar, main, this.hiddenInput);
+        this.container = createElement("div", {}, navBar, main);
 
         return this.container;
     }
@@ -59,7 +57,10 @@ class MatchingPage {
 
     connectWebSocket(callback) {
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        const endpoint = this.matchType === "PVP" ? "matchmaking" : !this.tournamentId ? "tournament/matchmaking": `tournament/game/${this.tournamentId}`;
+        const endpoint = 
+        this.matchType === "PVP" ?
+        "matchmaking" :
+        "tournament/matchmaking"
         const wsUrl = `${protocol}://${window.location.host}/api/ws/${endpoint}/`;
 
         this.socket = new WebSocket(wsUrl);
@@ -84,13 +85,9 @@ class MatchingPage {
             "match_found": () => this.handleMatchFound(data),
             "match_canceled": () => console.log("Match canceled."),
             "error": () => console.error(`Error: ${data.message}`),
-            "set_option": () => this.navigateToGame(this.matchType ==="PVP" ? data.game_id : data.tournament_id),
+            "set_option": () => this.navigateToGame(data.game_id),
             "already_joined": () => this.navigateToGame(data.game_id),
             "match_waiting": () => console.log("waiting for tounament"),
-            "game_started" : () => {
-                this.matchType = "PVP";
-                this.navigateToGame(data.game_id);
-            }
         };
 
         (messageHandlers[data.type] || (() => console.warn("Unhandled message type:", data.type)))();
@@ -105,21 +102,10 @@ class MatchingPage {
             const optionForm = document.getElementById("form-target");
             optionForm.classList.remove("hide");
             console.log('op select in this.tournamentId: ', this.tournamentId);
-            localStorage.setItem("matchType", this.matchType);
-            localStorage.setItem("gameId", data.game_id);
-            this.hiddenInput.value = `${this.matchType},${data.game_id}`;
         }
+        localStorage.setItem("matchType", this.matchType);
+        localStorage.setItem("gameId", data.game_id);
         console.log(`Match found! Opponent: ${data.opponent_username}`);
-        if(this.matchType === "tournament" && !this.tournamentId){
-            console.log("before set id",data.tournament_id);
-            this.tournamentId = data.tournament_id;
-            localStorage.setItem("tournamentId", this.tournamentId);
-            localStorage.setItem("matchType", this.matchType);
-            this.hiddenInput.value = `${this.matchType},${this.tournamentId}`; 
-            console.log('this.tournamentId: ', this.tournamentId);
-        }
-        else if(this.matchType === "PVP")
-            this.hiddenInput.value = data.game_id;
     }
 
     navigateToGame(gameId) {
@@ -128,22 +114,7 @@ class MatchingPage {
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
         }
-    if(this.matchType === "PVP")
         window.router.navigate(`/playing/${gameId}`, false);
-    else{
-        this.connectWebSocket(()=> this.requestTournamentMatch());
-    }
-    }
-    requestTournamentMatch() {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            const message = {
-                type: "ready",
-            };
-            this.socket.send(JSON.stringify(message));
-            console.log("Match Tournamentrequest sent:", message);
-        } else {
-            console.error("WebSocket is not open.");
-        }
     }
     requestMatch() {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
