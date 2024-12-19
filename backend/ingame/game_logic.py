@@ -543,7 +543,10 @@ class PingPongServer:
 
     async def _game_finish(self, game_state, winner_id):
         await self._save_game_history(game_state, winner_id)
+        game = await GameHistory.objects.aget(id=game_state["game_id"])
         game_id = game_state["game_id"]
+        if game.tournament_id is not None:
+            await self._update_tournament(game, winner_id)
 
         if game_state["is_single_player"] is False:
             self._clean_one_v_one_game(game_id)
@@ -554,6 +557,14 @@ class PingPongServer:
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
+
+    async def _update_tournament(self, game, winner_id):
+        tournament = await game.tournament
+        if winner_id == game.user1.id:
+            tournament.user1_score += 1
+        else:
+            tournament.user2_score += 1
+        await tournament.asave()
 
     async def _clean_one_v_one_game(self, game_id):
         try:
