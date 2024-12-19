@@ -11,6 +11,7 @@ class MatchingPage {
     this.statusDiv = null;
     this.container = null;
     this.hidden = null;
+    this.wait = null;
   }
 
   async template() {
@@ -45,31 +46,32 @@ class MatchingPage {
         console.log(this.btnContainer);
         this.btnContainer.classList.toggle("hide");
         console.log("버튼클릭");
-        const wait = WaitMacthBox(
+        this.wait = WaitMacthBox(
           "waiting for PvP User",
           () => {
             this.cancelMatch();
             this.btnContainer.classList.toggle("hide");
-            this.container.removeChild(wait.element);
+            this.container.removeChild(this.wait.element);
           },
           this.socket,
         );
-        wait.modal.show();
+        this.container.append(this.wait.element);
+        this.wait.modal.show();
       }),
       ButtonToMatch("tournament", () => {
         this.connectWebSocket("tournament", this.requestMatch);
         this.btnContainer.classList.toggle("hide");
-        const wait = WaitMacthBox(
+        this.wait = WaitMacthBox(
           "waiting for Tournament Users",
           () => {
             this.cancelMatch();
             this.btnContainer.classList.toggle("hide");
-            this.container.removeChild(wait.element);
+            this.container.removeChild(this.wait.element);
           },
           this.socket,
         );
-        this.container.append(wait.element);
-        wait.modal.show();
+        this.container.append(this.wait.element);
+        this.wait.modal.show();
       }),
     );
     const main = createElement("main", { id: "matching-main" }, title);
@@ -129,13 +131,11 @@ class MatchingPage {
     };
 
     this.socket.onmessage = (event) => {
+    console.log(event.data);
       const data = JSON.parse(event.data);
       console.log("수신한 데이터:", data);
       if (data.type === "waiting_for_match") {
         this.statusDiv.textContent = "상대를 기다리는 중...";
-        this.isMatching = true;
-        const gameUrl = "/palying";
-        // window.location.href = `${gameUrl}?gameId=${gameId}`;
       } else if (data.type === "match_found") {
         this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
         if (data.option_selector) {
@@ -157,7 +157,10 @@ class MatchingPage {
         this.isMatching = false;
       } else if (data.type === "set_option") {
         console.log("to the game page");
-        // location.href = `/playing?gameId={data.game_id}`;
+        console.log("this. wait=",this.wait);
+        this.wait.modal.dispose();
+        this.container.removeChild(this.wait.element);
+        window.router.navigate(`/playing/${data.game_id}`, false);
       }
     };
 

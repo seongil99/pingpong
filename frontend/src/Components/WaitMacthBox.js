@@ -60,6 +60,7 @@ function createMessageModal(message,callback,socket) {
     const modal = createElement(
         "div",
         {
+			id: "modal-tartget",
             class: "modal",
             tabindex: "-1",
         },

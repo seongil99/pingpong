@@ -301,7 +301,7 @@ class AudioManager {
 
 
 class PingPongClient {
-    constructor(socket,remoteOption) {
+    constructor(socket) {
         this.socket = socket;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -310,7 +310,6 @@ class PingPongClient {
         this.audio.init();
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.remotePlay = remoteOption;
         this.gameWidth = 100;
         this.gameLenth = 250;
         this.initColor = [0xffffff, 0xff0000, 0x000000, 0x0000cc]

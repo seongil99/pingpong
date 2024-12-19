@@ -1,5 +1,5 @@
 import Router from "./Routes/Router.js";
-import routes from "./Routes/routes.js";
+import {routes, routeChecker, staticRoutes, dynamicRoutes} from "./Routes/routes.js";
 import { handleClick } from "./Utils/clickHandler.js";
 import data from "./Translate/data.js"
 

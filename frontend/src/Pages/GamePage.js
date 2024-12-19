@@ -8,18 +8,16 @@ import { io } from "socket.io-client";
 
 class GamePage {
     async template(pathParam, queryParam) {
-        const [_, gameId] = pathParam;
+        const [_, path, gameId] = pathParam;
         const socket = io('/api/game', {
             transports: ['websocket'],
             debug: true,
             path: '/api/game/socket.io',
             query: {
-                gameId: gameId,
-                userName: "aa",
-                gameType: "aa",
+                gameId: gameId
             }
         });
-        const game = new GameWindow(parseInt(socket, true));
+        const game = new GameWindow(parseInt(socket));
         // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가
         const main = createElement(
             "div",
