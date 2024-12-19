@@ -27,4 +27,4 @@ channels==4.2.0
 daphne==4.1.2
 python-socketio[asyncio, asgi]==5.11.4
 django-debug-toolbar==4.4.6
-ipdb==0.13.13
+pytest==8.3.4

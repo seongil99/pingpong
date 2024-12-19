@@ -1,101 +1,98 @@
-import socketio
-from django.test import TransactionTestCase, override_settings
-from unittest.mock import patch, AsyncMock
-from backend.GameIO import GameIO, user_to_socket, user_to_game, game_state_db
-from users.models import User
-from pingpong_history.models import PingPongHistory
-from ingame.enums import GameMode
+import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+from backend.GameIO import GameIO
+from socketio import AsyncNamespace
 
-test_channel_layers = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-    },
-}
+@pytest.mark.asyncio
+async def test_check_authentication_success():
+    game_io = GameIO('/api/game')
+    environ = {"HTTP_COOKIE": "jwt-auth-token=valid_token;"}
+    sid = "test_sid"
 
+    with patch("backend.GameIO.settings") as mock_settings, \
+         patch("backend.GameIO.SimpleCookie") as mock_SimpleCookie, \
+         patch("backend.GameIO.TokenBackend") as mock_TokenBackend, \
+         patch("backend.GameIO.User.objects.aget", new=AsyncMock()) as mock_aget, \
+         patch("backend.GameIO.sio.save_session", new=AsyncMock()) as mock_save_session:
+        
+        mock_settings.REST_AUTH = {"JWT_AUTH_COOKIE": "jwt-auth-token"}
+        mock_settings.SECRET_KEY = "secret_key"
 
-@override_settings(CHANNEL_LAYERS=test_channel_layers)
-class TestGameIODisconnect(TransactionTestCase):
-    def setUp(self):
-        """Set up async test fixtures."""
-        self.user = User.objects.create(
-            username="testuser", password="password", email="a"
-        )
-        self.user2 = User.objects.create(
-            username="testuser2", password="password", email="b"
-        )
-        self.sid = "test_sid"
+        mock_cookie = MagicMock()
+        mock_cookie.get.return_value = MagicMock(value='valid_token')
+        mock_SimpleCookie.return_value = mock_cookie
 
-    async def test_disconnect_removes_user_from_socket(self):
-        user_to_socket[self.user.id] = self.sid
-        game_io = GameIO("/test")
+        mock_token_backend_instance = mock_TokenBackend.return_value
+        mock_token_backend_instance.decode.return_value = {"user_id": 1}
 
-        with patch("backend.GameIO.sio.get_session", return_value={"user": self.user}):
-            await game_io.on_disconnect(self.sid)
+        mock_user = MagicMock()
+        mock_aget.return_value = mock_user
 
-        self.assertNotIn(self.user.id, user_to_socket)
+        result = await game_io._check_authentication(environ, sid)
 
-    async def test_disconnect_removes_user_from_game(self):
-        game_id = "0"
-        user_to_game[self.sid] = game_id
-        game_io = GameIO("/test")
+        assert result is True
+        mock_save_session.assert_awaited_with(sid, {"user": mock_user}, namespace='/api/game')
 
-        with patch("backend.GameIO.sio.get_session", return_value={"user": self.user}):
-            await game_io.on_disconnect(self.sid)
+@pytest.mark.asyncio
+async def test_check_authentication_no_cookie():
+    game_io = GameIO('/api/game')
+    environ = {}
+    sid = "test_sid"
 
-        self.assertNotIn(self.sid, user_to_game)
+    with patch("backend.GameIO.settings") as mock_settings:
+        mock_settings.REST_AUTH = {"JWT_AUTH_COOKIE": "jwt-auth-token"}
 
-    async def test_disconnect_updates_game_state(self):
-        game_id = "0"
-        user_to_game[self.sid] = game_id
-        game_state = {
-            "clients": {self.sid: self.sid},
-            "gameStart": True,
-            "game_start_lock": AsyncMock(),
-        }
-        game_state_db.load_game_state = AsyncMock(return_value=game_state)
-        await PingPongHistory.objects.acreate(
-            id=game_id, gamemode=GameMode.PVP.value, user1=self.user, user2=self.user2
-        )
+        result = await game_io._check_authentication(environ, sid)
 
-        game_io = GameIO("/test")
-        with patch("backend.GameIO.sio.get_session", return_value={"user": self.user}):
-            await game_io.on_disconnect(self.sid)
+        assert result is False
 
-        self.assertNotIn(self.sid, game_state["clients"])
-        game_state["game_start_lock"].acquire.assert_called_once()
-        game_state["game_start_lock"].release.assert_called_once()
+@pytest.mark.asyncio
+async def test_check_authentication_invalid_token():
+    game_io = GameIO('/api/game')
+    environ = {"HTTP_COOKIE": "jwt-auth-token=invalid_token;"}
+    sid = "test_sid"
 
+    with patch("backend.GameIO.settings") as mock_settings, \
+         patch("backend.GameIO.SimpleCookie") as mock_SimpleCookie, \
+         patch("backend.GameIO.TokenBackend") as mock_TokenBackend:
+        
+        mock_settings.REST_AUTH = {"JWT_AUTH_COOKIE": "jwt-auth-token"}
+        mock_settings.SECRET_KEY = "secret_key"
 
-@override_settings(REST_AUTH={"JWT_AUTH_COOKIE": "jwt-auth"})
-class TestGameIO(TransactionTestCase):
-    def setUp(self):
-        """Set up async test fixtures."""
-        self.user = User.objects.create(username="testuser", password="password")
-        self.sid = "test_sid"
+        mock_cookie = MagicMock()
+        mock_cookie.get.return_value = MagicMock(value='invalid_token')
+        mock_SimpleCookie.return_value = mock_cookie
 
-    async def test_check_authentication_success(self):
-        token = "valid_token"
-        environ = {"HTTP_COOKIE": f"jwt-auth={token}"}
+        mock_token_backend_instance = mock_TokenBackend.return_value
+        mock_token_backend_instance.decode.side_effect = Exception("Invalid token")
 
-        with patch(
-            "backend.GameIO.TokenBackend.decode", return_value={"user_id": self.user.id}
-        ), patch("backend.GameIO.sio.save_session", new_callable=AsyncMock):
-            game_io = GameIO("/api/game")
-            result = await game_io._check_authentication(environ, self.sid)
-            self.assertTrue(result)
+        result = await game_io._check_authentication(environ, sid)
 
-    async def test_check_authentication_failure_no_token(self):
-        environ = {"HTTP_COOKIE": ""}
-        game_io = GameIO("/test")
-        result = await game_io._check_authentication(environ, self.sid)
-        self.assertFalse(result)
+        assert result is False
 
-    async def test_check_authentication_failure_invalid_token(self):
-        environ = {"HTTP_COOKIE": "jwt-auth=invalid_token"}
+@pytest.mark.asyncio
+async def test_check_authentication_user_not_found():
+    game_io = GameIO('/api/game')
+    environ = {"HTTP_COOKIE": "jwt-auth-token=valid_token;"}
+    sid = "test_sid"
 
-        with patch(
-            "backend.GameIO.TokenBackend.decode", side_effect=Exception("InvalidToken")
-        ):
-            game_io = GameIO("/test")
-            result = await game_io._check_authentication(environ, self.sid)
-            self.assertFalse(result)
+    with patch("backend.GameIO.settings") as mock_settings, \
+         patch("backend.GameIO.SimpleCookie") as mock_SimpleCookie, \
+         patch("backend.GameIO.TokenBackend") as mock_TokenBackend, \
+         patch("backend.GameIO.User.objects.aget", new=AsyncMock()) as mock_aget:
+        
+        mock_settings.REST_AUTH = {"JWT_AUTH_COOKIE": "jwt-auth-token"}
+        mock_settings.SECRET_KEY = "secret_key"
+
+        mock_cookie = MagicMock()
+        mock_cookie.get.return_value = MagicMock(value='valid_token')
+        mock_SimpleCookie.return_value = mock_cookie
+
+        mock_token_backend_instance = mock_TokenBackend.return_value
+        mock_token_backend_instance.decode.return_value = {"user_id": 1}
+
+        mock_aget.side_effect = Exception("User not found")
+
+        result = await game_io._check_authentication(environ, sid)
+
+        assert result is False

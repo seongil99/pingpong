@@ -254,5 +254,3 @@ class GameIO(socketio.AsyncNamespace):
         if game_state["gameStart"] is False:
             server.game_loop(game_state)
         game_state["gameStart"] = True
-
-    # 서버 접근 원자성 보장 함수
