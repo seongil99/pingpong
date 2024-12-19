@@ -1,6 +1,6 @@
 function connect() {
   const socket = new WebSocket("wss://localhost/api/online-status/");
-  let retryDelay = 5;
+  let retryDelay = 5 * 1000;
 
   socket.onopen = () => {
     console.log("Connected");
