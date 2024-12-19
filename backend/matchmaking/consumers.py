@@ -27,7 +27,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             await self.accept()
             # 사용자별 그룹에 가입
             self.group_name = f"user_{self.user.id}"
-            logger.info(f"\n\n\nuser_{self.user.id}\n\n\n")
             await self.channel_layer.group_add(self.group_name, self.channel_name)
         else:
             await self.close()
@@ -43,7 +42,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             raise ValueError("No text section for incoming WebSocket frame!")
 
     async def receive_json(self, content, **kwargs):
-        try:
+        # try:
             if content.get("type") == "request_match":
                 if await self.is_user_in_other_game(self.user.id):
                     game_id = await self.get_game_id_in_progress(self.user.id)
@@ -63,7 +62,9 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     if random_val == 0:
                         option_selector = opponent
                     game_id = await create_game_and_get_game_id(self.user, opponent, option_selector)
+                    logger.info(f"aaaaaaaaaaaa{game_id}")
                     self.current_game_id = game_id  # 현재 매칭된 게임 정보 저장
+                    logger.info(f"bbbbbbbbbbb{self.current_game_id}")
                     self.current_opponent_id = opponent.id
                     await self.send_json(
                         {
@@ -134,13 +135,13 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 )
                 await MatchRequest.objects.filter(user=self.user).adelete()
                 await self.close()
-        except Exception as e:
-            await self.send_json(
-                {
-                    "type": "error",
-                    "message": str(e),
-                }
-            )
+        # except Exception as e:
+        #     await self.send_json(
+        #         {
+        #             "type": "error",
+        #             "message": str(e),
+        #         }
+        #     )
 
     @database_sync_to_async
     def find_match(self, gamemode):
@@ -233,6 +234,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_one_versus_one_game(self, user1, user2):
         from ingame.models import OneVersusOneGame
+        logger.info(f"current game id {self.current_game_id}")
         with transaction.atomic():
             history = PingPongHistory.objects.get(id=self.current_game_id)
             game = OneVersusOneGame.objects.create(

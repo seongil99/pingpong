@@ -1,16 +1,17 @@
 import createElement from "../Utils/createElement.js";
 import CreateFormSwitch from "./CheckBox.js";
-function createMessageModal(message,callback) {
+function createMessageModal(message,callback,socket) {
     // 메시지 표시 영역 생성
-	const hidden = document.getElementById("hidden-input");
 	const modalTitle = createElement(
         "div",
         { class: "modal-title" },
-        createElement("h5", {}, `잠시만 기다려 주세요. hideen${hidden.value}`)
+        createElement("h5", {}, `잠시만 기다려 주세요. `)
     );
     const modalBody = createElement(
         "div",
-        { class: "modal-body" },
+        { 
+			id: "modal-body-target",
+			class: "modal-body" },
         createElement("p", {}, message)
     );
 
@@ -18,6 +19,7 @@ function createMessageModal(message,callback) {
     const btnClose = createElement(
         "button",
         {
+			id: "modal-btn-target",
             type: "button",
             class: "btn btn-secondary",
             "data-bs-dismiss": "modal",
@@ -38,11 +40,13 @@ function createMessageModal(message,callback) {
     // 모달 콘텐츠 생성
     const modalContent = createElement(
         "div",
-        { class: "modal-content" },
+        { 	
+			class: "modal-content" 
+		},
 		modalTitle,
         modalBody,
         modalFooter,
-		CreateFormSwitch(),
+		CreateFormSwitch(socket),
     );
 
     // 모달 다이얼로그 생성

@@ -1,5 +1,5 @@
 function connect() {
-  const socket = new WebSocket("wss://localhost/api/online-status/");
+  const socket = new WebSocket("/api/online-status/");
   let retryDelay = 5;
 
   socket.onopen = () => {

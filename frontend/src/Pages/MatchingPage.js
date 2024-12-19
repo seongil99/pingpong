@@ -10,6 +10,7 @@ class MatchingPage {
         this.requestPVEButton = null;
         this.statusDiv = null;
         this.container = null;
+        this.hidden = null;
     }
 
     async template() {
@@ -26,11 +27,12 @@ class MatchingPage {
             "div",
             {},
         );
-        const hiddenGameId = createElement(
+        this.hidden = createElement(
             'input',
             {
                 class:"hide",
-                id : "hidden-input"
+                id : "hidden-input",
+                value: "none"
             }
         )
         this.btnContainer = createElement(
@@ -50,22 +52,27 @@ class MatchingPage {
                 console.log(this.btnContainer);
                 this.btnContainer.classList.toggle("hide");
                 console.log("버튼클릭");
-                const wait = WaitMacthBox("waiting for PvP User",()=>{
+                const wait = WaitMacthBox(
+                    "waiting for PvP User",
+                    ()=>{
                     this.cancelMatch();
                     this.btnContainer.classList.toggle("hide");
                     this.container.removeChild(wait.element);
-                })
-                this.container.append(wait.element);
+                },
+                this.socket    
+                )
                 wait.modal.show();
-            }),
+        }),
             ButtonToMatch("tournament",()=>{
                 this.connectWebSocket("tournament",this.requestMatch);
                 this.btnContainer.classList.toggle("hide");
-                const wait = WaitMacthBox("waiting for Tournament Users",()=>{
+                const wait = WaitMacthBox(
+            "waiting for Tournament Users",
+            ()=>{
                     this.cancelMatch();
                     this.btnContainer.classList.toggle("hide");
-                    this.container.removeChild(wait.element);
-                })
+                    this.container.removeChild(wait.element);},
+            this.socket)
                 this.container.append(wait.element);
                 wait.modal.show();
             }
@@ -81,7 +88,7 @@ class MatchingPage {
             navBar,
             main,
             this.btnContainer,
-            hiddenGameId,
+            this.hidden,
         );
         // this.setupEventListeners();
         return this.container;
@@ -140,17 +147,23 @@ class MatchingPage {
         // window.location.href = `${gameUrl}?gameId=${gameId}`;
     } else if (data.type === "match_found") {
         this.statusDiv.textContent = `매칭 성공! 상대방: ${data.opponent_username}`;
-        this.isMatching = false;
-        const hidden = document.getElementById("hidden-input");
-        hidden.value = data.game_id;
+        if(data.option_selector){
+            const optionForm = document.getElementById("form-target");
+            optionForm.classList.remove("hide");
+            console.log("set gameid", data.game_id);
+            this.hidden.value = data.game_id;
+            console.log("check hiddenvlaue", this.hidden.value);
+        }
+        const modal  = document.getElementById("modal-body-target");
+        const modalbtn  = document.getElementById("modal-btn-target");
+        modal.classList.add("hide");
+        modalbtn.classList.add("hide");
       } else if (data.type === "match_canceled") {
         this.statusDiv.textContent = "매칭이 취소되었습니다.";
         this.isMatching = false;
       } else if (data.type === "error") {
         this.statusDiv.textContent = `에러 발생: ${data.message}`;
         this.isMatching = false;
-      }
-      else if(data.type === "set_option"){
       }
     };
 
@@ -174,6 +187,7 @@ class MatchingPage {
                 type: "request_match",
                 gamemode: "1v1"
             };
+            console.log("before sned message ",message);
             this.socket.send(JSON.stringify(message));
         console.log('12');
             console.log("매칭 요청을 보냈습니다:", message);
@@ -188,6 +202,7 @@ class MatchingPage {
             const message = {
                 type: "cancel_match",
             };
+            console.log("before sned message ",message);
             this.socket.send(JSON.stringify(message));
             this.socket.close();
             console.log("매칭 취소를 보냈습니다:", message);
