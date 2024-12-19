@@ -1,3 +1,5 @@
+import random
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
@@ -18,7 +20,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated:
+        if self.user.is_authenticated and not await self.is_user_duplicate():
             await self.accept()
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -49,9 +51,12 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
                     )
                 else:
                     # 4명 달성 -> 4명 추출
+                    random_val = random.Random().randint(0, 3)
                     players = await self.get_players_from_queue()
+                    option_selector = players[random_val]
                     await self.delete_users_from_queue(players)
                     tournament_id = await self.create_and_get_tournament_id(players)
+                    await self.set_tournament_option_selector(tournament_id, option_selector)
 
                     # 4명 모두에게 match_found 전송
                     for p in players:
@@ -67,10 +72,35 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
 
             elif content.get("type") == "cancel_match":
                 await self.cancel_match()
+            elif content.get("type") == "set_option":
+                tournament_id = content["tournament_id"]
+                multi_ball = content["multi_ball"]
+                if await self.can_user_set_tournament_option(tournament_id) and isinstance(multi_ball, bool):
+                    multi_ball = await self.set_tournament_option(tournament_id, multi_ball)
+                    players = await self.get_tournament_players(tournament_id)
+                    for p in players:
+                        group_name = f"user_{p.id}"
+                        await self.channel_layer.group_send(
+                            group_name,
+                            {
+                                "type": "set_option",
+                                "tournament_id": tournament_id,
+                                "multi_ball": multi_ball,
+                            }
+                        )
+                else:
+                    await self.send_json({
+                        "type": "error",
+                        "message": "You are not allowed to set options for this tournament"
+                    })
+
             else:
                 raise ValueError("Invalid message type")
         except Exception as e:
-            await self.send_json({"error": str(e)})
+            await self.send_json({
+                "type": "error",
+                "message": str(e)
+            })
 
     async def match_found(self, event):
         await self.send_json({
@@ -83,6 +113,51 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
         await self.remove_from_queue()
         await self.send_json({"type": "match_canceled"})
         await self.close()
+
+    async def set_option(self, event):
+        # 게임 옵션을 수신하여 클라이언트로 전달
+        await self.send_json(
+            {
+                "type": "set_option",
+                "tournament_id": event["tournament_id"],
+                "multi_ball": event["multi_ball"],
+            }
+        )
+
+    async def error(self, event):
+        await self.send_json({
+            "type": "error",
+            "message": event["message"]
+        })
+
+    @database_sync_to_async
+    def get_tournament_players(self, tournament_id):
+        with transaction.atomic():
+            participants = TournamentParticipant.objects.filter(tournament_id=tournament_id)
+            return [p.user for p in participants]
+
+    @database_sync_to_async
+    def can_user_set_tournament_option(self, tournament_id):
+        # 토너먼트의 option_selector인지 확인
+        with transaction.atomic():
+            try:
+                tournament = Tournament.objects.get(tournament_id=tournament_id)
+            except Tournament.DoesNotExist:
+                return False
+            return tournament.option_selector == self.user
+
+    @database_sync_to_async
+    def set_tournament_option(self, tournament_id, multi_ball: bool):
+        with transaction.atomic():
+            tournament = Tournament.objects.get(tournament_id=tournament_id)
+            tournament.multi_ball = multi_ball
+            tournament.save()
+            return tournament.multi_ball
+
+    @database_sync_to_async
+    def set_tournament_option_selector(self, tournament_id, option_selector):
+        with transaction.atomic():
+            Tournament.objects.filter(tournament_id=tournament_id).update(option_selector=option_selector)
 
     @database_sync_to_async
     def add_to_queue(self):
@@ -126,6 +201,10 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
     def delete_users_from_queue(self, players):
         with transaction.atomic():
             TournamentQueue.objects.filter(user__in=players).delete()
+
+    @database_sync_to_async
+    def is_user_duplicate(self):
+        return TournamentQueue.objects.filter(user=self.user).exists()
 
 
 # 특정 유저의 채널 이름을 저장하는 딕셔너리
@@ -197,7 +276,13 @@ class TournamentGameProcessConsumer(AsyncJsonWebsocketConsumer):
                 raise ValueError("Invalid message type")
 
         except Exception as e:
-            await self.send_json({"error": str(e)})
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "error",
+                    "message": str(e)
+                }
+            )
 
     @database_sync_to_async
     def is_user_participant(self):
@@ -262,8 +347,24 @@ class TournamentGameProcessConsumer(AsyncJsonWebsocketConsumer):
                 user_2=user2,
             )
 
+    @database_sync_to_async
+    def is_tournament_multi_ball(self):
+        with transaction.atomic():
+            tournament = Tournament.objects.get(tournament_id=self.tournament_id)
+            return tournament.multi_ball
+
+    @database_sync_to_async
+    def create_one_versus_one_game(self, game_id, user1, user2):
+        from ingame.models import OneVersusOneGame
+        with transaction.atomic():
+            history = PingPongHistory.objects.get(id=game_id)
+            game = OneVersusOneGame.objects.create(game_id=history, user_1=user1, user_2=user2)
+            return game.game_id
+
     async def create_game(self, user1, user2, round_num):
-        game_id = await create_game_and_get_game_id(user1, user2)
+        multi_ball = await self.is_tournament_multi_ball()
+        game_id = await create_game_and_get_game_id(user1, user2, multi_ball=multi_ball)
+        await self.create_one_versus_one_game(game_id, user1, user2)
         await self.create_tournament_game(game_id, round_num, user1, user2)
         await self.send_message_to_user(user1.id,
                                         {"type": "game_started",
