@@ -1,3 +1,5 @@
+import asyncio
+
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qs
 import logging
@@ -20,6 +22,7 @@ from users.models import User
 from backend.socketsend import socket_send, DEFAULT_NAMESPACE
 from backend.sio import sio
 from backend.dbAsync import get_game_users
+from .background_timer import CancellableTimer
 
 logger = logging.getLogger("django")
 
@@ -232,11 +235,15 @@ class GameIO(socketio.AsyncNamespace):
             await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
         await socket_send(game_state["render_data"], "gameStart", game_id)
         if game_state["gameStart"] is False:
-            server.game_loop(game_state)
+            await server.game_loop(game_state)
         game_state["gameStart"] = True
 
     async def _on_first_user_enter(self, user2, user, game_state, sid):
         game_id = game_state["game_id"]
+        game_state["start_timer"] = CancellableTimer(
+            5, self._single_player_end, game_id, sid
+        )
+        game_state["start_timer"].start()
         if user2 == user:
             await socket_send(game_state["render_data"], "secondPlayer", game_id, sid)
         logger.info("Waiting for another player...")
@@ -247,5 +254,26 @@ class GameIO(socketio.AsyncNamespace):
         await socket_send(game_state["render_data"], "gameStart", game_id)
         logger.info("Single player game start")
         if game_state["gameStart"] is False:
-            server.game_loop(game_state)
+            await server.game_loop(game_state)
         game_state["gameStart"] = True
+
+    async def _single_player_end(self, game_id, sid):
+        game_state = game_state_db.load_game_state(game_id)
+        await socket_send(game_state["render_data"], "gameEnd", game_id)
+        logger.info("Single player game end")
+        game_state["gameStart"] = False
+        session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
+        user = session["user"]
+        try:
+            game = await PingPongHistory.objects.aget(id=game_id)
+            logger.info("Game ended: %s", game_id)
+            OneVersusOneGame.objects.filter(game_id=game_id).adelete()
+            if game.tournament_id is not None:
+                server.update_tournament(game, user.id)
+            else:
+                await server.save_game_history(game_state, user.id)
+        except Exception as e:
+            logger.error(str(e), exc_info=True)
+        game_state_db.delete_game_state(game_id)
+        logger.info("Game state deleted")
+        return

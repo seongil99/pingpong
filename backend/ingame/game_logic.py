@@ -11,7 +11,9 @@ from pingpong_history.models import PingPongHistory as GameHistory, PingPongRoun
 from users.models import User
 from backend.socketsend import socket_send
 from backend.dbAsync import get_game_users
-
+from tournament.models import TournamentGame, TournamentMatchParticipants
+from django.db import transaction
+from asgiref.sync import sync_to_async
 from .enums import Game, GameMode
 
 logger = logging.getLogger("django")
@@ -117,6 +119,7 @@ class InMemoryGameState:
             "game_start_lock": asyncio.Lock(),
             "key_state_lock": asyncio.Lock(),
             "rally_flag": False,  # paddle to paddle 랠리 확인용 플래그 False = user1, True = user2 면 카운트
+            "start_timer": None,
         }
         self.save_game_state(game_id, game_state)
         return game_state
@@ -203,10 +206,11 @@ class PingPongServer:
             for i in range(0, ball_count):
                 self._add_ball(game_state)
 
-    def game_loop(self, game_state):
+    async def game_loop(self, game_state):
         """
         게임 루프를 asyncio background task 로 실행
         """
+        await game_state["start_timer"].cancel()
         logger.info("start game loop")
         game_id = game_state["game_id"]
         InMemoryGameState.reset_current_round(game_state)
@@ -345,12 +349,10 @@ class PingPongServer:
 
                 # Check if someone has won the set
                 if (
-                    game_state["render_data"]["score"]["playerOne"]
-                    # < 1
-                    < Game.GAME_SET_SCORE.value
-                    and game_state["render_data"]["score"]["playerTwo"]
-                    # < 1
-                    < Game.GAME_SET_SCORE.value
+                    game_state["render_data"]["score"]["playerOne"] < 1
+                    # < Game.GAME_SET_SCORE.value
+                    and game_state["render_data"]["score"]["playerTwo"] < 1
+                    # < Game.GAME_SET_SCORE.value
                 ):
                     if game_state["gameStart"]:
                         await socket_send(game_state["render_data"], "score", game_id)
@@ -542,8 +544,11 @@ class PingPongServer:
         )
 
     async def _game_finish(self, game_state, winner_id):
-        await self._save_game_history(game_state, winner_id)
+        await self.save_game_history(game_state, winner_id)
+        game = await GameHistory.objects.aget(id=game_state["game_id"])
         game_id = game_state["game_id"]
+        if game.tournament_id is not None:
+            await self.update_tournament(game, winner_id)
 
         if game_state["is_single_player"] is False:
             self._clean_one_v_one_game(game_id)
@@ -554,6 +559,60 @@ class PingPongServer:
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
+
+    @sync_to_async
+    def update_tournament(self, game, winner_id):
+        TournamentGame.objects.filter(game_id=game.id).update(
+            status="finished",
+            ended_at=timezone.now(),
+            winner_id=winner_id,
+        )
+        GameHistory.objects.filter(id=game.id).update(
+            ended_at=timezone.now(), winner_id=winner_id
+        )
+        with transaction.atomic():
+            tournament_game = TournamentGame.objects.get(game_id=game.id)
+            tournament = game.tournament
+            if tournament_game.tournament_round == 1:
+                if tournament.round_1_winner is None:
+                    tournament.round_1_winner.id = winner_id
+                else:
+                    tournament.round_2_winner.id = winner_id
+                    tournament.current_round = 2
+            else:
+                tournament.round_3_winner.id = winner_id
+                tournament.status = "finished"
+            tournament.save()
+
+        tournament_participants = TournamentMatchParticipants.objects.get(
+            tournament_id=tournament
+        )
+        # 다음 라운드 생성
+        if tournament.status != "finished":
+            if tournament.current_round == 1:
+                user1 = tournament_participants.user3_id
+                user2 = tournament_participants.user4_id
+                next_round = 1
+            else:
+                next_round = 2
+                user1 = tournament.round_1_winner
+                user2 = tournament.round_2_winner
+            game_id = GameHistory.objects.create(
+                user1_id=user1,
+                user2_id=user2,
+                gamemode=GameMode.PVP.value,
+                tournament_id=tournament,
+                option_selector_id=tournament_participants.user1_id,
+                multi_ball=tournament.multi_ball,
+            )
+            TournamentGame.objects.create(
+                game_id=game_id,
+                tournament_id=tournament,
+                tournament_round=next_round,
+                user_1_id=tournament.round_1_winner,
+                user_2_id=tournament.round_2_winner,
+                choices="ongoing",
+            )
 
     async def _clean_one_v_one_game(self, game_id):
         try:
@@ -567,14 +626,14 @@ class PingPongServer:
         """
         logger.info("Abandoned game: %s", game_state["game_id"])
         game_id = game_state["game_id"]
-        await self._save_game_history(game_state, None)
+        await self.save_game_history(game_state, None)
         await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel("abandoned cancel")
 
-    async def _save_game_history(self, game_state, winner_id):
+    async def save_game_history(self, game_state, winner_id):
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)
         logger.info("winner: %s", winner_id)
