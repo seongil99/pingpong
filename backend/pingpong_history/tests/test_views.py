@@ -125,7 +125,6 @@ class EventViewTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        print(data)
 
         self.assertEqual(data["eventType"], "match")
         self.assertEqual(data["eventId"], self.match_history.id)
@@ -150,7 +149,6 @@ class EventViewTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        print(data)
 
         self.assertEqual(data["eventType"], "tournament")
         self.assertEqual(data["eventId"], self.tournament.tournament_id)
