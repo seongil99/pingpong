@@ -1,23 +1,13 @@
 import random
-
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from channels.db import database_sync_to_async
-from django.db import transaction
-from django.contrib.auth import get_user_model
-
-from pingpong_history.models import PingPongHistory
-from .models import Tournament, TournamentParticipant, TournamentGame, TournamentQueue, TournamentMatchParticipants
-from ingame.utils import create_game_and_get_game_id
-
-User = get_user_model()
-
-import random
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
 from tournament.models import Tournament, TournamentParticipant, TournamentMatchParticipants, TournamentQueue
+from pingpong_history.models import PingPongHistory
+from .models import TournamentGame
+from ingame.utils import create_game_and_get_game_id
 
 User = get_user_model()
 
