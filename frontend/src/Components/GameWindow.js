@@ -301,7 +301,8 @@ class AudioManager {
 
 
 class PingPongClient {
-    constructor(socket) {
+    constructor(socket,gameId) {
+        this.gameId = gameId;
         this.socket = socket;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -615,6 +616,7 @@ class PingPongClient {
                 // 게임 종료시 이벤트 리스너 제거
                 window.removeEventListener('keydown', this.onKeyDownBound, false);
                 window.removeEventListener('keyup', this.onKeyUpBound, false);
+                window.router.navigate(`/result/${this.gameId}`, false);
             }
             else if (gameState.type === 'secondPlayer') {
                 this.secondPlayer = true;
@@ -635,10 +637,6 @@ class PingPongClient {
                 console.log('effect');
                 this.effect.createImpact(gameState.op);
                 this.audio.play('power_ball');
-            }
-            else if(gameState.type === 'redirect'){
-                if(gameState.url)
-                    window.location.href == gameStateurl;
             }
         });
     }

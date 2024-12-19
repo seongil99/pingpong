@@ -49,7 +49,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     game_id = await self.get_game_id_in_progress(self.user.id)
                     await self.send_json(
                         {
-                            "type": "error",
+                            "type": "already_joined",
                             "message": "이미 게임 중입니다.",
                             "game_id": game_id,
                         }

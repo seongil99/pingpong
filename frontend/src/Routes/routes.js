@@ -20,7 +20,7 @@ export const routes = {
         import("../Pages/ProfilePage.js"),
     "/settings": () => import("../Pages/SettingsPage.js"),
     "/matching": () => import("../Pages/MatchingPage.js"),
-    "/result" : () => import("../Pages/ResultPage.js"),
+    "/result/:id" : () => import("../Pages/ResultPage.js"),
     "/playing/:id": () => import("../Pages/GamePage.js"),
     "/404": () => import("../Pages/NotFoundPage.js"),
 };
@@ -28,7 +28,7 @@ export const routes = {
 export const routeChecker = {
     login: new Set(["/", "/login", "/oauth2/redirect"]),
     mfa: new Set(["/otp", "/otp/auth"]),
-    game: new Set(["/home", "/profile", "/settings", "/matching", "/playing"]),
+    game: new Set(["/home", "/profile", "/settings", "/matching", "/playing","/result"]),
 };
 
 export const staticRoutes = new Set([
@@ -56,5 +56,6 @@ export const dynamicRoutes = new Map([
         ],
     ],
     ["/playing", ["/playing/:id"]],
+    ["/result", ["/result/:id"]], 
 ]);
 
