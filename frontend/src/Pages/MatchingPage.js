@@ -105,12 +105,16 @@ class MatchingPage {
             const optionForm = document.getElementById("form-target");
             optionForm.classList.remove("hide");
             console.log('op select in this.tournamentId: ', this.tournamentId);
+            localStorage.setItem("matchType", this.matchType);
+            localStorage.setItem("gameId", data.game_id);
             this.hiddenInput.value = `${this.matchType},${data.game_id}`;
         }
         console.log(`Match found! Opponent: ${data.opponent_username}`);
         if(this.matchType === "tournament" && !this.tournamentId){
             console.log("before set id",data.tournament_id);
             this.tournamentId = data.tournament_id;
+            localStorage.setItem("tournamentId", this.tournamentId);
+            localStorage.setItem("matchType", this.matchType);
             this.hiddenInput.value = `${this.matchType},${this.tournamentId}`; 
             console.log('this.tournamentId: ', this.tournamentId);
         }
