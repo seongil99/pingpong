@@ -62,17 +62,17 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content, **kwargs):
         msg_type = content.get("type")
-        try:
-            if msg_type == "request_match":
-                await self.handle_request_match()
-            elif msg_type == "cancel_match":
-                await self.cancel_match()
-            elif msg_type == "set_option":
-                await self.handle_set_option(content)
-            else:
-                raise ValueError("Invalid message type")
-        except Exception as e:
-            await self.send_json({"type": "error", "message": str(e)})
+        # try:
+        if msg_type == "request_match":
+            await self.handle_request_match()
+        elif msg_type == "cancel_match":
+            await self.cancel_match()
+        elif msg_type == "set_option":
+            await self.handle_set_option(content)
+        else:
+            raise ValueError("Invalid message type")
+        # except Exception as e:
+        #     await self.send_json({"type": "error", "message": str(e)})
 
     # ---------------------
     # Handlers
@@ -111,6 +111,10 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
         if isinstance(multi_ball, bool) and await self.can_user_set_tournament_option(tournament_id):
             multi_ball = await self.set_tournament_option(tournament_id, multi_ball)
             players = await self.get_tournament_players(tournament_id)
+            tournament = await self.get_tournament(tournament_id)
+            game_id = await create_game_and_get_game_id(players[0], players[1], tournament_id=tournament,
+                                                        multi_ball=multi_ball)
+            await self.create_oneversusone_game(game_id, players[0], players[1])
             for p in players:
                 group_name = f"user_{p.id}"
                 await self.channel_layer.group_send(
@@ -119,6 +123,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
                         "type": "set_option",
                         "tournament_id": tournament_id,
                         "multi_ball": multi_ball,
+                        "game_id": game_id,
                     }
                 )
         else:
@@ -148,6 +153,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
             "type": "set_option",
             "tournament_id": event["tournament_id"],
             "multi_ball": event["multi_ball"],
+            "game_id": event["game_id"],
         })
 
     async def error(self, event):
@@ -223,6 +229,10 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
             return tournament.tournament_id
 
     @database_sync_to_async
+    def get_tournament(self, tournament_id):
+        return Tournament.objects.get(tournament_id=tournament_id)
+
+    @database_sync_to_async
     def get_queue_count(self):
         return TournamentQueue.objects.count()
 
@@ -262,6 +272,14 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def tournament_exists(self, tournament_id):
         return Tournament.objects.filter(tournament_id=tournament_id).exists()
+
+    @database_sync_to_async
+    def create_oneversusone_game(self, game_id, user1, user2):
+        from ingame.models import OneVersusOneGame
+        with transaction.atomic():
+            history = PingPongHistory.objects.get(id=game_id)
+            game = OneVersusOneGame.objects.create(game_id=history, user_1=user1, user_2=user2)
+            return game.game_id
 
 
 # 특정 유저의 채널 이름을 저장하는 딕셔너리
