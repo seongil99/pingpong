@@ -18,7 +18,7 @@ class Game(Enum):
     PHYSICS_INTERVAL = 1 / 60
     PADDLE_INTERVAL = 1 / 30
     MAX_ANGLE = math.pi / 6
-    ANGLE = (random.random() * 2 - 1) * MAX_ANGLE
+    
 
 
 class GameMode(Enum):

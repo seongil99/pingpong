@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import status
 
 from .models import PingPongHistory
 from .serializers import PingPongHistorySerializer
@@ -18,6 +19,19 @@ class PingPongHistoryAllView(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PingPongHistorySerializer
     queryset = PingPongHistory.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        if data.get("gamemode") == GameMode.PVE.value:
+            data["user1"] = request.user.id  # Assign the user's ID, not the instance
+
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Call the regular create method for other gamemodes
+        return super().create(request, *args, **kwargs)
 
 
 @extend_schema(

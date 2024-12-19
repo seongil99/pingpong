@@ -217,18 +217,14 @@ class PingPongServer:
         game_state["render_data"]["balls"].append(ball)
 
     def _set_ball_velocity(self, game_state, ball, power_up=1, strat=False):
+        angle = (random.random() * 2 - 1) * Game.MAX_ANGLE.value
         direction = 1 if ball.summon_direction else -1
         if strat:
             direction = 1 if len(game_state["render_data"]["balls"]) == 1 else -1
         power_up = 1 if ball.power_counter > 1 else power_up
         ball.power_counter = 1 if power_up == 2 else 0
-        vx = math.sin(Game.ANGLE.value) * Game.CONST_BALL_SPEED.value * power_up
-        vz = (
-            math.cos(Game.ANGLE.value)
-            * Game.CONST_BALL_SPEED.value
-            * power_up
-            * direction
-        )
+        vx = math.sin(angle) * Game.CONST_BALL_SPEED.value * power_up
+        vz = math.cos(angle) * Game.CONST_BALL_SPEED.value * power_up * direction
         ball.velocity = Vec3(vx, 0, vz)
 
     async def _update_ai(self, game_state):
@@ -266,7 +262,7 @@ class PingPongServer:
             await self.handle_player_input(game_state, "ai", "D", True)
 
     async def _update_physics(self, game_state):
-        logger.info("updating physics...")
+        # logger.info("updating physics...")
         if not game_state["gameStart"]:
             return
         game_id = game_state["game_id"]
@@ -323,9 +319,11 @@ class PingPongServer:
                 # Check if someone has won the set
                 if (
                     game_state["render_data"]["score"]["playerOne"]
-                    < 1  # Game.GAME_SET_SCORE.value
+                    # < 1
+                    < Game.GAME_SET_SCORE.value
                     and game_state["render_data"]["score"]["playerTwo"]
-                    < 1  # Game.GAME_SET_SCORE.value
+                    # < 1
+                    < Game.GAME_SET_SCORE.value
                 ):
                     if game_state["gameStart"]:
                         await socket_send(game_state["render_data"], "score", game_id)
