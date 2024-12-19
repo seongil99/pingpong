@@ -3,6 +3,7 @@ from .views import (
     UserSearchView,
     SearchFriendableView,
     MyProfileView,
+    MyCurrentGameView,
 )
 
 user_list = UserSearchView.as_view(
@@ -28,4 +29,5 @@ urlpatterns = [
         SearchFriendableView.as_view(),
         name="search-friendable",
     ),
+    path("me/current-game/", MyCurrentGameView.as_view(), name="current-game"),
 ]
