@@ -3,7 +3,7 @@ import NavBar from "../Components/Navbar.js";
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-
+import getCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
 
 const WAIT_GAME = 1;
 const START_GAME = 2;
@@ -616,7 +616,26 @@ class PingPongClient {
                 // 게임 종료시 이벤트 리스너 제거
                 window.removeEventListener('keydown', this.onKeyDownBound, false);
                 window.removeEventListener('keyup', this.onKeyUpBound, false);
-                window.router.navigate(`/result/${this.gameId}`, false);
+                if (localStorage.getItem("matchType") === "PVP")
+                    window.router.navigate(`/result/${this.gameId}`, false);
+                else {
+                    const pathname = window.location.pathname;
+                    let count = 0;
+                    const id = setInterval(async () => {
+                        if (count > 10) {
+                            clearInterval(id); // 반복 실행 중지
+                            return;
+                        }
+                        try {
+                            const result = await getCurrentUserGameStatus(); // 비동기 실행
+                            console.log(result);
+                        } catch (error) {
+                            console.error("Error fetching game status:", error);
+                        }
+
+                        count++;
+                    }, 2000); // 실행 간격 설정 (밀리초)
+                }
             }
             else if (gameState.type === 'secondPlayer') {
                 this.secondPlayer = true;

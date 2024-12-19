@@ -15,7 +15,7 @@ class Game(Enum):
     PADDLE_DEPTH = 5
     MOVE_SPEED = 2
     AI_INTERVAL = 1 / 10
-    PHYSICS_INTERVAL = 1 / 30
+    PHYSICS_INTERVAL = 1 / 60
     PADDLE_INTERVAL = 1 / 30
     MAX_ANGLE = math.pi / 6
     

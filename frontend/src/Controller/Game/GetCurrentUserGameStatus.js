@@ -1,22 +1,23 @@
-async function getCurrentUserGameStatus(params){
-		const url = "/api/online-status/";
-		try {
-			const response = await fetch(url, {
-				method: "GET",
-				// headers: {
-				// 	"Content-Type": "application/json",
-				// },
-				// credentials: "include"
-			});
-			if (!response.ok) {
-				throw new Error("Not OK! Status Code: ", response.status);
-			}
-			const json = await response.json();
-			console.log('user data json: ', json);
-			return json;
-		} catch (error) {
-			console.error("Error: ", error);
+async function getCurrentUserGameStatus() {
+	const url = "/api/v1/users/me/current-game/";
+	try {
+		const response = await fetch(url, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			credentials: "include"
+		});
+		if (response.status !== 200) {
+			throw new Error("Not OK! Status Code: ", response.status);
 		}
-	};
-	
-	export default getCurrentUserGameStatus;
+		console.log('response: ', response);
+		const json = await response.json();
+		console.log('user data json: ', json);
+		return json;
+	} catch (error) {
+		console.error("Error: ", error);
+	}
+};
+
+export default getCurrentUserGameStatus;
