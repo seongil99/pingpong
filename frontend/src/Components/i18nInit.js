@@ -6,8 +6,9 @@ async function translater(params) {
             i18next.changeLanguage(event.newValue);  // 언어 업데이트
         }
     });
-
+    // if(i18next.isInitialized) return;
     // i18next 초기화
+    console.log("i18 초기화");
     return i18next.init(
         {
             lng: localStorage.getItem('lang') || "한국어",

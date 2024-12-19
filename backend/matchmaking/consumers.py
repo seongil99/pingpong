@@ -10,7 +10,7 @@ from pingpong_history.models import PingPongHistory
 
 from logging import getLogger
 
-logger = getLogger(__name__)
+logger = getLogger("django")
 
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
@@ -113,6 +113,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 )
 
                 # 게임 생성 후 상대방 강제 종료 예시
+                logger.info("create 1v1 table")
                 await self.create_one_versus_one_game(self.user, opponent)
                 await self.channel_layer.group_send(
                     f"user_{opponent_id}",

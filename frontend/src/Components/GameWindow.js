@@ -3,18 +3,7 @@ import NavBar from "../Components/Navbar.js";
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-import { io } from "socket.io-client";
 
-const socket = io('/api/game', {
-    transports: ['websocket'],
-    debug: true,
-    path: '/api/game/socket.io',
-    query: {
-        gameId: gameId,
-        userName: userName,
-        gameType: gameTypeParam,
-    }
-});
 
 const WAIT_GAME = 1;
 const START_GAME = 2;
@@ -312,7 +301,8 @@ class AudioManager {
 
 
 class PingPongClient {
-    constructor(remoteOption) {
+    constructor(socket,remoteOption) {
+        this.socket = socket;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.audio = new AudioManager(this.camera);
@@ -423,13 +413,13 @@ class PingPongClient {
         let key = event.key.toUpperCase();
         key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
-            socket.emit('keyPress', { key: key, pressed: true, who: this.secondPlayer });
+            this.socket.emit('keyPress', { key: key, pressed: true, who: this.secondPlayer });
         }
         else if (this.secondPlayer && (key === 'A' || key === 'D')) {
-            socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: true, who: this.secondPlayer })
+            this.socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: true, who: this.secondPlayer })
         }
         else if (key === ' ')
-            socket.emit('keyPress', { key: ' ', pressed: true, who: this.secondPlayer });
+            this.socket.emit('keyPress', { key: ' ', pressed: true, who: this.secondPlayer });
         else if (key === 'M') {
             if (this.audio.sounds.get('bgm').sound); {
                 this.audio.sounds.get('bgm').sound.isPlaying ? this.audio.stop('bgm') : this.audio.play('bgm');
@@ -447,10 +437,10 @@ class PingPongClient {
         key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
         console.log('keyup', key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
-            socket.emit('keyPress', { key: key, pressed: false });
+            this.socket.emit('keyPress', { key: key, pressed: false });
         }
         else if (this.secondPlayer && (key === 'A' || key === 'D')) {
-            socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: false });
+            this.socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: false });
         }
     }
 
@@ -594,11 +584,11 @@ class PingPongClient {
 
 
     setupSocketListeners() {
-        socket.on('connect', () => {
+        this.socket.on('connect', () => {
             console.log('Connected to server');
         });
 
-        socket.on('data', (gameState) => {
+        this.socket.on('data', (gameState) => {
             // console.log(gameState.type, gameState);
             if (gameState.type === 'gameState') {
                 // console.log(gameState);

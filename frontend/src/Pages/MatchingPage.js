@@ -164,6 +164,9 @@ class MatchingPage {
       } else if (data.type === "error") {
         this.statusDiv.textContent = `에러 발생: ${data.message}`;
         this.isMatching = false;
+      }else if(data.type === "set_option"){
+        console.log("to the game page");
+        location.href = `/playing?gameId={data.game_id}`;
       }
     };
 
