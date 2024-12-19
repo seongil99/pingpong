@@ -6,7 +6,7 @@ import translater from "../Components/i18nInit.js";
 // import * as i18next from 'i18next';
 
 class HomePage {
-    async template() {
+    async template(pathParam, queryParam) {
         // i18next 초기화 대기
         await translater({
             "English": {

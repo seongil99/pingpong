@@ -1,7 +1,7 @@
 import callCallback from "../Controller/Auth/callCallback.js";
 
 class Oauth2Page {
-    async template() {
+    async template(pathParam, queryParam) {
         try {
             const data = await callCallback();
             let redirectPath;

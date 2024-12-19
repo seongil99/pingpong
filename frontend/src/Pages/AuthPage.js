@@ -2,7 +2,7 @@ import createElement from "../Utils/createElement.js";
 import AuthForm from "../Components/AuthForm.js";
 
 class AuthPage {
-    template() {
+    template(pathParam, queryParam) {
         const TwoFactorAuthTitle = createElement(
             "h1",
             {},

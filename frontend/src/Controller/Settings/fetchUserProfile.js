@@ -5,8 +5,9 @@ const fetchUserProfile = async () => {
             credentials: "include",
         });
         if (!response.ok) throw new Error("Network response was not ok");
-        const userData = await response.json();
-        return userData;
+        const data = await response.json();
+        data.avatar = data.avatar.replace("http://", "https://");
+        return data;
     } catch (error) {
         console.error("Error fetching user profile:", error);
     }

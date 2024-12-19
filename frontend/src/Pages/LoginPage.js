@@ -2,7 +2,7 @@ import createElement from "../Utils/createElement.js";
 import handleEmailLogin from "../Controller/Auth/handleEmailLogin.js";
 
 class LoginPage {
-    async template() {
+    async template(pathParam, queryParam) {
         // 제목 추가
         const title = createElement("h2", {}, "Login Page");
 

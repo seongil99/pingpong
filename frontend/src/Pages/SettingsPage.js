@@ -6,7 +6,7 @@ import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
 import disableMFA from "../Controller/Auth/disableMFA.js";
 
 class SettingsPage {
-    async template() {
+    async template(pathParam, queryParam) {
         const title1 = createElement(
             "h1",
             { class: "settings-section-title" },

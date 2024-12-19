@@ -1,7 +1,7 @@
 import createElement from "../Utils/createElement.js";
 
 class TwoFactorAuthPage {
-    template() {
+    template(pathParam, queryParam) {
         const MultiFactorAuthTitle = createElement(
             "h1",
             {},
