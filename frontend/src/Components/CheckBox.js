@@ -57,7 +57,7 @@ function createFormSwitch(socket, tournamentId) {
                         } else {
                             message = {
                                 type: "set_option",
-                                tournament_id: localStorage.getItem("tournamentId"),
+                                tournament_id: localStorage.getItem("gameId"),
                                 game_id : null,
                                 multi_ball: formCheckInput.checked,
                             };

@@ -2,7 +2,8 @@ import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import ButtonToMatch from "../Components/ButtonToMatch.js";
 import WaitMatchBox from "../Components/WaitMacthBox.js";
-
+import GetCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
+import getCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
 class MatchingPage {
     constructor(pathParam, queryParam) {
         this.socket = null;
@@ -104,16 +105,18 @@ class MatchingPage {
             console.log('op select in this.tournamentId: ', this.tournamentId);
         }
         localStorage.setItem("matchType", this.matchType);
-        localStorage.setItem("gameId", data.game_id);
-        console.log(`Match found! Opponent: ${data.opponent_username}`);
+        localStorage.setItem("gameId", data.game_id ? data.game_id: data.tournament_id);
+        this.tournamentId = data.tournament_id;
+        console.log(`Match found! gameId: ${localStorage.getItem("gameId")}`);
     }
 
-    navigateToGame(gameId) {
+    async navigateToGame(gameId) {
         if(this.waitModal){
             this.waitModal.modal.dispose();
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
         }
+        await getCurrentUserGameStatus();
         window.router.navigate(`/playing/${gameId}`, false);
     }
     requestMatch() {

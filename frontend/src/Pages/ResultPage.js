@@ -42,8 +42,10 @@ const tournamentData = {
 };
 
 class TournamentPage {
-	async template() {
-		const data = await getTournamentData('2');  // JSON 데이터를 인스턴스 변수로 관리
+	async template(pathParam,queryParam) {
+        const [_, path, gameId] = pathParam;
+        const type = localStorage.getItem("matchType") === "PVP" ? 'match':'tournament';
+		const data = await getTournamentData(type,gameId);  // JSON 데이터를 인스턴스 변수로 관리
 		const navicontainer = createElement("div",{},NavBar()); 
         const header = this.createHeader(data);
         const resultsSection = this.createResultsSection(data);
