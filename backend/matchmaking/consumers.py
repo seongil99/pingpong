@@ -227,8 +227,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def cancel_match(self):
         with transaction.atomic():
             MatchRequest.objects.filter(user=self.user).delete()
-            if self.current_game_id:
-                PingPongHistory.objects.filter(id=self.current_game_id).delete()
 
     @database_sync_to_async
     def get_opponent_id(self, game_id):
