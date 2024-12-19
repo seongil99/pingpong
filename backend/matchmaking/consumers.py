@@ -217,10 +217,10 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
         game = OneVersusOneGame.objects.filter(user_1_id=user_id).first()
         if game:
-            return game.game_id
+            return game.game_id.id
         game = OneVersusOneGame.objects.filter(user_2_id=user_id).first()
         if game:
-            return game.game_id
+            return game.game_id.id
         return None
 
     @database_sync_to_async
