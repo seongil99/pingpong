@@ -1,0 +1,90 @@
+.settings-modal,
+.two-auth-package {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.two-auth-package {
+    padding: 10px 12px 7px 12px;
+}
+
+.two-auth-enable-title {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.authenticator-guide-step {
+    display: flex;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+.authenticator-guide-step-number {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #909090;
+    margin-bottom: 2px;
+}
+
+.authenticator-guide-step-title {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.authenticator-guide-step-img-div {
+    width: 150px;
+    margin-right: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.authenticator-guide-step-description {
+    line-height: 20px;
+}
+
+.authenticator-guide-step-content > ul {
+    margin: 7px 0px;
+}
+
+.authenticator-guide-step-content > ul > li {
+    list-style-type: disc;
+    margin: 2px 0px 2px 20px;
+}
+
+.authenticator-guide-step-content > a {
+    color: #0078aa;
+    font-weight: 400;
+}
+
+.authenticator-qrcode-scan-guide {
+    font-size: 14px;
+}
+
+.authenticator-guide-step-content:last-child > form {
+    display: flex;
+    margin-top: 12px;
+}
+
+.authenticator-guide-step-content:last-child > form > input {
+    margin-right: 10px;
+}
+
+.authenticator-guide-step-img {
+    width: 150px;
+    height: 120px;
+}
+
+#mfa-qrcode {
+    width: 150px;
+    height: 150px;
+}
+
+.two-auth-authenticator-guide {
+    width: 700px;
+}
+
+.settings-btn-set > button {
+    margin: 0px 5px;
+    width: 80px;
+}

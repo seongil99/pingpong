@@ -1,0 +1,79 @@
+.start {
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.start > button {
+    font-size: 16px;
+    background-color: tomato;
+    color: white;
+    margin-top: 32px;
+    padding: 7px 10px;
+}
+
+.start > button:hover {
+    background-color: rgba(255, 99, 71, 0.8);
+}
+
+/* 스마트폰 세로 */
+@media only screen and (min-width : 320px) {
+    .start > h1 {
+        font-size: 36px;
+    }
+    .start > button {
+        font-size: 20px;
+    }
+}
+
+/* 스마트폰 세로 */
+@media only screen and (min-width : 480px) {
+    .start > h1 {
+        font-size: 42px;
+    }
+    .start > button {
+        font-size: 24px;
+    }
+}
+
+/* iPhone4와 같은 높은 해상도 가로 */
+@media only screen and (min-width : 640px) {
+    .start > h1 {
+        font-size: 50px;
+    }
+    .start > button {
+        font-size: 28px;
+    }
+}
+
+/* iPad 가로+세로 */
+@media only screen and (min-width : 768px) {
+    .start > h1 {
+        font-size: 64px;
+    }
+    .start > button {
+        font-size: 32px;
+    }
+}
+
+/* 데스크탑 브라우저 가로 */
+@media only screen and (min-width : 1224px) {
+    .start > h1 {
+        font-size: 76px;
+    }
+    .start > button {
+        font-size: 36px;
+    }
+}
+
+/* 큰 모니터 */
+@media only screen and (min-width : 1824px) {
+    .start > h1 {
+        font-size: 90px;
+    }
+    .start > button {
+        font-size: 42px;
+    }
+}

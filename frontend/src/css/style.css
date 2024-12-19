@@ -1,0 +1,22 @@
+@import "Components/Navbar.module.css";
+@import "Components/Friends.module.css";
+@import "Components/Modal.module.css";
+@import "Components/FriendModal.module.css";
+@import "Components/SettingsModal.module.css";
+
+@import "StartPage/StartPage.css";
+@import "StartPage/TwoFactorAuthPage.css";
+@import "StartPage/AuthenticatorPage.css";
+
+@import "MainPage/HomePage.css";
+
+@import "SettingsPage/SettingsPage.css";
+
+@import "ProfilePage/ProfilePage.css";
+
+@import "MatchingPage/MatchingPage.css";
+
+@import "common.css";
+
+@import "Game/Command.module.css";
+@import "Result/TournamentResult.module.css";

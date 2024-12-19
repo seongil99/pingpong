@@ -1,0 +1,21 @@
+#home-main {
+    height: 100vh;
+}
+
+.match-div {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.match-btn {
+    padding: 7px 10px;
+    background-color: greenyellow;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.hide {
+    display: none;
+}

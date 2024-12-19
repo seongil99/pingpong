@@ -1,0 +1,88 @@
+#settings-main {
+    overflow-y: scroll;
+}
+
+.settings-btn {
+    font-size: 16px;
+    padding: 7px 10px;
+}
+
+.settings-title,
+.settings-section-title {
+    padding: 15px 0px;
+}
+
+.settings-title {
+    font-size: 32px;
+}
+
+.settings-section-title {
+    font-size: 26px;
+}
+
+.settings-profile-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.settings-profile-btn-set {
+    padding-top: 15px;
+}
+
+.settings-profile-btn-set > button {
+    width: 80px;
+    padding: 5px 10px;
+    margin: 0px 5px;
+}
+
+.settings-profile-content {
+    display: flex;
+    align-items: center;
+}
+
+.settings-section {
+    padding: 10px;
+}
+
+.settings-profile-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 30%;
+    border-radius: 50%;
+}
+
+.settings-profile-image > img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+}
+
+#open-file-btn {
+    background: none;
+    color: white;
+}
+
+#img-input {
+    display: none;
+}
+
+.edit-bg {
+    background-color: rgba(0, 0, 0, 0.2);
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+}
+
+.settings-profile-infos {
+    width: 70%;
+    padding-left: 10px;
+}
+
+.input-box > input {
+    width: 200px;
+}

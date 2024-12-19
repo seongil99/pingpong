@@ -10,7 +10,7 @@ from ingame.utils import create_game_and_get_game_id
 from .models import MatchRequest
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
@@ -34,7 +34,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
-        await self.cancel_match()
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         if text_data:
@@ -50,7 +49,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     game_id = await self.get_game_id_in_progress(self.user.id)
                     await self.send_json(
                         {
-                            "type": "error",
+                            "type": "already_joined",
                             "message": "이미 게임 중입니다.",
                             "game_id": game_id,
                         }
@@ -100,6 +99,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     return
                 multiball_option = await self.save_multi_ball(game_id, multiball_option)
                 opponent_id = await self.get_opponent_id(game_id)
+                opponent = await self.get_opponent(game_id)
 
                 # 현재 유저에게 알림
                 await self.send_json(
@@ -121,7 +121,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 )
 
                 # 게임 생성 후 상대방 강제 종료 예시
-                await self.create_one_versus_one_game(self.user, opponent_id)
+                await self.create_one_versus_one_game(self.user, opponent)
                 await self.channel_layer.group_send(
                     f"user_{opponent_id}",
                     {"type": "force_disconnect"},
@@ -187,6 +187,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def force_disconnect(self, event):
+        await MatchRequest.objects.filter(user=self.user).adelete()
         await self.close()
 
     @database_sync_to_async
@@ -241,8 +242,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def cancel_match(self):
         with transaction.atomic():
             MatchRequest.objects.filter(user=self.user).delete()
-            if self.current_game_id:
-                PingPongHistory.objects.filter(id=self.current_game_id).delete()
 
     @database_sync_to_async
     def get_opponent_id(self, game_id):
@@ -251,6 +250,14 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
             return history.user2.id
         else:
             return history.user1.id
+
+    @database_sync_to_async
+    def get_opponent(self, game_id):
+        history = PingPongHistory.objects.get(id=game_id)
+        if history.user1 == self.user:
+            return history.user2
+        else:
+            return history.user1
 
     @database_sync_to_async
     def save_multi_ball(self, game_id, option):

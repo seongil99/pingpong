@@ -1,170 +1,501 @@
-import LoginButton from "../Components/LoginButton.js";
+import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
-import mfaQRcode from "../Components/MfaQRcode.js";
-import mfaForm from "../Components/MfaForm.js";
-import createFormComponent from "../Components/MfaForm.js";
-import DisableMFAbutton from "../Components/DiableMFAbutton.js";
+import FetchUserData from "../Controller/Profile/FetchUserData.js";
+import FetchOneUserGameHistory from "../Controller/Profile/FetchOneUserGameHistory.js";
+import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
+import calculateDiffDate from "../Utils/calculateDiffDate.js";
 
 class ProfilePage {
-  async template() {
-    const navBar = document.createElement("div");
-    navBar.innerHTML = NavBar;
-    const title = document.createElement("h2");
+    #offset;
+    #limit;
+    #UserProfile = (userData) => {
+        const profileUserImg = createElement(
+            "img",
+            {
+                class: "profile-user-img",
+                src: `${userData.avatar}`,
+                alt: `${userData.username}'s profile image`,
+            },
+            []
+        );
+        const profileUserName = createElement(
+            "h3",
+            { class: "profile-user-name" },
+            `${userData.username}`
+        );
+        const profileUserEmail = createElement(
+            "span",
+            { class: "profile-user-email" },
+            `${userData.email}`
+        );
+        const profileUserInfos = createElement(
+            "div",
+            { class: "profile-user-infos" },
+            profileUserName,
+            profileUserEmail
+        );
+        const userProfile = createElement(
+            "div",
+            { class: `profile-user-profile ${userData.username}` },
+            profileUserImg,
+            profileUserInfos
+        );
+        return userProfile;
+    };
 
-    const container = document.createElement("div");
-    container.id = "profile-page";
-    container.appendChild(navBar);
-    container.appendChild(title);
+    #StatDescription = (userHistoryData, userid) => {
+        const gameTotalCount = userHistoryData.count;
+        let gameWinCount = 0;
+        let playtime = 0;
+        let longestRallyCount = 0;
+        let averageRallyTotal = 0;
+        for (let idx = 0; idx < gameTotalCount; idx++) {
+            if (userHistoryData.results[idx].winner === userid) gameWinCount++;
+            const start = new Date(userHistoryData.results[idx].started_at);
+            const end = new Date(userHistoryData.results[idx].ended_at);
+            const diff = end.getTime() - start.getTime();
+            playtime += diff;
+            if (longestRallyCount < userHistoryData.results[idx].longest_rally)
+                longestRallyCount = userHistoryData.results[idx].longest_rally;
+            averageRallyTotal += userHistoryData.results[idx].average_rally;
+        }
+        const gameWinRate = gameTotalCount
+            ? `${(gameWinCount / gameTotalCount) * 100} %`
+            : "게임을 한 판 이상하면 승률을 확인할 수 있습니다.";
+        const longestRally = gameTotalCount
+            ? `${longestRallyCount} 회`
+            : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
+        const averageRally = gameTotalCount
+            ? `약 ${Math.floor(averageRallyTotal / gameTotalCount)} 회`
+            : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
+        const mode = { p2p: 0, tournament: 0 };
+        const mostMode = gameTotalCount
+            ? mode["p2p"] > mode["tournament"]
+                ? "1대 1"
+                : mode["p2p"] < mode["tournament"]
+                ? "토너먼트"
+                : "비슷비슷해요 🙂"
+            : "게임을 한 판 이상하면 가장 많이 한 모드 정보를 볼 수 있습니다.";
+        // ** user game count
+        const gameCount = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `게임 수: ${gameTotalCount} 회`
+        );
+        // ** user game win rate
+        const winRate = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `승률: ${gameWinRate}`
+        );
+        // ** user game win count and lose count
+        const winLoseCount = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `승 • 패: ${gameWinCount}/${gameTotalCount - gameWinCount}`
+        );
+        // ** user longest rally
+        const longestRallyText = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `최장 랠리: ${longestRally}`
+        );
+        // ** user average rally
+        const averageRallyText = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `평균 랠리: ${averageRally}`
+        );
+        const mostModeText = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `가장 많이 한 모드: ${mostMode}`
+        );
+        const stat = createElement(
+            "div",
+            { id: "profile-user-stat-description" },
+            gameCount,
+            winRate,
+            winLoseCount,
+            longestRallyText,
+            averageRallyText,
+            mostModeText
+        );
+        return stat;
+    };
 
-    const mainDiv = document.createElement("div");
-    mainDiv.innerHTML = `
-        <div id="profile-info">
-        <p id="email">Email: <span></span></p>
-        <p id="username">Username: <span></span></p>
-        <p id="first-name">First Name: <span></span></p>
-        <p id="last-name">Lirst Name: <span></span></p>
-            <button id="edit-profile">Edit Profile</button>
-        </div>
-        <div id="edit-profile-form" style="display: none;">
-            <h2>Edit Profile</h2>
-            <input type="email" id="edit-email" placeholder="Enter new email" />
-            <input type="text" id="edit-first-name" placeholder="Enter new first name" />
-            <input type="text" id="edit-last-name" placeholder="Enter new last name" />
-            <button id="save-changes">Save Changes</button>
-            <button id="cancel-edit">Cancel</button>
-        </div>
-        <div id="mfa-section">
-            <!-- Display the MFA status here -->
-        </div>
-    `;
+    #HistoryListItem = async (session, userid) => {
+        console.log(session);
+        const opponentId =
+            session.user1 !== userid ? session.user1 : session.user2;
+        const opponentData = await FetchUserData(opponentId);
+        const gameResult = createElement(
+            "span",
+            { class: "history-list-item-game-result" },
+            session.winner === userid ? "승리" : "패배"
+        );
+        const gameMode = createElement("span", {
+            class: "history-list-item-game-mode"
+        }, session.gamemode);
+        const gameScore = createElement("span", {
+            class: "history-list-item-game-user-score"
+        }, `${session.user1_score} : ${session.user2_score}`)
+        const gamePlaytime = createElement("span", {
+            class: "history-list-item-game-playtime"
+        }, `${calculateDiffDate(session.started_at, session.ended_at)}`);
+        const gameStart = createElement("span", {
+            class: "history-list-item-game-startdate"
+        }, `${new Date(session.started_at).toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric'
+        })}`);
+        const gameSummary = createElement(
+            "div",
+            { class: "history-list-item-summary" },
+            gameMode,
+            gameScore,
+            gamePlaytime,
+            gameStart
+        );
+        const versusText = createElement(
+            "span",
+            { class: "versus-text" },
+            "VS"
+        );
+        const opponentAvatar = createElement(
+            "img",
+            { src: `${opponentData.avatar}`, class: "opponent-avatar" },
+            []
+        );
+        const opponentUsername = createElement(
+            "span",
+            {
+                class: "opponent-username",
+            },
+            `${opponentData.username}`
+        );
+        const opponentProfile = createElement(
+            "div",
+            { class: "history-list-item-opponent-profile" },
+            opponentAvatar,
+            opponentUsername
+        );
+        const gameVersus = createElement(
+            "div",
+            { class: "history-list-item-game-versus" },
+            versusText,
+            opponentProfile
+        );
+        const item = createElement(
+            "li",
+            { id: `${session.id}`, class: "history-list-item" },
+            gameResult,
+            gameSummary,
+            gameVersus
+        );
+        return item;
+    };
 
-    container.appendChild(mainDiv);
+    #HistoryDescription = async (userHistoryData, userid) => {
+        let curPageBlock = 0;
+        let curPage = 1;
+        const pageBlocks = [];
+        const pageListContent = [];
+        const pageNumBtns = [];
+        for (
+            let i = 1;
+            this.#limit &&
+            i <=
+                Math.floor(userHistoryData.count / this.#limit) +
+                    (userHistoryData.count % this.#limit);
+            i++
+        ) {
+            const curLimit =
+                userHistoryData.count - this.#limit * (i - 1) >= this.#limit
+                    ? this.#limit
+                    : userHistoryData.count - this.#limit * i;
+            pageNumBtns.push(
+                createElement("button", {
+                    id: `page${i}`,
+                    offset: `${this.#limit * (i - 1) + 1}`,
+                    limit: `${curLimit}`,
+                    events: {
+                        click: (event) => {
+                            const list = document.getElementById(
+                                "history-description-list"
+                            );
+                            list.removeChild(list.lastChild);
+                            list.appendChild(pageListContent[i - 1]);
+                            this.#offset = `${this.#limit * (i - 1) + 1}`;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        },
+                    },
+                }, `${i}`)
+            );
+            const content = createElement(
+                "div",
+                { class: "history-description-pagination-content-list" },
+                []
+            );
+            console.log(curLimit);
+            for (let j = 0; j < curLimit; j++) {
+                const item = await this.#HistoryListItem(
+                    userHistoryData.results[curLimit * (i - 1) + j],
+                    userid
+                );
+                content.appendChild(item);
+                console.log(item);
+            }
+            pageListContent.push(content);
+            if (
+                !(i % 5) ||
+                userHistoryData.count - this.#limit * i < this.#limit
+            ) {
+                const pageBlock = createElement(
+                    "div",
+                    { class: "history-description-pagination-pages" },
+                    []
+                );
+                while (pageNumBtns.length) {
+                    pageBlock.appendChild(pageNumBtns[0]);
+                    pageNumBtns.shift();
+                }
+                pageBlocks.push(pageBlock);
+            }
+        }
+        curPageBlock = this.#limit
+            ? Math.floor(Math.floor(this.#offset / this.#limit) / 5)
+            : 0;
+        curPage = this.#limit
+            ? Math.floor(this.#offset / this.#limit) +
+              (this.#offset % this.#limit)
+            : 1;
+        const pageNumsDiv = createElement(
+            "div",
+            { id: "history-description-pagination-nums-div" },
+            pageBlocks[curPageBlock]
+        );
+        const leftBtn = createElement(
+            "button",
+            {
+                class: "history-description-pagination-left-btn",
+                events: {
+                    click: () => {
+                        if (curPageBlock - 1 >= 0) {
+                            curPageBlock -= 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 5;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
+            "<"
+        );
+        const rightBtn = createElement(
+            "button",
+            {
+                class: "history-description-pagination-right-btn",
+                events: {
+                    click: () => {
+                        if (
+                            curPageBlock + 1 <
+                            Math.floor(userHistoryData.count / this.#limit) +
+                                (userHistoryData.count % this.#limit)
+                        ) {
+                            curPageBlock += 1;
+                            const paginationPages = document.getElementById(
+                                "history-description-pagination-nums-div"
+                            );
+                            paginationPages.removeChild(
+                                paginationPages.lastChild
+                            );
+                            paginationPages.appendChild(
+                                pageBlocks[curPageBlock]
+                            );
+                            // 페이지 번호 버튼 색깔 변화
+                            curPage = 5 * curPageBlock + 1;
+                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            window.history.pushState(
+                                {},
+                                `/profile/${userid}/history?offset=${
+                                    this.#offset
+                                }&limit=${curLimit}`,
+                                window.location.origin +
+                                    `/profile/${userid}/history?offset=${
+                                        this.#offset
+                                    }&limit=${curLimit}`
+                            );
+                        }
+                    },
+                },
+            },
+            ">"
+        );
+        const pagination = createElement(
+            "div",
+            { id: "history-description-pagination" },
+            leftBtn,
+            pageNumsDiv,
+            rightBtn
+        );
+        const historyList = createElement(
+            "ul",
+            { id: "history-description-list" },
+            pageListContent[curPage]
+        );
+        const history = createElement(
+            "div",
+            { id: "history-description" },
+            historyList,
+            pagination
+        );
+        return history;
+    };
 
-    document.getElementById("app").innerHTML = ""; // Clear previous content
-    document.getElementById("app").appendChild(container); // Append the profile page
+    #StatOrHistoryBtnSet = (userHistoryData, userid) => {
+        const statBtn = createElement(
+            "button",
+            {
+                class: "profile-btn",
+                events: {
+                    click: () => {
+                        const description = document.querySelector(
+                            "#profile-stat-or-history-description"
+                        );
+                        description.removeChild(description.lastChild);
+                        description.appendChild(
+                            this.#StatDescription(userHistoryData, userid)
+                        );
+                        window.history.pushState(
+                            {},
+                            `/profile/${userid}/stat`,
+                            window.location.origin + `/profile/${userid}/stat`
+                        );
+                    },
+                },
+            },
+            "게임 스탯"
+        );
+        const historyBtn = createElement(
+            "button",
+            {
+                class: "profile-btn",
+                events: {
+                    click: async () => {
+                        const description = document.querySelector(
+                            "#profile-stat-or-history-description"
+                        );
+                        description.removeChild(description.lastElementChild);
+                        description.appendChild(
+                            await this.#HistoryDescription(userHistoryData, userid)
+                        );
+                        window.history.pushState(
+                            {},
+                            `/profile/${userid}/history`,
+                            window.location.origin +
+                                `/profile/${userid}/history`
+                        );
+                    },
+                },
+            },
+            "전적 기록"
+        );
+        const btnSet = createElement(
+            "div",
+            { class: "profile-btn-set" },
+            statBtn,
+            historyBtn
+        );
+        return btnSet;
+    };
 
-    const userData = await fetchUserProfile();
-
-    await displayProfile(userData);
-
-    const profileImage = document.createElement("img");
-    profileImage.src = `${userData.avatar}`;
-    profileImage.alt = "Profile Image";
-    profileImage.width = 100;
-    profileImage.height = 100;
-    container.insertBefore(profileImage, title);
-
-    const editProfileImageForm = document.createElement("form");
-    editProfileImageForm.enctype = "multipart/form-data";
-    editProfileImageForm.id = "edit-profile-image-form";
-    editProfileImageForm.innerHTML = `
-        <input type="file" id="edit-profile-image" accept="image/*" />
-        <button type="submit">Save Image</button>
-    `;
-    editProfileImageForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const formData = new FormData();
-      formData.append(
-        "avatar",
-        document.getElementById("edit-profile-image").files[0],
-      );
-      try {
-        const response = await fetch("/api/v1/users/me/", {
-          method: "PATCH",
-          credentials: "include",
-          body: formData,
-        });
-        console.log(response);
-        if (!response.ok) throw new Error("Network response was not ok");
-
-        const userData = await response.json();
-        profileImage.src = `${userData.avatar}`;
-      } catch (error) {
-        console.error("Error updating profile image:", error);
-      }
-    });
-    container.insertBefore(editProfileImageForm, title);
-
-    const mfaStatus = await fetchMFAStatus();
-    console.log(mfaStatus);
-    const mfaSection = document.getElementById("mfa-section");
-    if (mfaStatus == "enabled") {
-      const mfaDisableTitle = document.createElement("h2");
-      const mfaDisableButton = document.createElement("disable-mfa-button");
-      mfaDisableTitle.textContent = "Disable MFA";
-      mfaSection.appendChild(mfaDisableTitle);
-      mfaSection.appendChild(mfaDisableButton);
-    } else {
-      const mfaEnableTitle = document.createElement("h2");
-      mfaEnableTitle.textContent = "Enable MFA";
-      const mfaQRcode = document.createElement("mfa-qr-display");
-      mfaSection.appendChild(mfaEnableTitle);
-      mfaSection.appendChild(mfaQRcode);
-      const mfaForm = createFormComponent();
-      mfaSection.appendChild(mfaForm);
+    #validateQueryParam(userHistoryData, queryParam) {
+        const regex = /^[1-9]\d*$/;
+        const offsetValue = queryParam.get("offset");
+        const limitValue = queryParam.get("limit");
+        this.#offset = regex.test(offsetValue) ? parseInt(offsetValue) : 1;
+        this.#limit = regex.test(limitValue)
+            ? parseInt(limitValue)
+            : userHistoryData.count;
+        if (this.#offset <= 0) this.#offset = 1;
+        else if (this.#offset > userHistoryData.count)
+            this.#offset = userHistoryData.count;
+        if (this.#limit <= 0 || this.#limit > userHistoryData.count)
+            this.#limit = userHistoryData.count;
     }
 
-    return container; // 최종 DOM 반환
-  }
-}
+    async template(pathParam, queryParam) {
+        const [_, path, userId, info] = pathParam;
+        let user;
+        if (pathParam.length === 2) {
+            user = await fetchUserProfile();
+        } else {
+            user = await FetchUserData(parseInt(userId));
+        }
+        const userHistoryData = await FetchOneUserGameHistory(user.id);
+        this.#validateQueryParam(userHistoryData, queryParam);
+        const navBar = NavBar();
+        const profileTitle = createElement(
+            "h1",
+            { class: "profile-title" },
+            `${user.username}님의 프로필`
+        );
+        const userProfile = this.#UserProfile(user);
+        const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(
+            userHistoryData,
+            user.id
+        );
+        const description = createElement(
+            "div",
+            { id: "profile-stat-or-history-description" },
+            info !== "history"
+                ? this.#StatDescription(userHistoryData, user.id)
+                : await this.#HistoryDescription(userHistoryData, user.id)
+        );
 
-async function fetchUserProfile() {
-  try {
-    const response = await fetch("/api/v1/users/me/", {
-      method: "GET",
-      credentials: "include",
-    });
-    console.log(response);
-    if (!response.ok) throw new Error("Network response was not ok");
-
-    const userData = await response.json(); // Assuming it returns { username: '...', email: '...' }
-    // Populate the profile info
-
-    return userData;
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-  }
-}
-
-async function displayProfile(userData) {
-  // console.log(`email: ${userData.email}`);
-  // console.log(`first_name: ${userData.first_name}`);
-  // console.log(`last_name: ${userData.last_name}`);
-
-  document.getElementById("email").querySelector("span").textContent =
-    userData.email;
-
-  const username = document.getElementById("username").querySelector("span");
-  const firstName = document.getElementById("first-name").querySelector("span");
-  const lastName = document.getElementById("last-name").querySelector("span");
-
-  if (userData.username === null || userData.username === "") {
-    username.textContent = "Not provided";
-  } else {
-    username.textContent = userData.username;
-  }
-  if (userData.first_name === null || userData.first_name === "") {
-    firstName.textContent = "Not provided";
-  } else {
-    firstName.textContent = userData.first_name;
-  }
-  if (userData.last_name === null || userData.last_name === "") {
-    lastName.textContent = "Not provided";
-  } else {
-    lastName.textContent = userData.last_name;
-  }
-}
-
-async function fetchMFAStatus() {
-  return await fetch("/api/v1/users/accounts/mfa/", {
-    method: "GET",
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      return data.status;
-    })
-    .catch((error) => console.error("Error fetching MFA status:", error));
+        const main = createElement(
+            "main",
+            { id: "profile-main" },
+            profileTitle,
+            userProfile,
+            statOrHistoryBtnSet,
+            description
+        );
+        const container = createElement("div", {}, navBar, main);
+        return container;
+    }
 }
 
 export default ProfilePage;

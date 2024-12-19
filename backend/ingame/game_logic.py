@@ -485,9 +485,9 @@ class PingPongServer:
         await socket_send(game_state["render_data"], "gameState", game_id)
 
     async def handle_player_input(self, game_state, player_id, key, pressed):
-        logger.info(f"player_id: {player_id}")
-        logger.info(f"user1: {game_state['playerOneId']}")
-        logger.info(f"user2: {game_state['playerTwoId']}")
+        # logger.info(f"player_id: {player_id}")
+        # logger.info(f"user1: {game_state['playerOneId']}")
+        # logger.info(f"user2: {game_state['playerTwoId']}")
 
         # logger.info(f"key???: {key}")
         await game_state["key_state_lock"].acquire()
