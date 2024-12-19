@@ -36,7 +36,7 @@ class MatchingPage {
         id: "match-btn-container",
       },
       ButtonToMatch("PVP", async () => {
-        if (!this.socket) {
+        if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
           this.connectWebSocket("PVP", () => {
             this.requestMatch();
           });

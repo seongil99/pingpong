@@ -30,7 +30,7 @@ class ImpactEffect {
 
     createImpact(position) {
         const rings = [];
-        console.log(position);
+        // console.log(position);
         // 각 링에 대해
         for (let r = 0; r < this.settings.rings; r++) {
             const geometry = new THREE.BufferGeometry();
@@ -408,17 +408,17 @@ class PingPongClient {
     }
 
     onKeyDown(event) {
-        console.log('keydown', event.key);
+        // console.log('keydown', event.key);
         let key = event.key.toUpperCase();
         key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
-            this.socket.emit('keyPress', { key: key, pressed: true, who: this.secondPlayer });
+            this.socket.emit('keypress', { key: key, pressed: true, who: this.secondPlayer });
         }
         else if (this.secondPlayer && (key === 'A' || key === 'D')) {
-            this.socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: true, who: this.secondPlayer })
+            this.socket.emit('keypress', { key: key === 'A' ? 'D' : 'A', pressed: true, who: this.secondPlayer })
         }
         else if (key === ' ')
-            this.socket.emit('keyPress', { key: ' ', pressed: true, who: this.secondPlayer });
+            this.socket.emit('keypress', { key: ' ', pressed: true, who: this.secondPlayer });
         else if (key === 'M') {
             if (this.audio.sounds.get('bgm').sound); {
                 this.audio.sounds.get('bgm').sound.isPlaying ? this.audio.stop('bgm') : this.audio.play('bgm');
@@ -434,12 +434,12 @@ class PingPongClient {
     onKeyUp(event) {
         let key = event.key.toUpperCase();
         key = key === 'ARROWRIGHT' ? 'D' : (key === 'ARROWLEFT' ? 'A' : key);
-        console.log('keyup', key);
+        // console.log('keyup', key);
         if (!this.secondPlayer && (key === 'A' || key === 'D')) {
-            this.socket.emit('keyPress', { key: key, pressed: false });
+            this.socket.emit('keypress', { key: key, pressed: false });
         }
         else if (this.secondPlayer && (key === 'A' || key === 'D')) {
-            this.socket.emit('keyPress', { key: key === 'A' ? 'D' : 'A', pressed: false });
+            this.socket.emit('keypress', { key: key === 'A' ? 'D' : 'A', pressed: false });
         }
     }
 
@@ -486,7 +486,7 @@ class PingPongClient {
     }
 
     onWindowResize() {
-        console.log('resize');
+        // console.log('resize');
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);

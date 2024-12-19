@@ -262,7 +262,7 @@ class PingPongServer:
             await self.handle_player_input(game_state, "ai", "D", True)
 
     async def _update_physics(self, game_state):
-        logger.info("updating physics...")
+        # logger.info("updating physics...")
         if not game_state["gameStart"]:
             return
         game_id = game_state["game_id"]
@@ -456,9 +456,9 @@ class PingPongServer:
         await socket_send(game_state["render_data"], "gameState", game_id)
 
     async def handle_player_input(self, game_state, player_id, key, pressed):
-        logger.info(f"player_id: {player_id}")
-        logger.info(f"user1: {game_state['playerOneId']}")
-        logger.info(f"user2: {game_state['playerTwoId']}")
+        # logger.info(f"player_id: {player_id}")
+        # logger.info(f"user1: {game_state['playerOneId']}")
+        # logger.info(f"user2: {game_state['playerTwoId']}")
 
         # logger.info(f"key???: {key}")
         await game_state["key_state_lock"].acquire()
