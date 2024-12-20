@@ -10,10 +10,6 @@
             crossorigin="anonymous" />
         <link rel="stylesheet" href="/src/css/style.css" />
         <title>ft_transcendence</title>
-        <!-- Other meta tags, styles, and scripts -->
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="styles.css">
         
         <!-- Google Translate -->
         <script type="text/javascript">
@@ -27,9 +23,18 @@
         </script>
         <script type="text/javascript"
             src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    </head>
-
+        <style>
+            #google_translate_element {
+                display: none;
+                /* Hides the dropdown box */
+            }
+        </style>
+        </head>
+        
     <body>
+        <div id="translate-container">
+            <div id="google_translate_element"></div>
+        </div>
             <!-- Rest of the content -->
         <div id="app"></div>
         <script type="importmap">
