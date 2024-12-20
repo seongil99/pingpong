@@ -75,13 +75,30 @@ class GameIO(socketio.AsyncNamespace):
             return
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
-        try:
-            if await self._process_authorization(sid, game_id, game.gamemode) is False:
+        tournament_id = await self._get_tournament_id(game)
+        logger.info("tournament_id: %s", tournament_id)
+        if tournament_id is None:
+            logger.info('1')
+            try:
+                if await self._process_authorization(sid, game_id, game.gamemode) is False:
+                    return
+            except OneVersusOneGame.DoesNotExist:
+                logger.info("Game not found: %s", game_id)
+                sio.disconnect(sid)
                 return
-        except OneVersusOneGame.DoesNotExist:
-            logger.info("Game not found: %s", game_id)
-            sio.disconnect(sid)
-            return
+        else:
+            logger.info('2')
+            try:
+                if await self._process_authorization(sid, game_id, game.gamemode) is False:
+                    logger.info("failed authorization")
+                    return
+                logger.info("tournament: %s", tournament)
+                logger.info("tournament_status: %s", tournament_id.status)
+                if tournament_id.status == 'finished':
+                    raise
+            except:
+                sio.disconnect(sid)
+                return
 
         user_to_socket[user.id] = sid
         # enter game room
@@ -111,6 +128,8 @@ class GameIO(socketio.AsyncNamespace):
             await self._on_first_user_enter(user2, user, game_state, sid)
 
         await socket_send(game_state["render_data"], "gameState", sid, game_id)
+    
+
 
     async def on_keypress(self, sid, data):
         """
