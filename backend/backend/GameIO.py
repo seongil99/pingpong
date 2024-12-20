@@ -267,7 +267,7 @@ class GameIO(socketio.AsyncNamespace):
         try:
             game = await PingPongHistory.objects.aget(id=game_id)
             logger.info("Game ended: %s", game_id)
-            OneVersusOneGame.objects.filter(game_id=game_id).adelete()
+            await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
             if game.tournament_id is not None:
                 server.update_tournament(game, user.id)
             else:
