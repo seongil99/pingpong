@@ -16,6 +16,7 @@ from django.db import transaction
 from asgiref.sync import sync_to_async
 from .enums import Game, GameMode
 from tournament.models import Tournament
+from ingame.data import user_to_socket
 
 logger = logging.getLogger("django")
 
@@ -351,10 +352,10 @@ class PingPongServer:
                 or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
-                    game_state["render_data"]["score"]["playerOne"] += 1
+                    game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = True
                 else:
-                    game_state["render_data"]["score"]["playerTwo"] += 1
+                    game_state["render_data"]["score"]["playerOne"] += 1
                     ball.summon_direction = False
                 self._save_round_data(game_state)
 
