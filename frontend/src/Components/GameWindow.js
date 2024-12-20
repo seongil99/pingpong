@@ -387,15 +387,6 @@ class PingPongClient {
   }
   makeWindow() {
     // 기존 pushState와 replaceState를 보존
-    window.addEventListener('beforeunload', () => {
-        if (this.socket && this.socket.connected) {
-          console.log("this.socket: ", this.socket);
-          this.socket.close();
-          this.socket = null;
-          console.log("disconnect socket at game url change!");
-        }
-    });
-
     return createElement(
       "div",
       { class: "gameWindow" },
@@ -702,12 +693,6 @@ class PingPongClient {
         window.removeEventListener("keydown", this.onKeyDownBound, false);
         window.removeEventListener("keyup", this.onKeyUpBound, false);
         if (localStorage.getItem("matchType") !== "tournament") {
-          if (this.socket && this.socket.connected) {
-            console.log("this.socket: ", this.socket);
-            console.log("disconnect socket");
-            this.socket.disconnect();
-            this.socket = null;
-          }
           if (localStorage.getItem("matchType") === "Pve")
             window.router.navigate(`/home`, false);
           else window.router.navigate(`/result/${this.gameId}`, false);
@@ -717,20 +702,12 @@ class PingPongClient {
           const id = setInterval(async () => {
             if (count > 10) {
               clearInterval(id); // 반복 실행 중지
-              if (this.socket && this.socket.connected) {
-                console.log("this.socket: ", this.socket);
-                console.log("disconnect socket");
-                this.socket.disconnect();
-                this.socket = null;
-              }
               window.router.navigate(`/home`, false);
               return;
             }
             try {
               clearInterval(id); // 반복 실행 중지
               const result = await getCurrentUserGameStatus(); // 비동기 실행
-              if (this.socket && this.socket.connected)
-                this.socket.disconnect();
               if (!result) {
                 const tournament_id = localStorage.getItem("tid");
                 window.router.navigate(`/result/${tournament_id}`, false);
