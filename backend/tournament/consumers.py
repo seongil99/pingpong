@@ -115,6 +115,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
             game_id = await create_game_and_get_game_id(players[0], players[1], tournament_id=tournament,
                                                         multi_ball=multi_ball)
             await self.create_oneversusone_game(game_id, players[0], players[1])
+            await self.create_tournament_game(tournament_id, game_id, 1, players[0], players[1])
             for p in players:
                 group_name = f"user_{p.id}"
                 await self.channel_layer.group_send(
@@ -280,6 +281,19 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
             history = PingPongHistory.objects.get(id=game_id)
             game = OneVersusOneGame.objects.create(game_id=history, user_1=user1, user_2=user2)
             return game.game_id
+
+    @database_sync_to_async
+    def create_tournament_game(self, tournament_id, game_id, round_num, user1, user2):
+        with transaction.atomic():
+            pingpong_history = PingPongHistory.objects.get(id=game_id)
+            tournament = Tournament.objects.get(tournament_id=tournament_id)
+            TournamentGame.objects.create(
+                game_id=pingpong_history,
+                tournament_id=tournament,
+                tournament_round=round_num,
+                user_1=user1,
+                user_2=user2,
+            )
 
 
 # 특정 유저의 채널 이름을 저장하는 딕셔너리
