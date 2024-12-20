@@ -197,3 +197,20 @@ class EventViewTest(APITestCase):
         # 만약 인증이 필요 없도록 설정했다면 이 부분 조정 필요
         # 여기서는 인증 필요하다고 가정
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_pingpong_history_detail(self):
+        url = reverse('pingpong-history-detail', args=[self.match_history.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        print(data)
+        self.assertEqual(data['id'], self.match_history.id)
+        self.assertEqual(data['user1'], self.user1.id)
+        self.assertEqual(data['user2'], self.user2.id)
+        self.assertEqual(data['user1_score'], 3)
+        self.assertEqual(data['user2_score'], 1)
+        self.assertEqual(data['winner'], self.user1.id)
+        self.assertEqual(data['gamemode'], 'normal')
+        self.assertIsNotNone(data['started_at'])
+        self.assertIsNotNone(data['ended_at'])
+        self.assertEqual(data['tournament_id'], None)
