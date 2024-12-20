@@ -9,7 +9,7 @@ async function getCurrentUserGameStatus() {
 			credentials: "include"
 		});
 		if (response.status !== 200) {
-			if(response.status === 204) return null;
+			if(response.status === 204) return null
 			throw new Error("Not OK! Status Code: ", response.status);
 		}
 		console.log('response: ', response);

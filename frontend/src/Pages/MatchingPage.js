@@ -131,8 +131,8 @@ class MatchingPage {
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
         }
-        await getCurrentUserGameStatus();
-        window.router.navigate(`/playing/${gameId}`, false);
+        const gameId = await getCurrentUserGameStatus();
+        window.router.navigate(`/playing/${gameId.game_id}`, false);
     }
     requestMatch() {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
