@@ -230,9 +230,9 @@ class ProfilePage {
 
     #HistorySessionMatchDashboard = async (session) => {
         const scoreTitle = createElement("h3", {class: "history-session-match-dashboard-title"}, "Score");
-        
+        const scoreChart = ScoreChart(session);
         const rallyTitle = createElement("h3", {class: "history-session-match-dashboard-title"}, "Rally");
-        
+        const RallyChart = RallyChart(session);
         const match = createElement("div", {class: "history-session-match-dashboard"}, scoreTitle, scoreChart, rallyTitle, rallyChart);
         return match;
     }
