@@ -1,6 +1,6 @@
 import createElement from "../Utils/createElement.js";
 import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
-import updateUserProfile from "../Controller/Settings/updateUserProfile.js";
+import UpdateUserProfile from "../Controller/Settings/UpdateUserProfile.js";
 
 const ProfileForm = async () => {
     let data = await fetchUserProfile();
@@ -10,40 +10,21 @@ const ProfileForm = async () => {
             id: "open-file-btn",
             events: {
                 click: () => {
-                    const fileInput = document.getElementById("img-input");
+                    const fileInput = document.getElementById(
+                        "edit-profile-img-input"
+                    );
                     fileInput.click(); // 숨겨진 파일 입력을 트리거
                 },
             },
         },
         "Edit"
     );
-    const imgInput = createElement(
+    const editProfileImgInput = createElement(
         "input",
         {
             type: "file",
-            id: "img-input",
+            id: "edit-profile-img-input",
             accept: "image/*",
-            events: {
-                change: (event) => {
-                    const file = event.target.files[0]; // 선택된 파일 가져오기
-                    if (!file || file.size > 1000000) return;
-                    // 이미지 파일만 허용: MIME 타입 체크
-                    if (!file.type.startsWith("image/")) {
-                        alert("이미지 파일만 선택해주세요.");
-                        this.value = ""; // 선택 초기화
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const profileImg = document.querySelector(
-                            ".settings-profile-image > img"
-                        );
-                        profileImg.src = e.target.result;
-                        data.avatar = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                },
-            },
         },
         []
     );
@@ -54,7 +35,7 @@ const ProfileForm = async () => {
     );
     const realImg = createElement(
         "img",
-        { src: data?.avatar, alt: "Real Image" },
+        { id: "edit-profile-image", src: data?.avatar, alt: "Real Image" },
         []
     );
     const profileImg = createElement(
@@ -62,7 +43,7 @@ const ProfileForm = async () => {
         { class: "settings-profile-image" },
         editBg,
         realImg,
-        imgInput
+        editProfileImgInput
     );
     const usernameInfo = createElement(
         "h3",
@@ -83,15 +64,20 @@ const ProfileForm = async () => {
         "div",
         { class: "settings-profile-infos" },
         usernameInfo,
+        usernameInput,
         emailInfo
     );
     const editBtn = createElement(
         "button",
         {
+            type: "button",
             class: "settings-btn profile-edit-btn",
             id : "btn_edit",
             events: {
                 click: (event) => {
+                    document
+                        .querySelector(".username-input")
+                        .classList.remove("hide");
                     document
                         .querySelector(".profile-save-btn")
                         .classList.remove("hide");
@@ -99,20 +85,33 @@ const ProfileForm = async () => {
                         .querySelector(".profile-cancel-btn")
                         .classList.remove("hide");
                     document.querySelector(".edit-bg").classList.remove("hide");
-
                     event.target.classList.add("hide");
                 },
             },
         },
         i18next.t("btn_edit")
     );
+    const allSettingsBtns = document.querySelectorAll(".settings-btn");
+    allSettingsBtns.forEach((value) => {
+        value.addEventListener("click", (event) => {
+            if (event.target.classList.contains("profile-save-btn")) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    });
     const saveBtn = createElement(
         "button",
         {
+            type: "submit",
             class: "settings-btn profile-save-btn hide",
             id: "save-id-btn",
             events: {
                 click: async (event) => {
+                    document
+                        .querySelector(".username-input")
+                        .classList.add("hide");
                     document
                         .querySelector(".profile-cancel-btn")
                         .classList.add("hide");
@@ -120,16 +119,7 @@ const ProfileForm = async () => {
                         .querySelector(".profile-edit-btn")
                         .classList.remove("hide");
                     document.querySelector(".edit-bg").classList.add("hide");
-                    updateUserProfile(data);
                     event.target.classList.add("hide");
-                    data = await fetchUserProfile();
-                    document.querySelector(".username-info").textContent =
-                        data?.username;
-                    document.querySelector(".email-info").textContent =
-                        data?.email;
-                    document.querySelector(
-                        ".settings-profile-image > img"
-                    ).textContent = data?.avatar;
                 },
             },
         },
@@ -138,6 +128,7 @@ const ProfileForm = async () => {
     const cancelBtn = createElement(
         "button",
         {
+            type: "button",
             class: "settings-btn profile-cancel-btn hide",
             id : "btn_cancel",
             events: {
@@ -149,6 +140,9 @@ const ProfileForm = async () => {
                         .querySelector(".profile-edit-btn")
                         .classList.remove("hide");
                     document.querySelector(".edit-bg").classList.add("hide");
+                    document
+                        .querySelector(".username-input")
+                        .classList.add("hide");
                     event.target.classList.add("hide");
                 },
             },
@@ -171,10 +165,31 @@ const ProfileForm = async () => {
     const profileForm = createElement(
         "form",
         {
-            class: "settings-profile-form",
+            enctype: "multipart/form-data",
+            id: "edit-profile-image-form",
             events: {
-                submit: (event) => {
+                submit: async (event) => {
                     event.preventDefault();
+                    const formData = new FormData();
+                    const selectedImage = document.getElementById(
+                        "edit-profile-img-input"
+                    ).files[0];
+                    const usernameInput =
+                        document.querySelector(".username-input").value;
+                    if (selectedImage !== undefined) {
+                        formData.append("avatar", selectedImage);
+                    }
+                    if (usernameInput.length > 4) {
+                        formData.append("username", usernameInput);
+                    }
+                    const userData = await UpdateUserProfile(formData);
+                    console.log(userData);
+                    document.querySelector(
+                        "#edit-profile-image"
+                    ).src = `${userData.avatar}`;
+                    document.querySelector(".username-info").textContent =
+                        userData.username;
+                    document.querySelector(".username-input").value = "";
                 },
             },
         },

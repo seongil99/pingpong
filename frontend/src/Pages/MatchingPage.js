@@ -69,7 +69,7 @@ class MatchingPage {
 
     connectWebSocket(callback) {
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        const endpoint = 
+        const endpoint =
         this.matchType === "PVP" ?
         "matchmaking" :
         "tournament/matchmaking"
@@ -97,8 +97,8 @@ class MatchingPage {
             "match_found": () => this.handleMatchFound(data),
             "match_canceled": () => console.log("Match canceled."),
             "error": () => console.error(`Error: ${data.message}`),
-            "set_option": () => this.navigateToGame(data.game_id),
-            "already_joined": () => this.navigateToGame(data.game_id),
+            "set_option": () => this.navigateToGame(),
+            "already_joined": () => this.navigateToGame(),
             "match_waiting": () => console.log("waiting for tounament"),
         };
 
@@ -124,7 +124,7 @@ class MatchingPage {
 
     }
 
-    async navigateToGame(gameId) {
+    async navigateToGame() {
         if(this.waitModal){
             console.log("modal distroryd");
             this.waitModal.modal.dispose();

@@ -2,6 +2,11 @@
     height: 100vh;
 }
 
+.navbar {
+    display: flex;
+    justify-content: space-between;
+}
+
 .match-div {
     height: 100%;
     display: flex;
@@ -16,6 +21,21 @@
     margin-bottom: 30px;
 }
 
-.hide {
+
+/* .hide {
     display: none;
 }
+
+.dropdown-menu {
+    display:none;
+}
+
+.dropdown-menu.show {
+    display: block;
+    position: fixed;
+    top: 30px;
+    right: 40px;
+}
+.container-fluid {
+    width: 80px;
+} */
