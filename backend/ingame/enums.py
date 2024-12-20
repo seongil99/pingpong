@@ -7,7 +7,7 @@ class Game(Enum):
     GAME_WIDTH = 100
     GAME_LENGTH = 250
     CONST_BALL_SPEED = 50
-    GAME_SET_SCORE = 5
+    GAME_SET_SCORE = 1
     AI_RATE = 10
     BALL_SIZE = 5
     PADDLE_WIDTH = 20
@@ -15,7 +15,7 @@ class Game(Enum):
     PADDLE_DEPTH = 5
     MOVE_SPEED = 2
     AI_INTERVAL = 1 / 10
-    PHYSICS_INTERVAL = 1 / 30
+    PHYSICS_INTERVAL = 1 / 60
     PADDLE_INTERVAL = 1 / 30
     MAX_ANGLE = math.pi / 6
     

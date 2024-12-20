@@ -42,8 +42,10 @@ const tournamentData = {
 };
 
 class TournamentPage {
-	async template() {
-		const data = await getTournamentData('2');  // JSON 데이터를 인스턴스 변수로 관리
+	async template(pathParam,queryParam) {
+        const [_, path, gameId] = pathParam;
+        const type = localStorage.getItem("matchType") === "PVP" ? 'match':'tournament';
+		const data = await getTournamentData(type,gameId);  // JSON 데이터를 인스턴스 변수로 관리
 		const navicontainer = createElement("div",{},NavBar()); 
         const header = this.createHeader(data);
         const resultsSection = this.createResultsSection(data);
@@ -56,7 +58,7 @@ class TournamentPage {
         return createElement(
             "header",
             { class: "text-center mb-5" },
-            createElement("h1", { class: "text-3xl font-bold mb-3" }, "Tournament Results"),
+            createElement("h1", { class: "text-3xl font-bold mb-3" }, `${localStorage.getItem("matchType")} Results`),
             createElement(
                 "div",
                 { class: "text-gray-600" },

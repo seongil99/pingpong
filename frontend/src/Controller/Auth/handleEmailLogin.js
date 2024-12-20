@@ -1,6 +1,6 @@
 // import { getCSRFToken } from "../Utils/csrf";
 
-const handleEmailLogin = async () => {
+const handleEmailLogin = async (user) => {
     // const csrfToken = getCSRFToken();
     // console.log("CSRF Token:", csrfToken);
     const url = "api/v1/users/accounts/login/"; // 로그인 API 서버 URL
@@ -15,8 +15,8 @@ const handleEmailLogin = async () => {
             },
             credentials: "include",
             body: JSON.stringify({
-                "username": "test",
-                "email": "test@example.com",
+                "username": user,
+                "email": `${user}@example.com`,
                 "password": "wert2345"
             }),
         });
