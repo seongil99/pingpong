@@ -3,11 +3,19 @@ import NavBar from "../Components/Navbar.js";
 import FetchUserData from "../Controller/Profile/FetchUserData.js";
 import FetchOneUserGameHistory from "../Controller/Profile/FetchOneUserGameHistory.js";
 import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
+import ScoreChart from "../Components/ScoreChart.js";
 import calculateDiffDate from "../Utils/calculateDiffDate.js";
+import changeTimeToDate from "../Utils/changeTimeToDate.js";
 
 class ProfilePage {
     #offset;
     #limit;
+    #gameTotalCount;
+    #currentHistoryPage;
+    #currentHistoryPagesBlock;
+    #pageListContent = [];
+    #pageNumBtns = [];
+    #pagesBlocks = [];
     #UserProfile = (userData) => {
         const profileUserImg = createElement(
             "img",
@@ -44,12 +52,12 @@ class ProfilePage {
     };
 
     #StatDescription = (userHistoryData, userid) => {
-        const gameTotalCount = userHistoryData.count;
         let gameWinCount = 0;
         let playtime = 0;
         let longestRallyCount = 0;
         let averageRallyTotal = 0;
-        for (let idx = 0; idx < gameTotalCount; idx++) {
+        const mode = { pvp: 0, tournament: 0 };
+        for (let idx = 0; idx < this.#gameTotalCount; idx++) {
             if (userHistoryData.results[idx].winner === userid) gameWinCount++;
             const start = new Date(userHistoryData.results[idx].started_at);
             const end = new Date(userHistoryData.results[idx].ended_at);
@@ -58,29 +66,30 @@ class ProfilePage {
             if (longestRallyCount < userHistoryData.results[idx].longest_rally)
                 longestRallyCount = userHistoryData.results[idx].longest_rally;
             averageRallyTotal += userHistoryData.results[idx].average_rally;
+            userHistoryData.results[idx].gamemode === "PVP"
+                ? (mode["pvp"] += 1)
+                : (mode["tournament"] += 1);
         }
-        const gameWinRate = gameTotalCount
-            ? `${(gameWinCount / gameTotalCount) * 100} %`
+        const gameWinRate = this.#gameTotalCount
+            ? `${(gameWinCount / this.#gameTotalCount) * 100} %`
             : "게임을 한 판 이상하면 승률을 확인할 수 있습니다.";
-        const longestRally = gameTotalCount
+        const longestRally = this.#gameTotalCount
             ? `${longestRallyCount} 회`
             : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
-        const averageRally = gameTotalCount
-            ? `약 ${Math.floor(averageRallyTotal / gameTotalCount)} 회`
+        const averageRally = this.#gameTotalCount
+            ? `약 ${Math.floor(averageRallyTotal / this.#gameTotalCount)} 회`
             : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
-        const mode = { p2p: 0, tournament: 0 };
-        const mostMode = gameTotalCount
-            ? mode["p2p"] > mode["tournament"]
-                ? "1대 1"
-                : mode["p2p"] < mode["tournament"]
-                ? "토너먼트"
-                : "비슷비슷해요 🙂"
+        const modeCount = this.#gameTotalCount
+            ? `PVP: ${mode["pvp"]}, 토너먼트: ${mode["tournament"]}`
             : "게임을 한 판 이상하면 가장 많이 한 모드 정보를 볼 수 있습니다.";
+        const totalPlaytime = this.#gameTotalCount
+            ? `${changeTimeToDate(playtime)}`
+            : "게임을 한 판 이상하면 플레이타임 정보를 볼 수 있습니다.";
         // ** user game count
         const gameCount = createElement(
             "span",
             { class: "stat-description-data" },
-            `게임 수: ${gameTotalCount} 회`
+            `게임 수: ${this.#gameTotalCount} 회`
         );
         // ** user game win rate
         const winRate = createElement(
@@ -92,7 +101,7 @@ class ProfilePage {
         const winLoseCount = createElement(
             "span",
             { class: "stat-description-data" },
-            `승 • 패: ${gameWinCount}/${gameTotalCount - gameWinCount}`
+            `승 • 패: ${gameWinCount}/${this.#gameTotalCount - gameWinCount}`
         );
         // ** user longest rally
         const longestRallyText = createElement(
@@ -106,10 +115,15 @@ class ProfilePage {
             { class: "stat-description-data" },
             `평균 랠리: ${averageRally}`
         );
-        const mostModeText = createElement(
+        const modeCountText = createElement(
             "span",
             { class: "stat-description-data" },
-            `가장 많이 한 모드: ${mostMode}`
+            `게임 모드: ${modeCount}`
+        );
+        const totalPlaytimeText = createElement(
+            "span",
+            { class: "stat-description-data" },
+            `플레이 시간: ${totalPlaytime}`
         );
         const stat = createElement(
             "div",
@@ -119,42 +133,64 @@ class ProfilePage {
             winLoseCount,
             longestRallyText,
             averageRallyText,
-            mostModeText
+            modeCountText,
+            totalPlaytimeText
         );
         return stat;
     };
 
-    #HistoryListItem = async (session, userid) => {
-        console.log(session);
+    #HistorySession = async (session, userid) => {
         const opponentId =
             session.user1 !== userid ? session.user1 : session.user2;
         const opponentData = await FetchUserData(opponentId);
         const gameResult = createElement(
             "span",
-            { class: "history-list-item-game-result" },
+            { class: "history-session-game-result" },
             session.winner === userid ? "승리" : "패배"
         );
-        const gameMode = createElement("span", {
-            class: "history-list-item-game-mode"
-        }, session.gamemode);
-        const gameScore = createElement("span", {
-            class: "history-list-item-game-user-score"
-        }, `${session.user1_score} : ${session.user2_score}`)
-        const gamePlaytime = createElement("span", {
-            class: "history-list-item-game-playtime"
-        }, `${calculateDiffDate(session.started_at, session.ended_at)}`);
-        const gameStart = createElement("span", {
-            class: "history-list-item-game-startdate"
-        }, `${new Date(session.started_at).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric'
-        })}`);
+        const gameMode = createElement(
+            "span",
+            {
+                class: "history-session-game-mode",
+            },
+            session.gamemode
+        );
+        const gameScore = createElement(
+            "span",
+            {
+                class: "history-session-game-user-score",
+            },
+            `${session.user1_score} : ${session.user2_score}`
+        );
+        const gamePlaytime = createElement(
+            "span",
+            {
+                class: "history-session-game-playtime",
+            },
+            `게임 시간: ${calculateDiffDate(
+                session.started_at,
+                session.ended_at
+            )}`
+        );
+        const gameStart = createElement(
+            "span",
+            {
+                class: "history-session-game-startdate",
+            },
+            `게임 일자: ${new Date(session.started_at).toLocaleDateString(
+                "ko-KR",
+                {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                }
+            )}`
+        );
         const gameSummary = createElement(
             "div",
-            { class: "history-list-item-summary" },
+            { class: "history-session-summary" },
             gameMode,
             gameScore,
             gamePlaytime,
@@ -179,19 +215,19 @@ class ProfilePage {
         );
         const opponentProfile = createElement(
             "div",
-            { class: "history-list-item-opponent-profile" },
+            { class: "history-session-opponent-profile" },
             opponentAvatar,
             opponentUsername
         );
         const gameVersus = createElement(
             "div",
-            { class: "history-list-item-game-versus" },
+            { class: "history-session-game-versus" },
             versusText,
             opponentProfile
         );
         const item = createElement(
             "li",
-            { id: `${session.id}`, class: "history-list-item" },
+            { id: `${session.id}`, class: "history-session" },
             gameResult,
             gameSummary,
             gameVersus
@@ -199,93 +235,112 @@ class ProfilePage {
         return item;
     };
 
-    #HistoryDescription = async (userHistoryData, userid) => {
-        let curPageBlock = 0;
-        let curPage = 1;
-        const pageBlocks = [];
-        const pageListContent = [];
-        const pageNumBtns = [];
-        for (
-            let i = 1;
-            this.#limit &&
-            i <=
-                Math.floor(userHistoryData.count / this.#limit) +
-                    (userHistoryData.count % this.#limit);
-            i++
-        ) {
-            const curLimit =
-                userHistoryData.count - this.#limit * (i - 1) >= this.#limit
-                    ? this.#limit
-                    : userHistoryData.count - this.#limit * i;
-            pageNumBtns.push(
-                createElement("button", {
-                    id: `page${i}`,
-                    offset: `${this.#limit * (i - 1) + 1}`,
-                    limit: `${curLimit}`,
-                    events: {
-                        click: (event) => {
-                            const list = document.getElementById(
-                                "history-description-list"
-                            );
-                            list.removeChild(list.lastChild);
-                            list.appendChild(pageListContent[i - 1]);
-                            this.#offset = `${this.#limit * (i - 1) + 1}`;
-                            window.history.pushState(
-                                {},
-                                `/profile/${userid}/history?offset=${
-                                    this.#offset
-                                }&limit=${curLimit}`,
-                                window.location.origin +
-                                    `/profile/${userid}/history?offset=${
-                                        this.#offset
-                                    }&limit=${curLimit}`
-                            );
-                        },
+    #HistorySessionMatchDashboard = async (session, sessionIdx) => {
+        const scoreTitle = createElement(
+            "h3",
+            { class: "history-session-match-dashboard-title" },
+            "Score"
+        );
+        const scoreChart = await ScoreChart(session, sessionIdx);
+        const scoreChartDiv = createElement(
+            "div",
+            { class: "history-session-chart" },
+            scoreTitle,
+            scoreChart
+        );
+        const match = createElement(
+            "div",
+            { class: "history-session-match-dashboard" },
+            scoreChartDiv
+        );
+        return match;
+    };
+
+    #handlePageClick = (number, curLimit, userid) => {
+        const list = document.getElementById("history-description-list");
+        list.removeChild(list.lastChild);
+        list.appendChild(this.#pageListContent[number - 1]);
+        this.#offset = `${this.#limit * (number - 1) + 1}`;
+        window.history.pushState(
+            {},
+            `/profile/${userid}/history?offset=${
+                this.#offset
+            }&limit=${curLimit}`,
+            window.location.origin +
+                `/profile/${userid}/history?offset=${
+                    this.#offset
+                }&limit=${curLimit}`
+        );
+    };
+
+    #PageButton = (number, curLimit, userid) => {
+        const pageButton = createElement(
+            "button",
+            {
+                id: `page${number}`,
+                offset: `${this.#limit * (number - 1) + 1}`,
+                limit: `${curLimit}`,
+                events: {
+                    click: () => {
+                        this.#handlePageClick(number, curLimit, userid);
                     },
-                }, `${i}`)
-            );
+                },
+            },
+            `${number}`
+        );
+        return pageButton;
+    };
+
+    #Pagination = async (userHistoryData, info, userid) => {
+        const totalPage = this.#limit
+            ? Math.floor(this.#gameTotalCount / this.#limit) +
+              (this.#gameTotalCount % this.#limit)
+            : 0;
+        for (let i = 1; i <= totalPage; i++) {
+            const curLimit =
+                this.#gameTotalCount - this.#limit * (i - 1) >= this.#limit
+                    ? this.#limit
+                    : this.#gameTotalCount - this.#limit * i;
+            this.#pageNumBtns.push(this.#PageButton(i, curLimit, userid));
             const content = createElement(
                 "div",
                 { class: "history-description-pagination-content-list" },
                 []
             );
-            console.log(curLimit);
             for (let j = 0; j < curLimit; j++) {
-                const item = await this.#HistoryListItem(
-                    userHistoryData.results[curLimit * (i - 1) + j],
-                    userid
-                );
-                content.appendChild(item);
-                console.log(item);
+                const sessionData =
+                    userHistoryData.results[this.#limit * (i - 1) + j];
+                const session = await this.#HistorySession(sessionData, userid);
+                let sessionDashboard = "";
+                if (sessionData.gamemode === "PVP")
+                    sessionDashboard = await this.#HistorySessionMatchDashboard(
+                        sessionData,
+                        j
+                    );
+                content.appendChild(session);
+                content.appendChild(sessionDashboard);
             }
-            pageListContent.push(content);
+            this.#pageListContent.push(content);
             if (
                 !(i % 5) ||
-                userHistoryData.count - this.#limit * i < this.#limit
+                this.#gameTotalCount - this.#limit * i < this.#limit
             ) {
-                const pageBlock = createElement(
+                const pagesBlock = createElement(
                     "div",
                     { class: "history-description-pagination-pages" },
                     []
                 );
-                while (pageNumBtns.length) {
-                    pageBlock.appendChild(pageNumBtns[0]);
-                    pageNumBtns.shift();
+                while (this.#pageNumBtns.length) {
+                    pagesBlock.appendChild(this.#pageNumBtns[0]);
+                    this.#pageNumBtns.shift();
                 }
-                pageBlocks.push(pageBlock);
+                this.#pagesBlocks.push(pagesBlock);
             }
         }
-        curPageBlock = this.#limit
-            ? Math.floor(Math.floor(this.#offset / this.#limit) / 5)
-            : 0;
-        curPage = this.#limit
-            ? Math.floor(this.#offset / this.#limit) +
-              (this.#offset % this.#limit)
-            : 1;
         const pageNumsDiv = createElement(
             "div",
             { id: "history-description-pagination-nums-div" },
-            pageBlocks[curPageBlock]
+            this.#pagesBlocks[this.#currentHistoryPagesBlock]
         );
         const leftBtn = createElement(
             "button",
@@ -293,8 +348,8 @@ class ProfilePage {
                 class: "history-description-pagination-left-btn",
                 events: {
                     click: () => {
-                        if (curPageBlock - 1 >= 0) {
-                            curPageBlock -= 1;
+                        if (this.#currentHistoryPagesBlock - 1 >= 0) {
+                            this.#currentHistoryPagesBlock -= 1;
                             const paginationPages = document.getElementById(
                                 "history-description-pagination-nums-div"
                             );
@@ -302,11 +357,16 @@ class ProfilePage {
                                 paginationPages.lastChild
                             );
                             paginationPages.appendChild(
-                                pageBlocks[curPageBlock]
+                                this.#pagesBlocks[
+                                    this.#currentHistoryPagesBlock
+                                ]
                             );
                             // 페이지 번호 버튼 색깔 변화
-                            curPage = 5 * curPageBlock + 5;
-                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            this.#currentHistoryPage =
+                                5 * this.#currentHistoryPagesBlock + 5;
+                            this.#offset =
+                                this.#limit * (this.#currentHistoryPage - 1) +
+                                1;
                             window.history.pushState(
                                 {},
                                 `/profile/${userid}/history?offset=${
@@ -330,11 +390,10 @@ class ProfilePage {
                 events: {
                     click: () => {
                         if (
-                            curPageBlock + 1 <
-                            Math.floor(userHistoryData.count / this.#limit) +
-                                (userHistoryData.count % this.#limit)
+                            this.#currentHistoryPagesBlock + 1 <
+                            this.#pagesBlocks.length
                         ) {
-                            curPageBlock += 1;
+                            this.#currentHistoryPagesBlock += 1;
                             const paginationPages = document.getElementById(
                                 "history-description-pagination-nums-div"
                             );
@@ -342,11 +401,16 @@ class ProfilePage {
                                 paginationPages.lastChild
                             );
                             paginationPages.appendChild(
-                                pageBlocks[curPageBlock]
+                                this.#pagesBlocks[
+                                    this.#currentHistoryPagesBlock
+                                ]
                             );
                             // 페이지 번호 버튼 색깔 변화
-                            curPage = 5 * curPageBlock + 1;
-                            this.#offset = this.#limit * (curPage - 1) + 1;
+                            this.#currentHistoryPage =
+                                5 * this.#currentHistoryPagesBlock + 1;
+                            this.#offset =
+                                this.#limit * (this.#currentHistoryPage - 1) +
+                                1;
                             window.history.pushState(
                                 {},
                                 `/profile/${userid}/history?offset=${
@@ -370,16 +434,23 @@ class ProfilePage {
             pageNumsDiv,
             rightBtn
         );
+        if (info === "stat") {
+            console.log(info);
+            pagination.classList.add("hide");
+        }
+        return pagination;
+    };
+
+    #HistoryDescription = async (userHistoryData, userid) => {
         const historyList = createElement(
             "ul",
             { id: "history-description-list" },
-            pageListContent[curPage]
+            this.#pageListContent[this.#currentHistoryPage - 1]
         );
         const history = createElement(
             "div",
             { id: "history-description" },
-            historyList,
-            pagination
+            historyList
         );
         return history;
     };
@@ -391,12 +462,17 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: () => {
+                        const pagination = document.querySelector(
+                            "#history-description-pagination"
+                        );
+                        pagination.classList.add("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
-                        description.removeChild(description.lastChild);
-                        description.appendChild(
-                            this.#StatDescription(userHistoryData, userid)
+                        description.removeChild(description.firstElementChild);
+                        description.insertBefore(
+                            this.#StatDescription(userHistoryData, userid),
+                            pagination
                         );
                         window.history.pushState(
                             {},
@@ -414,12 +490,20 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: async () => {
+                        const pagination = document.querySelector(
+                            "#history-description-pagination"
+                        );
+                        pagination.classList.remove("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
-                        description.removeChild(description.lastElementChild);
-                        description.appendChild(
-                            await this.#HistoryDescription(userHistoryData, userid)
+                        description.removeChild(description.firstElementChild);
+                        description.insertBefore(
+                            await this.#HistoryDescription(
+                                userHistoryData,
+                                userid
+                            ),
+                            pagination
                         );
                         window.history.pushState(
                             {},
@@ -445,15 +529,23 @@ class ProfilePage {
         const regex = /^[1-9]\d*$/;
         const offsetValue = queryParam.get("offset");
         const limitValue = queryParam.get("limit");
+        this.#gameTotalCount = userHistoryData.count;
         this.#offset = regex.test(offsetValue) ? parseInt(offsetValue) : 1;
         this.#limit = regex.test(limitValue)
             ? parseInt(limitValue)
-            : userHistoryData.count;
+            : this.#gameTotalCount;
         if (this.#offset <= 0) this.#offset = 1;
-        else if (this.#offset > userHistoryData.count)
-            this.#offset = userHistoryData.count;
-        if (this.#limit <= 0 || this.#limit > userHistoryData.count)
-            this.#limit = userHistoryData.count;
+        else if (this.#offset > this.#gameTotalCount)
+            this.#offset = this.#gameTotalCount;
+        if (this.#limit <= 0 || this.#limit > this.#gameTotalCount)
+            this.#limit = this.#gameTotalCount;
+        this.#currentHistoryPagesBlock = this.#limit
+            ? Math.floor(Math.floor(this.#offset / this.#limit) / 5)
+            : 0;
+        this.#currentHistoryPage = this.#limit
+            ? Math.floor(this.#offset / this.#limit) +
+              (this.#offset % this.#limit)
+            : 1;
     }
 
     async template(pathParam, queryParam) {
@@ -477,12 +569,23 @@ class ProfilePage {
             userHistoryData,
             user.id
         );
+        let chosenDescription;
+        if (info !== "history") {
+            chosenDescription = this.#StatDescription(userHistoryData, user.id);
+        } else {
+            chosenDescription = await this.#HistoryDescription(
+                userHistoryData,
+                user.id
+            );
+        }
+        const pagination = this.#Pagination(userHistoryData, info, user.id);
         const description = createElement(
             "div",
-            { id: "profile-stat-or-history-description" },
-            info !== "history"
-                ? this.#StatDescription(userHistoryData, user.id)
-                : await this.#HistoryDescription(userHistoryData, user.id)
+            {
+                id: "profile-stat-or-history-description",
+            },
+            chosenDescription,
+            pagination
         );
 
         const main = createElement(

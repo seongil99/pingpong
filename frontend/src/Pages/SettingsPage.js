@@ -17,11 +17,6 @@ class SettingsPage {
             { class: "settings-section-title" },
             i18next.t("settings_2fa")
         );
-        const title3 = createElement(
-            "h1",
-            { class: "settings-section-title" },
-            i18next.t("settings_inactive_account")
-        );
 
         const editProfileForm = await ProfileForm();
         const mfaStatus = await detectMfaEnabled();
@@ -86,13 +81,6 @@ class SettingsPage {
             title2,
             twoAuthBtn
         );
-        const inactivateAccountSection = createElement(
-            "section",
-            { class: "settings-section" },
-            title3,
-            inactiveBtn
-        );
-
         const modal = await SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
@@ -106,7 +94,6 @@ class SettingsPage {
             { class: "settings-sections" },
             editProfileSection,
             twoAuthSection,
-            inactivateAccountSection
         );
 
         const main = createElement(
