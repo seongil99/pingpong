@@ -598,7 +598,7 @@ class PingPongServer:
         with transaction.atomic():
             tournament_game = TournamentGame.objects.get(game_id=game.id)
             tournament = game.tournament_id
-            winner = User.objects.get(id=winner_id)
+            winner = None if winner_id is None else User.objects.get(id=winner_id)
             if tournament_game.tournament_round == 1:
                 if tournament.round_1_winner is None:
                     tournament.round_1_winner = winner
@@ -632,6 +632,8 @@ class PingPongServer:
             logger.info("round 2")
             logger.info("user: %s", user1)
             logger.info("user: %s", user2)
+        if user1 is None and user2 is None:
+            return
         game_id = GameHistory.objects.create(
             user1=user1,
             user2=user2,
@@ -662,6 +664,7 @@ class PingPongServer:
         logger.info("Abandoned game: %s", game_state["game_id"])
         game_id = game_state["game_id"]
         await self.save_game_history(game_state, None)
+        await self.update_tournament(game_state, None)
         await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)
 
