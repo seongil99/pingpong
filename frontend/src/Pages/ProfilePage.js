@@ -66,9 +66,9 @@ class ProfilePage {
             if (longestRallyCount < userHistoryData.results[idx].longest_rally)
                 longestRallyCount = userHistoryData.results[idx].longest_rally;
             averageRallyTotal += userHistoryData.results[idx].average_rally;
-            userHistoryData.results[idx].gamemode === "PVP"
-                ? (mode["pvp"] += 1)
-                : (mode["tournament"] += 1);
+            (userHistoryData.results[idx].tournament_id)
+                ? (mode["tournament"] += 1)
+                : (mode["pvp"] += 1);
         }
         const gameWinRate = this.#gameTotalCount
             ? `${(gameWinCount / this.#gameTotalCount) * 100} %`
