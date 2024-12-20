@@ -17,11 +17,7 @@ class SettingsPage {
             { class: "settings-section-title" },
             "2FA Enable/Disable"
         );
-        const title3 = createElement(
-            "h1",
-            { class: "settings-section-title" },
-            "Inactive Account"
-        );
+
         const editProfileForm = await ProfileForm();
         const mfaStatus = await detectMfaEnabled();
         const twoAuthBtn = createElement(
@@ -78,12 +74,6 @@ class SettingsPage {
             title2,
             twoAuthBtn
         );
-        const inactivateAccountSection = createElement(
-            "section",
-            { class: "settings-section" },
-            title3,
-            inactiveBtn
-        );
         const modal = await SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
@@ -96,7 +86,6 @@ class SettingsPage {
             { class: "settings-sections" },
             editProfileSection,
             twoAuthSection,
-            inactivateAccountSection
         );
         const main = createElement(
             "main",
