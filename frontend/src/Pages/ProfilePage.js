@@ -589,7 +589,6 @@ class ProfilePage {
                 id: "profile-stat-or-history-description",
             },
             chosenDescription,
-            pagination
         );
 
         const main = createElement(
@@ -598,7 +597,8 @@ class ProfilePage {
             profileTitle,
             userProfile,
             statOrHistoryBtnSet,
-            description
+            description,
+            pagination
         );
         const container = createElement("div", {}, navBar, main);
         return container;
