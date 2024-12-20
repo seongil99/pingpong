@@ -624,8 +624,12 @@ class PingPongClient {
                     const id = setInterval(async () => {
                         if (count > 10) {
                             clearInterval(id); // 반복 실행 중지
-                            if (this.socket && this.socket.connected)
+                            console.log('this.socket: ', this.socket);
+                            if (this.socket && this.socket.connected){
+                                console.log("disconnect socket");
                                 this.socket.disconnect();
+                                this.socket = null;
+                            }
                             window.router.navigate(`/home`, false);
                             return;
                         }
@@ -634,7 +638,7 @@ class PingPongClient {
                             const result = await getCurrentUserGameStatus(); // 비동기 실행
                             if (this.socket && this.socket.connected)
                                 this.socket.disconnect();
-                            if(result.round === 2)
+                            if(!result)
                                 window.router.navigate(`/result/${result.tournament_id}`, false);
                             else
                                 window.router.navigate(`/playing/${result.game_id}`, false);

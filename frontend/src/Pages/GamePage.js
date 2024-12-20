@@ -10,12 +10,13 @@ class GamePage {
     async template(pathParam, queryParam) {
         const [_, path, gameId] = pathParam;
         const socket = io('/api/game', {
+            reconnection: false,
             transports: ['websocket'],
             debug: true,
             path: '/api/game/socket.io',
             query: {
                 gameId: gameId
-            }
+            },
         });
         const game = new GameWindow(socket,gameId);
         // main 요소에 친구 목록 버튼 상자, 친구 목록 화면, 게임 시작 버튼 추가

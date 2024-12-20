@@ -1,7 +1,7 @@
 // Bootstrap Form Switch 생성 함수
 import createElement from "../Utils/createElement.js";
 
-function createFormSwitch(socket, modal) {
+function createFormSwitch(socket) {
     // 스위치 입력 생성
     const formCheckInput = createElement("input", {
         class: "form-check-input",
@@ -42,7 +42,7 @@ function createFormSwitch(socket, modal) {
             class: "btn btn-primary mt-3",
             events: {
                 click: () => {
-                    console.log("this is secondcallback ", this, "hiddenvalue", socket);
+                    console.log("this is secondcallback ",  "hiddenvalue", localStorage.getItem("matchType"));
                     if (socket) {
                         let message = null;
                         const type = localStorage.getItem("matchType");
@@ -66,15 +66,22 @@ function createFormSwitch(socket, modal) {
                         console.log("before sned message ", message);
                         socket.send(JSON.stringify(message));
                     }
-                    else{
-                        if(localStorage.getItem("matchType") === "Pve"){
-                            if(modal){
-                                console.log("modal distroryd");
-                                modal.modal.dispose();
-                                console.log(modal);
-                                this.container.removeChild(modal.element);
-                                modal = null;
+                    else {
+                        if (localStorage.getItem("matchType") === "Pve") {
+                            console.log("distroyd");
+                            const gameId = localStorage.getItem("gameId");
+                            const modalElement = document.getElementById("modal-tartget");
+                            // 부모 엘리먼트를 얻기
+                            const parentElement = modalElement.parentElement;
+                            // 부모 엘리먼트에서 자식 제거
+                            if (parentElement) {
+                                parentElement.removeChild(modalElement);
                             }
+                            // Bootstrap 모달 인스턴스 얻기
+                            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                            modalInstance.dispose();
+                            console.log(gameId);
+                            window.router.navigate(`/playing/${gameId}`, false);
                         }
                     }
                 }, // 콜백 실행

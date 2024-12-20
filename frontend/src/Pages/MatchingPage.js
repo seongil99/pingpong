@@ -37,7 +37,11 @@ class MatchingPage {
             if(this.matchType ==="Pve"){
                 localStorage.setItem("matchType", this.matchType);
                 this.gameId = await PvpRequest();
-                localStorage.setItem("gameId", this.gameId);
+                localStorage.setItem("gameId", this.gameId.game_id);
+                this.toggleButtonContainer();
+                this.waitModal = this.createWaitModal(waitMessage);
+                this.handleMatchFound("Pve");
+                return;
             }
             else{
                 if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
@@ -56,7 +60,7 @@ class MatchingPage {
             this.cancelMatch();
             this.toggleButtonContainer();
             waitBox.modal.dispose();
-        }, this.socket,this.modal);
+        }, this.socket);
         this.container.append(waitBox.element);
         waitBox.modal.show();
         return waitBox;
@@ -109,12 +113,12 @@ class MatchingPage {
         const modalbtn = document.getElementById("modal-btn-target");
         modal.classList.add("hide");
         modalbtn.classList.add("hide");
-        if (this.matchType === "Pve") return;
-        if (data.option_selector) {
+        if (data.option_selector || this.matchType === "Pve") {
             const optionForm = document.getElementById("form-target");
             optionForm.classList.remove("hide");
             console.log('op select in this.tournamentId: ', this.tournamentId);
         }
+        if (this.matchType === "Pve") return;
         localStorage.setItem("matchType", this.matchType);
         localStorage.setItem("gameId", data.game_id ? data.game_id : data.tournament_id);
         this.tournamentId = data.tournament_id;

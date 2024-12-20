@@ -1,6 +1,6 @@
 import createElement from "../Utils/createElement.js";
 import CreateFormSwitch from "./CheckBox.js";
-function createMessageModal(message,callback,socket,modalT) {
+function createMessageModal(message,callback,socket) {
     // 메시지 표시 영역 생성
 	const modalTitle = createElement(
         "div",
@@ -46,7 +46,7 @@ function createMessageModal(message,callback,socket,modalT) {
 		modalTitle,
         modalBody,
         modalFooter,
-		CreateFormSwitch(socket,modalT),
+		CreateFormSwitch(socket),
     );
 
     // 모달 다이얼로그 생성
