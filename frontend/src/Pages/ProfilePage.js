@@ -83,7 +83,7 @@ class ProfilePage {
             ? `PVP: ${mode["pvp"]}, 토너먼트: ${mode["tournament"]}`
             : "게임을 한 판 이상하면 가장 많이 한 모드 정보를 볼 수 있습니다.";
         const totalPlaytime = this.#gameTotalCount
-            ? `${calculateDiffDate(changeTimeToDate(playtime))}`
+            ? `${changeTimeToDate(playtime)}`
             : "게임을 한 판 이상하면 플레이타임 정보를 볼 수 있습니다.";
         // ** user game count
         const gameCount = createElement(
@@ -140,7 +140,6 @@ class ProfilePage {
     };
 
     #HistorySession = async (session, userid) => {
-        console.log(session);
         const opponentId =
             session.user1 !== userid ? session.user1 : session.user2;
         const opponentData = await FetchUserData(opponentId);
@@ -168,20 +167,26 @@ class ProfilePage {
             {
                 class: "history-session-game-playtime",
             },
-            `${calculateDiffDate(session.started_at, session.ended_at)}`
+            `게임 시간: ${calculateDiffDate(
+                session.started_at,
+                session.ended_at
+            )}`
         );
         const gameStart = createElement(
             "span",
             {
                 class: "history-session-game-startdate",
             },
-            `${new Date(session.started_at).toLocaleDateString("ko-KR", {
-                year: "numeric",
-                month: "numeric",
-                day: "numeric",
-                hour: "numeric",
-                minute: "numeric",
-            })}`
+            `게임 일자: ${new Date(session.started_at).toLocaleDateString(
+                "ko-KR",
+                {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                }
+            )}`
         );
         const gameSummary = createElement(
             "div",
@@ -237,11 +242,16 @@ class ProfilePage {
             "Score"
         );
         const scoreChart = await ScoreChart(session, sessionIdx);
+        const scoreChartDiv = createElement(
+            "div",
+            { class: "history-session-chart" },
+            scoreTitle,
+            scoreChart
+        );
         const match = createElement(
             "div",
             { class: "history-session-match-dashboard" },
-            scoreTitle,
-            scoreChart
+            scoreChartDiv
         );
         return match;
     };
@@ -281,7 +291,7 @@ class ProfilePage {
         return pageButton;
     };
 
-    #Pagination = async (userHistoryData, userid) => {
+    #Pagination = async (userHistoryData, info, userid) => {
         const totalPage = this.#limit
             ? Math.floor(this.#gameTotalCount / this.#limit) +
               (this.#gameTotalCount % this.#limit)
@@ -381,8 +391,7 @@ class ProfilePage {
                     click: () => {
                         if (
                             this.#currentHistoryPagesBlock + 1 <
-                            Math.floor(this.#gameTotalCount / this.#limit) +
-                                (this.#gameTotalCount % this.#limit)
+                            this.#pagesBlocks.length
                         ) {
                             this.#currentHistoryPagesBlock += 1;
                             const paginationPages = document.getElementById(
@@ -425,11 +434,14 @@ class ProfilePage {
             pageNumsDiv,
             rightBtn
         );
+        if (info === "stat") {
+            console.log(info);
+            pagination.classList.add("hide");
+        }
         return pagination;
     };
 
     #HistoryDescription = async (userHistoryData, userid) => {
-        const pagination = await this.#Pagination(userHistoryData, userid);
         const historyList = createElement(
             "ul",
             { id: "history-description-list" },
@@ -438,8 +450,7 @@ class ProfilePage {
         const history = createElement(
             "div",
             { id: "history-description" },
-            historyList,
-            pagination
+            historyList
         );
         return history;
     };
@@ -451,12 +462,17 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: () => {
+                        const pagination = document.querySelector(
+                            "#history-description-pagination"
+                        );
+                        pagination.classList.add("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
-                        description.removeChild(description.lastChild);
-                        description.appendChild(
-                            this.#StatDescription(userHistoryData, userid)
+                        description.removeChild(description.firstElementChild);
+                        description.insertBefore(
+                            this.#StatDescription(userHistoryData, userid),
+                            pagination
                         );
                         window.history.pushState(
                             {},
@@ -474,15 +490,20 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: async () => {
+                        const pagination = document.querySelector(
+                            "#history-description-pagination"
+                        );
+                        pagination.classList.remove("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
-                        description.removeChild(description.lastElementChild);
-                        description.appendChild(
+                        description.removeChild(description.firstElementChild);
+                        description.insertBefore(
                             await this.#HistoryDescription(
                                 userHistoryData,
                                 userid
-                            )
+                            ),
+                            pagination
                         );
                         window.history.pushState(
                             {},
@@ -548,12 +569,23 @@ class ProfilePage {
             userHistoryData,
             user.id
         );
+        let chosenDescription;
+        if (info !== "history") {
+            chosenDescription = this.#StatDescription(userHistoryData, user.id);
+        } else {
+            chosenDescription = await this.#HistoryDescription(
+                userHistoryData,
+                user.id
+            );
+        }
+        const pagination = this.#Pagination(userHistoryData, info, user.id);
         const description = createElement(
             "div",
-            { id: "profile-stat-or-history-description" },
-            info !== "history"
-                ? this.#StatDescription(userHistoryData, user.id)
-                : await this.#HistoryDescription(userHistoryData, user.id)
+            {
+                id: "profile-stat-or-history-description",
+            },
+            chosenDescription,
+            pagination
         );
 
         const main = createElement(
