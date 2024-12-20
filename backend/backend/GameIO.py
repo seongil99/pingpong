@@ -52,6 +52,7 @@ class GameIO(socketio.AsyncNamespace):
 
         # 여러 소켓이 하나의 유저로 들어올 경우
         if user.id in user_to_socket:
+            logger.info("multiple user socket")
             sio.disconnect(sid)
             return
 
@@ -62,7 +63,7 @@ class GameIO(socketio.AsyncNamespace):
             int(game_id)
             game: PingPongHistory = await PingPongHistory.objects.aget(id=game_id)
         except Exception as e:
-            logger.error(str(e), exc_info=True)
+            # logger.error(str(e), exc_info=True)
             sio.disconnect(sid)
             return
 
@@ -76,7 +77,11 @@ class GameIO(socketio.AsyncNamespace):
         # upon successful authentication, enter game room
         await sio.enter_room(sid, game_id, namespace="/api/game")
         try:
-            if await self._process_authorization(sid, game_id, game.gamemode) is False:
+            if (
+                await self._process_authorization(sid, game_id, game.gamemode, game)
+                is False
+            ):
+                logger.info("Authorization failed: %s", game_id)
                 return
         except OneVersusOneGame.DoesNotExist:
             logger.info("Game not found: %s", game_id)
@@ -116,7 +121,7 @@ class GameIO(socketio.AsyncNamespace):
         """
         클라이언트로부터 키 입력을 받았을 때 호출되는 메서드
         """
-        # logger.info("Key press: %s", data)
+        logger.info("Key press: %s", data)
         if sid not in user_to_game:
             logger.info("User not in game: %s", sid)
             return
@@ -126,7 +131,7 @@ class GameIO(socketio.AsyncNamespace):
             return
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
-        # logger.info("user_id: %s", user.id)
+        logger.info("user_id: %s", user.id)
 
         if data["key"] != " ":
             await server.handle_player_input(
@@ -209,7 +214,7 @@ class GameIO(socketio.AsyncNamespace):
         logger.info("Authorization failed: %s not in %s", user, game_id)
         return False
 
-    async def _process_authorization(self, sid, game_id, game_type):
+    async def _process_authorization(self, sid, game_id, game_type, game):
         if game_type == GameMode.PVE.value:
             return await self._pve_authorization(sid, game_id)
         if not await self._check_authorization(sid, game_id):

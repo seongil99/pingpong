@@ -12,7 +12,7 @@ const fetchFriends = async () => {
         }
         const json = await response.json();
         json.results.map(v => {
-            v.friend_user.avatar = v.friend_user.avatar.replace("http://", "https://");
+            v.friend_user.avatar = String(v.friend_user.avatar).replace("http://", "https://");
         });
         return json.results;
     } catch (error) {

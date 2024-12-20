@@ -14,6 +14,7 @@ const { ANONYMOUS, NOLOGIN, LOGIN, NOTHING } = AuthorizationStatus;
 
 class Router {
     constructor() {
+        this.currentRouteInstanse = null;
         this.init();
     }
 
@@ -123,9 +124,12 @@ class Router {
             window.router.navigate(redirectPath, true);
             return;
         }
+        if(this.currentRouteInstanse && typeof this.currentRouteInstanse.dispose === 'function')
+            this.currentRouteInstanse.dispose();
         const routeLoader = routes[correctRoute] || routes["/404"];
         const routeModule = await routeLoader();
         const routeInstance = new routeModule.default(); // 동적으로 로드한 모듈 인스턴스화
+        this.currentRouteInstanse = routeInstance;
         const app = document.querySelector("#app");
         app.innerHTML = "";
         const dynamicData =

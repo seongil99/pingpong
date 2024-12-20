@@ -43,9 +43,9 @@ class DisableMFAbutton extends HTMLElement {
   }
 
   async handleDisableMFA() {
-    const url = "https://localhost/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
+    const url = "/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
   async handleDisableMFA() {
-    const url = "https://localhost/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
+    const url = "/api/v1/users/accounts/mfa/"; // MFA 비활성화 API 서버 URL
 
     try {
       const response = await fetch(url, {

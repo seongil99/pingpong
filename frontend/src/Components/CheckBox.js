@@ -1,7 +1,7 @@
 // Bootstrap Form Switch 생성 함수
 import createElement from "../Utils/createElement.js";
-
-function createFormSwitch(socket, tournamentId) {
+import PvpRequest from "../Controller/Game/PvpRequest.js";
+function createFormSwitch(socket) {
     // 스위치 입력 생성
     const formCheckInput = createElement("input", {
         class: "form-check-input",
@@ -40,9 +40,10 @@ function createFormSwitch(socket, tournamentId) {
         {
             type: "button",
             class: "btn btn-primary mt-3",
+            id : "process-btn",
             events: {
-                click: () => {
-                    console.log("this is secondcallback ", this, "hiddenvalue", socket);
+                click: async () => {
+                    console.log("this is secondcallback ",  "hiddenvalue", localStorage.getItem("matchType"));
                     if (socket) {
                         let message = null;
                         const type = localStorage.getItem("matchType");
@@ -54,7 +55,8 @@ function createFormSwitch(socket, tournamentId) {
                                 game_id: localStorage.getItem("gameId"),
                                 multi_ball: formCheckInput.checked,
                             };
-                        } else {
+                        } 
+                        else {
                             message = {
                                 type: "set_option",
                                 tournament_id: localStorage.getItem("gameId"),
@@ -65,10 +67,28 @@ function createFormSwitch(socket, tournamentId) {
                         console.log("before sned message ", message);
                         socket.send(JSON.stringify(message));
                     }
+                    else {
+                        if (localStorage.getItem("matchType") === "Pve") {
+                            console.log("distroyd");
+                            const gameId = await PvpRequest(formCheckInput.checked);
+                            const modalElement = document.getElementById("modal-tartget");
+                            // 부모 엘리먼트를 얻기
+                            const parentElement = modalElement.parentElement;
+                            // 부모 엘리먼트에서 자식 제거
+                            if (parentElement) {
+                                parentElement.removeChild(modalElement);
+                            }
+                            // Bootstrap 모달 인스턴스 얻기
+                            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                            modalInstance.dispose();
+                            console.log(gameId);
+                            window.router.navigate(`/playing/${gameId.game_id}`, false);
+                        }
+                    }
                 }, // 콜백 실행
             },
         },
-        "진행"
+        i18next.t("process-btn")
     );
 
     // 스위치 컨테이너 생성

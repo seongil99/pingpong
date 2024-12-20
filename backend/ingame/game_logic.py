@@ -16,6 +16,7 @@ from django.db import transaction
 from asgiref.sync import sync_to_async
 from .enums import Game, GameMode
 from tournament.models import Tournament
+from ingame.data import user_to_socket
 
 logger = logging.getLogger("django")
 
@@ -211,15 +212,16 @@ class PingPongServer:
         """
         게임 루프를 asyncio background task 로 실행
         """
-        await game_state["start_timer"].cancel()
+        if game_state["is_single_player"] is False:
+            await game_state["start_timer"].cancel()
         logger.info("start game loop")
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)
-        tournament_id = await self._get_tournament_id(game) 
+        tournament_id = await self._get_tournament_id(game)
         if tournament_id is not None:
-            await Tournament.objects.filter(tournament_id=tournament_id.tournament_id).aupdate(
-                status="ongoing", current_round=1
-            )
+            await Tournament.objects.filter(
+                tournament_id=tournament_id.tournament_id
+            ).aupdate(status="ongoing", current_round=1)
         InMemoryGameState.reset_current_round(game_state)
         task_list = []
         if game_state["is_single_player"] is True:
@@ -351,19 +353,19 @@ class PingPongServer:
                 or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
-                    game_state["render_data"]["score"]["playerOne"] += 1
+                    game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = True
                 else:
-                    game_state["render_data"]["score"]["playerTwo"] += 1
+                    game_state["render_data"]["score"]["playerOne"] += 1
                     ball.summon_direction = False
                 self._save_round_data(game_state)
 
                 # Check if someone has won the set
                 if (
-                    game_state["render_data"]["score"]["playerOne"] < 1
-                    # < Game.GAME_SET_SCORE.value
-                    and game_state["render_data"]["score"]["playerTwo"] < 1
-                    # < Game.GAME_SET_SCORE.value
+                    game_state["render_data"]["score"]["playerOne"]
+                    < Game.GAME_SET_SCORE.value
+                    and game_state["render_data"]["score"]["playerTwo"]
+                    < Game.GAME_SET_SCORE.value
                 ):
                     if game_state["gameStart"]:
                         await socket_send(game_state["render_data"], "score", game_id)

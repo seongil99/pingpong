@@ -11,6 +11,7 @@ class MatchingPage {
         this.waitModal = null;
         this.matchType = null;
         this.tournamentId = null;
+        this.gameId = null;
     }
 
     async template() {
@@ -19,8 +20,9 @@ class MatchingPage {
 
         const pvpButton = this.createMatchButton("PVP", "waiting for PvP User");
         const tournamentButton = this.createMatchButton("tournament", "waiting for Tournament Users");
+        const pveButton = this.createMatchButton("Pve", "waiting for start");
 
-        const buttonContainer = createElement("div", { id: "match-btn-container" }, pvpButton, tournamentButton);
+        const buttonContainer = createElement("div", { id: "match-btn-container" }, pvpButton, tournamentButton, pveButton);
 
         const main = createElement("main", { id: "matching-main" }, title, buttonContainer);
         this.container = createElement("div", {}, navBar, main);
@@ -29,12 +31,21 @@ class MatchingPage {
     }
 
     createMatchButton(type, waitMessage) {
-        return ButtonToMatch(type, () => {
+        return ButtonToMatch(type, async() => {
             this.matchType = type;
-            if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
-                this.connectWebSocket(() => this.requestMatch());
-            } else {
-                this.requestMatch();
+            if(this.matchType ==="Pve"){
+                localStorage.setItem("matchType", this.matchType);
+                this.toggleButtonContainer();
+                this.waitModal = this.createWaitModal(waitMessage);
+                this.handleMatchFound("Pve");
+                return;
+            }
+            else{
+                if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
+                    this.connectWebSocket(() => this.requestMatch());
+                } else {
+                    this.requestMatch();
+                }
             }
             this.toggleButtonContainer();
             this.waitModal = this.createWaitModal(waitMessage);
@@ -46,7 +57,7 @@ class MatchingPage {
             this.cancelMatch();
             this.toggleButtonContainer();
             waitBox.modal.dispose();
-        }, this.socket,this.tournamentId);
+        }, this.socket);
         this.container.append(waitBox.element);
         waitBox.modal.show();
         return waitBox;
@@ -58,7 +69,7 @@ class MatchingPage {
 
     connectWebSocket(callback) {
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        const endpoint = 
+        const endpoint =
         this.matchType === "PVP" ?
         "matchmaking" :
         "tournament/matchmaking"
@@ -99,25 +110,33 @@ class MatchingPage {
         const modalbtn = document.getElementById("modal-btn-target");
         modal.classList.add("hide");
         modalbtn.classList.add("hide");
-        if(data.option_selector){
+        if (data.option_selector || this.matchType === "Pve") {
             const optionForm = document.getElementById("form-target");
             optionForm.classList.remove("hide");
             console.log('op select in this.tournamentId: ', this.tournamentId);
         }
+        if (this.matchType === "Pve") return;
         localStorage.setItem("matchType", this.matchType);
-        localStorage.setItem("gameId", data.game_id ? data.game_id: data.tournament_id);
+        localStorage.setItem("gameId", data.game_id ? data.game_id : data.tournament_id);
         this.tournamentId = data.tournament_id;
+        localStorage.setItem("tid",this.tournamentId);
         console.log(`Match found! gameId: ${localStorage.getItem("gameId")}`);
+
     }
 
     async navigateToGame(gameId) {
         if(this.waitModal){
+            console.log("modal distroryd");
             this.waitModal.modal.dispose();
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
         }
-        await getCurrentUserGameStatus();
-        window.router.navigate(`/playing/${gameId}`, false);
+        const serverdgameId = await getCurrentUserGameStatus();
+        if(!serverdgameId)
+            window.router.navigate(`/playing/${gameId}`, false);
+        else
+            window.router.navigate(`/playing/${serverdgameId.game_id}`, false);
+
     }
     requestMatch() {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {

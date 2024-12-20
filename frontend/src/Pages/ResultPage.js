@@ -1,76 +1,55 @@
 import createElement from "../Utils/createElement.js";
 import NavBar from "../Components/Navbar.js";
 import getTournamentData from "../Controller/Game/GetTournamentData.js";
-// JSON 데이터 예시
-const tournamentData = {
-    "eventId": 1,
-    "eventType": "tournament",
-    "startDate": "2024-01-15T14:00:00Z",
-    "endDate": "2024-01-20T18:00:00Z",
-    "matches": [
-        {
-            "matchId": 101,
-            "round": "PlayerOne vs PlayerTwo",
-            "startTime": "2024-01-15T16:00:00Z",
-            "endTime": "2024-01-15T17:30:00Z",
-            "players": [
-                { "playerId": 1, "name": "PlayerOne", "score": 3, "status": "winner" },
-                { "playerId": 2, "name": "PlayerTwo", "score": 1, "status": "loser" }
-            ]
-        },
-        {
-            "matchId": 102,
-            "round": "PlayerThree vs PlayerFour",
-            "startTime": "2024-01-15T18:00:00Z",
-            "endTime": "2024-01-15T18:10:00Z",
-            "players": [
-                { "playerId": 3, "name": "PlayerThree", "score": 2, "status": "loser" },
-                { "playerId": 4, "name": "PlayerFour", "score": 3, "status": "winner" }
-            ]
-        },
-        {
-            "matchId": 103,
-            "round": "PlayerOne vs PlayerFour",
-            "startTime": "2024-01-15T18:20:00Z",
-            "endTime": "2024-01-15T18:30:00Z",
-            "players": [
-                { "playerId": 1, "name": "PlayerOne", "score": 2, "status": "loser" },
-                { "playerId": 4, "name": "PlayerFour", "score": 3, "status": "winner" }
-            ]
-        }
-    ]
-};
+
 
 class TournamentPage {
-	async template(pathParam,queryParam) {
+    async template(pathParam, queryParam) {
         const [_, path, gameId] = pathParam;
-        const type = localStorage.getItem("matchType") === "PVP" ? 'match':'tournament';
-		const data = await getTournamentData(type,gameId);  // JSON 데이터를 인스턴스 변수로 관리
-		const navicontainer = createElement("div",{},NavBar()); 
+        const checkmatch = localStorage.getItem("matchType");
+        if (checkmatch === "null") window.router.navigate(`/home`, false);
+        const type = checkmatch === "PVP" ? 'match' : 'tournament';
+        const data = await getTournamentData(type, gameId);
+        const navicontainer = createElement("div", {}, NavBar());
         const header = this.createHeader(data);
         const resultsSection = this.createResultsSection(data);
-		const main = createElement("div", { id: "tournament-results",class: "container py-5" }, header,resultsSection);
-		const total = createElement("div", {},navicontainer,main); 
-        return total;  // 전체 컨테이너 반환
+        const main = createElement("div", { id: "tournament-results", class: "container py-5" }, header, resultsSection);
+        const total = createElement("div", {}, navicontainer, main);
+
+        const originalReplaceState = history.replaceState;
+        const urlChangeEvent = new Event('urlchange');
+
+        history.replaceState = function (...args) {
+            originalReplaceState.apply(this, args);
+            window.dispatchEvent(urlChangeEvent);
+        };
+
+        window.addEventListener('urlchange', (event) => {
+            window.removeEventListener('urlchange');
+            localStorage.setItem("matchType", "null");
+            localStorage.setItem("tid", "null");
+            window.router.navigate(`/home`, false);
+        });
+        return total;
     }
 
     createHeader(data) {
         return createElement(
             "header",
             { class: "text-center mb-5" },
-            createElement("h1", { class: "text-3xl font-bold mb-3" }, `${localStorage.getItem("matchType")} Results`),
+            createElement("h1", { id: "header-title", class: "text-3xl font-bold mb-3", "data-i18n": "results_title" }, `${localStorage.getItem("matchType")} ${i18next.t('results')}`),
             createElement(
                 "div",
                 { class: "text-gray-600" },
-                createElement("span", {}, `Start Date: ${new Date(data.startDate).toLocaleDateString()}`),
+                createElement("span", { id: "start-date", "data-i18n": "start_date" }, `${i18next.t('start_date')}: ${new Date(data.startDate).toLocaleString('ko-KR', { timeZone: 'UTC' })}`),
                 " - ",
-                createElement("span", {}, `End Date: ${new Date(data.endDate).toLocaleDateString()}`)
+                createElement("span", { id: "end-date", "data-i18n": "end_date" }, `${i18next.t('end_date')}: ${new Date(data.endDate).toLocaleString('ko-KR', { timeZone: 'UTC' })}`)
             )
         );
     }
 
     createResultsSection(data) {
-        const resultsSection = createElement("section", { class: "row g-4" });
+        const resultsSection = createElement("section", { id: "results-section", class: "row g-4" });
 
         data.matches.forEach((match) => {
             const [player1, player2] = match.players;
@@ -89,13 +68,13 @@ class TournamentPage {
                     createElement(
                         "div",
                         { class: "d-flex justify-content-between align-items-center" },
-                        this.createPlayerInfo(player1, player1.status === 'winner'? true:false),
+                        this.createPlayerInfo(player1, player1.status === 'winner' ? true : false),
                         createElement(
                             "div",
                             { class: "text-center mx-4 align-self-center font-mono" },
                             createElement("span", { class: "font-bold text-lg" }, `${player1.score} - ${player2.score}`)
                         ),
-                        this.createPlayerInfo(player2, player2.status === 'winner'? true:false)
+                        this.createPlayerInfo(player2, player2.status === 'winner' ? true : false)
                     )
                 )
             );
@@ -110,11 +89,11 @@ class TournamentPage {
         return createElement(
             "div",
             { class: `d-flex ${isLeft ? "" : "text-end"} flex-column` },
-            createElement("p", { class: "font-semibold mb-0" }, player.name),
+            createElement("p", { class: "font-semibold mb-0", "data-i18n": "player_name" }, player.name),
             createElement(
                 "p",
-                { class: `mb-0 ${player.status === "winner" ? "text-success" : "text-muted"}` },
-                player.status === "winner" ? "Winner" : "loser"
+                { class: `mb-0 ${player.status === "winner" ? "text-success" : "text-muted"}`, "data-i18n": player.status === "winner" ? "winner" : "loser" },
+                i18next.t(player.status === "winner" ? "winner" : "loser")
             )
         );
     }

@@ -1,16 +1,17 @@
-async function getCurrentUserGameStatus() {
-	const url = "/api/v1/users/me/current-game/";
+async function PvpRequest(option) {
+	const url = "/api/v1/matchmaking/pve/";
 	try {
 		const response = await fetch(url, {
-			method: "GET",
+			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
+			body: JSON.stringify({
+				"multi_ball": option,
+			}),
 			credentials: "include"
 		});
-		console.log(response)
-		if (response.status !== 200) {
-			if(response.status === 204) return null
+		if (response.status !== 201) {
 			throw new Error("Not OK! Status Code: ", response.status);
 		}
 		console.log('response: ', response);
@@ -22,4 +23,4 @@ async function getCurrentUserGameStatus() {
 	}
 };
 
-export default getCurrentUserGameStatus;
+export default PvpRequest;

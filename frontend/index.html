@@ -10,26 +10,53 @@
             crossorigin="anonymous" />
         <link rel="stylesheet" href="/src/css/style.css" />
         <title>ft_transcendence</title>
-    </head>
+        <!-- Google Translate -->
+        <script type="text/javascript">
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    includedLanguages: 'fr,de,es,zh', // Add your desired languages here
+                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 'google_translate_element');
+            }
+        </script>
+        <script type="text/javascript"
+            src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        <style>
+            #google_translate_element {
+                display: none;
+                /* Hides the dropdown box */
+            }
+        </style>
+        </head>
 
     <body>
+        <div id="translate-container">
+            <div id="google_translate_element"></div>
+        </div>
+            <!-- Rest of the content -->
         <div id="app"></div>
         <script type="importmap">
-        {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/examples/jsm/loaders/FontLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/FontLoader.js",
-            "three/examples/jsm/geometries/TextGeometry.js": "https://unpkg.com/three@0.160.0/examples/jsm/geometries/TextGeometry.js",
-            "socket.io-client": "https://cdn.jsdelivr.net/npm/socket.io-client@4.6.1/dist/socket.io.esm.min.js"
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                    "three/examples/jsm/loaders/FontLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/FontLoader.js",
+                    "three/examples/jsm/geometries/TextGeometry.js": "https://unpkg.com/three@0.160.0/examples/jsm/geometries/TextGeometry.js",
+                    "socket.io-client": "https://cdn.jsdelivr.net/npm/socket.io-client@4.6.1/dist/socket.io.esm.min.js"
+                }
             }
-        }
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.8.15/i18next.min.js"></script>
-        <script type="module" src="/src/index.js"></script>
-        <script src="./src/Components/StatusChecker.js"></script>
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"
+            integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+        <script type="module" src="/src/index.js"></script>
+        <script src="./src/Components/StatusChecker.js"></script>
     </body>
 </html>

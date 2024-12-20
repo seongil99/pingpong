@@ -2,7 +2,7 @@ import createElement from "../Utils/createElement.js";
 import LanguageDropdown from "./LangugeDropDown.js";
 
 const logout = async () => {
-    const url = "https://localhost/api/v1/users/accounts/logout/";
+    const url = "/api/v1/users/accounts/logout/";
     const csrftoken = document.cookie
         .split("; ")
         .find((row) => row.startsWith("csrftoken="))
@@ -84,7 +84,7 @@ function NavBar() {
     const navBarListBox = createElement(
         "div",
         {
-            class: "justify-content-end collapse navbar-collapse",
+            class: "collapse navbar-collapse justify-content-end",
             id: "navbarTogglerDemo02",
         },
         navBarList

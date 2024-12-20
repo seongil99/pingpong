@@ -5,6 +5,7 @@
     padding: 2rem;
     max-width: 960px;
     margin: 0 auto;
+    overflow-y: scroll;
 }
 
 /* 헤더 스타일 */

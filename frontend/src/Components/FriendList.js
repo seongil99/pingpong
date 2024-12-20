@@ -26,8 +26,9 @@ async function FriendList() {
                     }
                 },
             },
+            id:"addFriend-btn"
         },
-        "친구추가"
+    i18next.t("addFriend-btn")
     );
     const friendsManagement = createElement(
         "div",

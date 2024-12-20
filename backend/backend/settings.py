@@ -243,7 +243,7 @@ CORS_ORIGIN_WHITELIST = [
     "https://localhost:3000",
     "https://localhost",
     "https://127.0.0.1",
-    "ws://localhost",
+    "https://10.19.204.195", "ws://localhost",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -254,11 +254,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost:3000",
     "https://localhost",
     "https://127.0.0.1",
+    "https://10.19.204.195:3000",
+    "https://10.19.204.195:8000",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://localhost",
     "https://127.0.0.1",
+    "https://10.19.204.195",
 ]
 
 SESSION_COOKIE_SAMESITE = "None"

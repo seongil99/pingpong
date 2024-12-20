@@ -217,7 +217,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_and_get_tournament_id(self, players):
         with transaction.atomic():
-            tournament = Tournament.objects.create()
+            tournament = Tournament.objects.create(status="ongoing")
             for p in players:
                 TournamentParticipant.objects.create(user=p, tournament=tournament)
             TournamentMatchParticipants.objects.create(
@@ -293,6 +293,7 @@ class TournamentMatchingConsumer(AsyncJsonWebsocketConsumer):
                 tournament_round=round_num,
                 user_1=user1,
                 user_2=user2,
+                status="ongoing",
             )
 
 
