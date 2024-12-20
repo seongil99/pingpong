@@ -3,7 +3,9 @@ import NavBar from "../Components/Navbar.js";
 import FetchUserData from "../Controller/Profile/FetchUserData.js";
 import FetchOneUserGameHistory from "../Controller/Profile/FetchOneUserGameHistory.js";
 import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
+import ScoreChart from "../Components/ScoreChart.js";
 import calculateDiffDate from "../Utils/calculateDiffDate.js";
+import changeTimeToDate from "../Utils/changeTimeToDate.js";
 
 class ProfilePage {
     #offset;
@@ -81,7 +83,7 @@ class ProfilePage {
             ? `PVP: ${mode["pvp"]}, 토너먼트: ${mode["tournament"]}`
             : "게임을 한 판 이상하면 가장 많이 한 모드 정보를 볼 수 있습니다.";
         const totalPlaytime = this.#gameTotalCount
-            ? `${calculateDiffDate(session.started_at, session.ended_at)}`
+            ? `${calculateDiffDate(changeTimeToDate(playtime))}`
             : "게임을 한 판 이상하면 플레이타임 정보를 볼 수 있습니다.";
         // ** user game count
         const gameCount = createElement(
@@ -228,20 +230,23 @@ class ProfilePage {
         return item;
     };
 
-    #HistorySessionMatchDashboard = async (session) => {
-        const scoreTitle = createElement("h3", {class: "history-session-match-dashboard-title"}, "Score");
-        const scoreChart = ScoreChart(session);
-        const rallyTitle = createElement("h3", {class: "history-session-match-dashboard-title"}, "Rally");
-        const RallyChart = RallyChart(session);
-        const match = createElement("div", {class: "history-session-match-dashboard"}, scoreTitle, scoreChart, rallyTitle, rallyChart);
+    #HistorySessionMatchDashboard = async (session, sessionIdx) => {
+        const scoreTitle = createElement(
+            "h3",
+            { class: "history-session-match-dashboard-title" },
+            "Score"
+        );
+        const scoreChart = await ScoreChart(session, sessionIdx);
+        const match = createElement(
+            "div",
+            { class: "history-session-match-dashboard" },
+            scoreTitle,
+            scoreChart
+        );
         return match;
-    }
+    };
 
-    #HistorySessionTournamentDashboard = async (session) => {
-        
-    }
-
-    #handlePageClick = (number, curLimit) => {
+    #handlePageClick = (number, curLimit, userid) => {
         const list = document.getElementById("history-description-list");
         list.removeChild(list.lastChild);
         list.appendChild(this.#pageListContent[number - 1]);
@@ -258,7 +263,7 @@ class ProfilePage {
         );
     };
 
-    #PageButton = (number, curLimit) => {
+    #PageButton = (number, curLimit, userid) => {
         const pageButton = createElement(
             "button",
             {
@@ -267,7 +272,7 @@ class ProfilePage {
                 limit: `${curLimit}`,
                 events: {
                     click: () => {
-                        this.#handlePageClick(number, curLimit);
+                        this.#handlePageClick(number, curLimit, userid);
                     },
                 },
             },
@@ -276,7 +281,7 @@ class ProfilePage {
         return pageButton;
     };
 
-    #Pagination = async () => {
+    #Pagination = async (userHistoryData, userid) => {
         const totalPage = this.#limit
             ? Math.floor(this.#gameTotalCount / this.#limit) +
               (this.#gameTotalCount % this.#limit)
@@ -286,21 +291,22 @@ class ProfilePage {
                 this.#gameTotalCount - this.#limit * (i - 1) >= this.#limit
                     ? this.#limit
                     : this.#gameTotalCount - this.#limit * i;
-            this.#pageNumBtns.push(this.#PageButton(i, curLimit));
+            this.#pageNumBtns.push(this.#PageButton(i, curLimit, userid));
             const content = createElement(
                 "div",
                 { class: "history-description-pagination-content-list" },
                 []
             );
             for (let j = 0; j < curLimit; j++) {
-                const sessionData = userHistoryData.results[this.#limit * (i - 1) + j];
-                const session = await this.#HistorySession(
-                    sessionData,
-                    userid
-                );
-                let sessionDashboard;
-                if (session.gamemode === "PVP") sessionDashboard = await this.#HistorySessionMatchDashboard(session);
-                else sessionDashboard = await this.#HistorySessionTournamentDashboard(session);
+                const sessionData =
+                    userHistoryData.results[this.#limit * (i - 1) + j];
+                const session = await this.#HistorySession(sessionData, userid);
+                let sessionDashboard = "";
+                if (sessionData.gamemode === "PVP")
+                    sessionDashboard = await this.#HistorySessionMatchDashboard(
+                        sessionData,
+                        j
+                    );
                 content.appendChild(session);
                 content.appendChild(sessionDashboard);
             }
