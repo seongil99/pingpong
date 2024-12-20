@@ -269,7 +269,7 @@ class GameIO(socketio.AsyncNamespace):
             logger.info("Game ended: %s", game_id)
             await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
             if game.tournament_id is not None:
-                server.update_tournament(game, user.id)
+                await server.update_tournament(game, user.id)
             else:
                 await server.save_game_history(game_state, user.id)
         except Exception as e:
