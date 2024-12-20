@@ -44,13 +44,32 @@ const tournamentData = {
 class TournamentPage {
 	async template(pathParam,queryParam) {
         const [_, path, gameId] = pathParam;
-        const type = localStorage.getItem("matchType") === "PVP" ? 'match':'tournament';
+        const checkmatch = localStorage.getItem("matchType");
+        if(checkmatch === "null") window.router.navigate(`/home`, false);
+        const type = checkmatch === "PVP" ? 'match':'tournament';
 		const data = await getTournamentData(type,gameId);  // JSON 데이터를 인스턴스 변수로 관리
-		const navicontainer = createElement("div",{},NavBar()); 
+        const navicontainer = createElement("div", {}, NavBar());
         const header = this.createHeader(data);
         const resultsSection = this.createResultsSection(data);
-		const main = createElement("div", { id: "tournament-results",class: "container py-5" }, header,resultsSection);
-		const total = createElement("div", {},navicontainer,main); 
+        const main = createElement("div", { id: "tournament-results", class: "container py-5" }, header, resultsSection);
+        const total = createElement("div", {}, navicontainer, main);
+        const originalReplaceState = history.replaceState;
+
+        // 커스텀 이벤트 트리거
+        const urlChangeEvent = new Event('urlchange');
+
+        history.replaceState = function (...args) {
+            originalReplaceState.apply(this, args);
+            window.dispatchEvent(urlChangeEvent);
+        };
+
+        window.addEventListener('urlchange', (event) => {
+            window.removeEventListener('urlchange');
+            localStorage.setItem("matchType", "null");
+            window.router.navigate(`/home`, false);
+            console.log("URL changed:", window.location.href);
+            console.log("State data:", event.state);  // 히스토리 API 상태 데이터
+        });
         return total;  // 전체 컨테이너 반환
     }
 
