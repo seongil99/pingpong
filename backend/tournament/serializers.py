@@ -91,7 +91,7 @@ class PingPongHistorySessionSerializer(serializers.ModelSerializer):
         model = PingPongHistory
         fields = [
             'id', 'started_at', 'ended_at', 'user1_score', 'user2_score',
-            'gamemode', 'longest_rally', 'average_rally', 'user1', 'user2', 'winner', 'rounds'
+            'gamemode', 'longest_rally', 'average_rally', 'user1', 'user2', 'winner', 'rounds', 'tournament_id'
         ]
 
 

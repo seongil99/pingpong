@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 
+from tournament.serializers import PingPongHistorySessionSerializer
 from .models import PingPongHistory
 from .serializers import PingPongHistorySerializer, PingPongEventSerializer, EventSerializer
 from ingame.enums import GameMode
@@ -116,3 +117,18 @@ class PingPongHistoryViewByHistoryId(APIView):
         history = get_object_or_404(PingPongHistory, id=history_id)
         serializer = PingPongHistorySerializer(history)
         return Response(serializer.data)
+
+
+@extend_schema(
+    responses=PingPongHistorySessionSerializer,
+)
+class PingPongHistoryDetailView(APIView):
+    def get(self, request, history_id):
+        # pk를 기반으로 Tournament 객체를 가져옴
+        try:
+            history = PingPongHistory.objects.get(id=history_id)
+        except PingPongHistory.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PingPongHistorySessionSerializer(history)
+        return Response(serializer.data, status=status.HTTP_200_OK)

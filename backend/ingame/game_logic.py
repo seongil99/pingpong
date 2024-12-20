@@ -15,6 +15,7 @@ from tournament.models import TournamentGame, TournamentMatchParticipants
 from django.db import transaction
 from asgiref.sync import sync_to_async
 from .enums import Game, GameMode
+from tournament.models import Tournament
 
 logger = logging.getLogger("django")
 
@@ -213,6 +214,11 @@ class PingPongServer:
         await game_state["start_timer"].cancel()
         logger.info("start game loop")
         game_id = game_state["game_id"]
+        game = await GameHistory.objects.aget(id=game_id)
+        if game.tournament_id is not None:
+            Tournament.objects.filter(id=game.tournament_id).update(
+                status="ongoing", current_round=1
+            )
         InMemoryGameState.reset_current_round(game_state)
         task_list = []
         if game_state["is_single_player"] is True:
@@ -340,10 +346,10 @@ class PingPongServer:
                 or ball.position["y"] > 20
             ):
                 if ball.position["z"] > 0:
-                    game_state["render_data"]["score"]["playerTwo"] += 1
+                    game_state["render_data"]["score"]["playerOne"] += 1
                     ball.summon_direction = True
                 else:
-                    game_state["render_data"]["score"]["playerOne"] += 1
+                    game_state["render_data"]["score"]["playerTwo"] += 1
                     ball.summon_direction = False
                 self._save_round_data(game_state)
 
@@ -549,9 +555,10 @@ class PingPongServer:
         game_id = game_state["game_id"]
         if game.tournament_id is not None:
             await self.update_tournament(game, winner_id)
-
+        logger.info("Game finished: %s", game_id)
+        logger.info("is_single_player: %s", game_state["is_single_player"])
         if game_state["is_single_player"] is False:
-            self._clean_one_v_one_game(game_id)
+            await self._clean_one_v_one_game(game_id)
 
         self.game_state.delete_game_state(game_id)
 
