@@ -90,10 +90,12 @@ class TournamentDetailView(APIView):
         serializer = TournamentSessionSerializer(tournament)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-@extend_schema()
+@extend_schema(
+    tags=["test"],
+)
 class TestTournamentEventDataCreateView(APIView):
 
-    def get(self, request):
+    def post(self, request):
         from django.contrib.auth import get_user_model
         from .utils import create_tournament, start_round, finish_game, check_and_advance_round
         from .models import TournamentGame

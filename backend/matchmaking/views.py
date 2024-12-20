@@ -12,7 +12,27 @@ User = get_user_model()
 @extend_schema(tags=["matchmaking"])
 class PVEMatchView(APIView):
     @extend_schema(
-        responses={"200": {"history_id": "int"}},
+        responses=
+        {
+            201: {
+                "type": "object",
+                "properties": {
+                    "game_id": {
+                        "type": "integer",
+                        "description": "Game ID for the PVE match"
+                    }
+                }
+            },
+            400: {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Error message"
+                    }
+                }
+            }
+        }
     )
     @transaction.atomic
     def post(self, request):
@@ -22,9 +42,9 @@ class PVEMatchView(APIView):
             history.save()
             history_id = history.id
             data = {
-                "history_id": history_id,
+                "game_id": history_id,
             }
-            return Response(data, status=status.HTTP_200_OK)
+            return Response(data, status=status.HTTP_201_CREATED)
         except Exception as e:
             data = {
                 "error": str(e),
