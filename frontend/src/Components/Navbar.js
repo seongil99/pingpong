@@ -84,7 +84,7 @@ function NavBar() {
     const navBarListBox = createElement(
         "div",
         {
-            class: "justify-content-end collapse navbar-collapse",
+            class: "collapse navbar-collapse justify-content-end",
             id: "navbarTogglerDemo02",
         },
         navBarList

@@ -40,7 +40,7 @@ function createLanguageDropdown() {
     const dropdownMenu = createElement(
         "ul",
         {
-            class: "dropdown-menu dropdown-menu-dark",
+            class: "dropdown-menu dropdown-menu-end dropdown-menu-dark",
             "aria-labelledby": "navbarLanguageMenu",
         },
         ...dropdownItems
@@ -84,7 +84,7 @@ function createLanguageDropdown() {
 
     const navbarContainer = createElement(
         "div",
-        { class: "container-fluid" },
+        { class: "container-fluid w-auto" },
         navbarToggler,
         navbarCollapse
     );
@@ -94,7 +94,7 @@ function createLanguageDropdown() {
 
 // 언어 변경 함수
 function changeLanguage(lang) {
-	i18next.changeLanguage(lang);
+    i18next.changeLanguage(lang);
 }
 
 // 실행
