@@ -4,7 +4,6 @@ import ButtonToMatch from "../Components/ButtonToMatch.js";
 import WaitMatchBox from "../Components/WaitMacthBox.js";
 import GetCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
 import getCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
-import PvpRequest from "../Controller/Game/PvpRequest.js";
 class MatchingPage {
     constructor(pathParam, queryParam) {
         this.socket = null;
@@ -36,8 +35,6 @@ class MatchingPage {
             this.matchType = type;
             if(this.matchType ==="Pve"){
                 localStorage.setItem("matchType", this.matchType);
-                this.gameId = await PvpRequest();
-                localStorage.setItem("gameId", this.gameId.game_id);
                 this.toggleButtonContainer();
                 this.waitModal = this.createWaitModal(waitMessage);
                 this.handleMatchFound("Pve");

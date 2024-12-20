@@ -1,6 +1,6 @@
 // Bootstrap Form Switch 생성 함수
 import createElement from "../Utils/createElement.js";
-
+import PvpRequest from "../Controller/Game/PvpRequest.js";
 function createFormSwitch(socket) {
     // 스위치 입력 생성
     const formCheckInput = createElement("input", {
@@ -41,7 +41,7 @@ function createFormSwitch(socket) {
             type: "button",
             class: "btn btn-primary mt-3",
             events: {
-                click: () => {
+                click: async () => {
                     console.log("this is secondcallback ",  "hiddenvalue", localStorage.getItem("matchType"));
                     if (socket) {
                         let message = null;
@@ -69,7 +69,7 @@ function createFormSwitch(socket) {
                     else {
                         if (localStorage.getItem("matchType") === "Pve") {
                             console.log("distroyd");
-                            const gameId = localStorage.getItem("gameId");
+                            const gameId = await PvpRequest(formCheckInput.checked);
                             const modalElement = document.getElementById("modal-tartget");
                             // 부모 엘리먼트를 얻기
                             const parentElement = modalElement.parentElement;

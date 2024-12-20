@@ -1,10 +1,13 @@
-async function PvpRequest() {
+async function PvpRequest(option) {
 	const url = "/api/v1/matchmaking/pve/";
 	try {
 		const response = await fetch(url, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				body: JSON.stringify({
+					"multi_ball": option,
+				}),
 			},
 			credentials: "include"
 		});
