@@ -127,6 +127,8 @@ class Router {
         const routeModule = await routeLoader();
         const routeInstance = new routeModule.default(); // 동적으로 로드한 모듈 인스턴스화
         const app = document.querySelector("#app");
+        if(routeInstance.dispose)
+            routeInstance.dispose();
         app.innerHTML = "";
         const dynamicData =
             routeMethod === "dynamic" ? pathname.split("/") : null;

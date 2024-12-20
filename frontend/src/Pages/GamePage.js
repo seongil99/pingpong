@@ -7,9 +7,12 @@ import GameCommandInfo from "../Components/GameCommand.js";
 import { io } from "socket.io-client";
 
 class GamePage {
+    constructor(){
+        this.socket = null;
+    }
     async template(pathParam, queryParam) {
         const [_, path, gameId] = pathParam;
-        const socket = io('/api/game', {
+        this.socket = io('/api/game', {
             reconnection: false,
             transports: ['websocket'],
             debug: true,
@@ -29,6 +32,12 @@ class GamePage {
         // 컨테이너에 모달, 네비게이션 바, main 요소 추가
         const container = createElement("div", {}, main);
         return container; // 컨테이너를 반환
+    }
+    dispose() {
+        if (this.socket && this.socket.connected) {
+          this.socket.disconnect();
+          this.socket = null;
+        }
     }
 }
 
