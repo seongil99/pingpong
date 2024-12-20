@@ -1,7 +1,3 @@
-#settings-main {
-    overflow-y: scroll;
-}
-
 .settings-btn {
     font-size: 16px;
     padding: 7px 10px;
@@ -14,6 +10,16 @@
 
 .settings-title {
     font-size: 32px;
+}
+
+.settings-sections {
+    padding: 20px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .settings-section-title {
@@ -29,6 +35,7 @@
 
 .settings-profile-btn-set {
     padding-top: 15px;
+    display: flex;
 }
 
 .settings-profile-btn-set > button {
@@ -42,12 +49,9 @@
     align-items: center;
 }
 
-.settings-section {
-    padding: 10px;
-}
-
-.settings-profile-image {
+#edit-profile-image-form {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
@@ -66,7 +70,7 @@
     color: white;
 }
 
-#img-input {
+#edit-profile-img-input {
     display: none;
 }
 
@@ -86,3 +90,4 @@
 .input-box > input {
     width: 200px;
 }
+
