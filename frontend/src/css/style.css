@@ -15,8 +15,7 @@
 @import "ProfilePage/ProfilePage.css";
 
 @import "MatchingPage/MatchingPage.css";
-
-@import "common.css";
-
 @import "Game/Command.module.css";
 @import "Result/TournamentResult.module.css";
+
+@import "common.css";

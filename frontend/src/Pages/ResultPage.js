@@ -27,6 +27,7 @@ class TournamentPage {
         window.addEventListener('urlchange', (event) => {
             window.removeEventListener('urlchange');
             localStorage.setItem("matchType", "null");
+            localStorage.setItem("tid", "null");
             window.router.navigate(`/home`, false);
         });
         return total;

@@ -5,10 +5,10 @@ async function PvpRequest(option) {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				body: JSON.stringify({
-					"multi_ball": option,
-				}),
 			},
+			body: JSON.stringify({
+				"multi_ball": option,
+			}),
 			credentials: "include"
 		});
 		if (response.status !== 201) {

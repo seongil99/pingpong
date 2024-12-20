@@ -648,8 +648,10 @@ class PingPongClient {
                             const result = await getCurrentUserGameStatus(); // 비동기 실행
                             if (this.socket && this.socket.connected)
                                 this.socket.disconnect();
-                            if(!result)
-                                window.router.navigate(`/result/${result.tournament_id}`, false);
+                            if(!result){
+                                const tournament_id = localStorage.getItem("tid");
+                                window.router.navigate(`/result/${tournament_id}`, false);
+                            }
                             else
                                 window.router.navigate(`/playing/${result.game_id}`, false);
                             console.log(result);

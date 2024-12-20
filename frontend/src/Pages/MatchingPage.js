@@ -119,6 +119,7 @@ class MatchingPage {
         localStorage.setItem("matchType", this.matchType);
         localStorage.setItem("gameId", data.game_id ? data.game_id : data.tournament_id);
         this.tournamentId = data.tournament_id;
+        localStorage.setItem("tid",this.tournamentId);
         console.log(`Match found! gameId: ${localStorage.getItem("gameId")}`);
 
     }
