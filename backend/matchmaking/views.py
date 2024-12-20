@@ -1,4 +1,5 @@
 from django.db import transaction
+from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,7 +9,11 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+@extend_schema(tags=["matchmaking"])
 class PVEMatchView(APIView):
+    @extend_schema(
+        responses={"200": {"history_id": "int"}},
+    )
     @transaction.atomic
     def post(self, request):
         user = request.user
@@ -17,7 +22,6 @@ class PVEMatchView(APIView):
             history.save()
             history_id = history.id
             data = {
-                "status"
                 "history_id": history_id,
             }
             return Response(data, status=status.HTTP_200_OK)
