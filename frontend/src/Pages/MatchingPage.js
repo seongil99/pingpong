@@ -97,8 +97,8 @@ class MatchingPage {
             "match_found": () => this.handleMatchFound(data),
             "match_canceled": () => console.log("Match canceled."),
             "error": () => console.error(`Error: ${data.message}`),
-            "set_option": () => this.navigateToGame(),
-            "already_joined": () => this.navigateToGame(),
+            "set_option": () => this.navigateToGame(data.game_id),
+            "already_joined": () => this.navigateToGame(data.game_id),
             "match_waiting": () => console.log("waiting for tounament"),
         };
 
@@ -124,15 +124,19 @@ class MatchingPage {
 
     }
 
-    async navigateToGame() {
+    async navigateToGame(gameId) {
         if(this.waitModal){
             console.log("modal distroryd");
             this.waitModal.modal.dispose();
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
         }
-        const gameId = await getCurrentUserGameStatus();
-        window.router.navigate(`/playing/${gameId.game_id}`, false);
+        const serverdgameId = await getCurrentUserGameStatus();
+        if(!serverdgameId)
+            window.router.navigate(`/playing/${gameId}`, false);
+        else
+            window.router.navigate(`/playing/${serverdgameId.game_id}`, false);
+
     }
     requestMatch() {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {

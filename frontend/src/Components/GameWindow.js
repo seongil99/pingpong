@@ -386,6 +386,16 @@ class PingPongClient {
     this.setupSocketListeners();
   }
   makeWindow() {
+    // 기존 pushState와 replaceState를 보존
+    window.addEventListener('beforeunload', () => {
+        if (this.socket && this.socket.connected) {
+          console.log("this.socket: ", this.socket);
+          this.socket.close();
+          this.socket = null;
+          console.log("disconnect socket at game url change!");
+        }
+    });
+
     return createElement(
       "div",
       { class: "gameWindow" },
@@ -741,8 +751,8 @@ class PingPongClient {
         this.playerOne.material.color.setHex(this.initColor[0]);
         this.playerTwo.material.color.setHex(this.initColor[1]);
       } else if (gameState.type === "gameWait") {
-        this.gameStart = WAIT_GAME;
       } else if (gameState.type === "sound") {
+        this.gameStart = WAIT_GAME;
         if (gameState.sound == "ballToWall" && this.audio.sounds.has("ball")) {
           this.audio.play("nomal_ball");
         }
