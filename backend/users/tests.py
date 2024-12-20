@@ -154,25 +154,6 @@ class MyCurrentGameViewTest(APITestCase):
         self.assertEqual(data['status'], 'ongoing')
         self.assertEqual(data['round'], 1)
 
-    def test_normal_game_pending(self):
-        normal_game = PingPongHistory(
-            user1=self.user,
-            user2=None,
-            winner=None,
-            ended_at=None,
-            gamemode='1v1'
-        )
-        normal_game.save()
-
-        self.authenticate()
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
-        self.assertEqual(data['game_id'], normal_game.id)
-        self.assertEqual(data['tournament_id'], None)
-        self.assertEqual(data['status'], 'pending')
-        self.assertEqual(data['round'], None)
-
     def test_normal_game_ongoing(self):
         normal_game = PingPongHistory(
             user1=self.user,

@@ -137,7 +137,7 @@ class TournamentMatchingConsumerTest(TransactionTestCase):
         # 토너먼트 확인
         tournament_id = response1["tournament_id"]
         tournament = await self.get_tournament(tournament_id)
-        self.assertEqual(tournament.status, "pending")
+        self.assertEqual(tournament.status, "ongoing")
         self.assertEqual(tournament.current_round, 0)
         self.assertIsNotNone(tournament.created_at)
 

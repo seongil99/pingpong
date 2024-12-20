@@ -167,7 +167,7 @@ class MyCurrentGameView(APIView):
             .first()
         )
 
-        if normal_game and normal_game.ended_at is not None:
+        if normal_game and normal_game.ended_at is None:
             status = "ongoing"
             data = {
                 "game_id": normal_game.id,
