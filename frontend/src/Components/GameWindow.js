@@ -624,6 +624,9 @@ class PingPongClient {
                     const id = setInterval(async () => {
                         if (count > 10) {
                             clearInterval(id); // 반복 실행 중지
+                            if (this.socket && this.socket.connected)
+                                this.socket.disconnect();
+                            window.router.navigate(`/home`, false);
                             return;
                         }
                         try {

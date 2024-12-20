@@ -1,7 +1,7 @@
 // Bootstrap Form Switch 생성 함수
 import createElement from "../Utils/createElement.js";
 
-function createFormSwitch(socket, tournamentId) {
+function createFormSwitch(socket, modal) {
     // 스위치 입력 생성
     const formCheckInput = createElement("input", {
         class: "form-check-input",
@@ -54,7 +54,8 @@ function createFormSwitch(socket, tournamentId) {
                                 game_id: localStorage.getItem("gameId"),
                                 multi_ball: formCheckInput.checked,
                             };
-                        } else {
+                        } 
+                        else {
                             message = {
                                 type: "set_option",
                                 tournament_id: localStorage.getItem("gameId"),
@@ -64,6 +65,17 @@ function createFormSwitch(socket, tournamentId) {
                         }
                         console.log("before sned message ", message);
                         socket.send(JSON.stringify(message));
+                    }
+                    else{
+                        if(localStorage.getItem("matchType") === "Pve"){
+                            if(modal){
+                                console.log("modal distroryd");
+                                modal.modal.dispose();
+                                console.log(modal);
+                                this.container.removeChild(modal.element);
+                                modal = null;
+                            }
+                        }
                     }
                 }, // 콜백 실행
             },
