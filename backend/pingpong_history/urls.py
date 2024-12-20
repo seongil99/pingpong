@@ -4,6 +4,7 @@ from .views import (
     PingPongHistoryViewByHistoryId,
     PingPongHistoryAllViewByUserId,
     EventView,
+    PingPongHistoryDetailView,
 )
 
 pingpong_history_list = PingPongHistoryAllView.as_view(
@@ -26,4 +27,5 @@ urlpatterns = [
         name="pingpong-history-by-id",
     ),
     path("event/<str:event_type>/<int:id_value>/", EventView.as_view(), name="event-detail"),
+    path("<int:history_id>/detail/", PingPongHistoryDetailView.as_view(), name="pingpong-history-detail"),
 ]
