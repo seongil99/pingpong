@@ -152,13 +152,8 @@ class MyCurrentGameView(APIView):
             ended_at__isnull=True
         ).order_by("-started_at").first()
 
-        if normal_game:
-            # status 결정
-            if normal_game.user2 is None:
-                status = "pending"
-            else:
-                status = "ongoing"
-
+        if normal_game and normal_game.ended_at is not None:
+            status = "ongoing"
             data = {
                 "game_id": normal_game.id,
                 "tournament_id": None,

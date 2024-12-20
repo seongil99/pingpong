@@ -215,11 +215,11 @@ class PingPongServer:
         logger.info("start game loop")
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)
-        tournament_id = await self._get_tournament_id(game) 
+        tournament_id = await self._get_tournament_id(game)
         if tournament_id is not None:
-            await Tournament.objects.filter(tournament_id=tournament_id.tournament_id).aupdate(
-                status="ongoing", current_round=1
-            )
+            await Tournament.objects.filter(
+                tournament_id=tournament_id.tournament_id
+            ).aupdate(status="ongoing", current_round=1)
         InMemoryGameState.reset_current_round(game_state)
         task_list = []
         if game_state["is_single_player"] is True:
@@ -360,10 +360,10 @@ class PingPongServer:
 
                 # Check if someone has won the set
                 if (
-                    game_state["render_data"]["score"]["playerOne"] < 1
-                    # < Game.GAME_SET_SCORE.value
-                    and game_state["render_data"]["score"]["playerTwo"] < 1
-                    # < Game.GAME_SET_SCORE.value
+                    game_state["render_data"]["score"]["playerOne"]
+                    < Game.GAME_SET_SCORE.value
+                    and game_state["render_data"]["score"]["playerTwo"]
+                    < Game.GAME_SET_SCORE.value
                 ):
                     if game_state["gameStart"]:
                         await socket_send(game_state["render_data"], "score", game_id)
