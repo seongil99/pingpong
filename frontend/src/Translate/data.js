@@ -19,7 +19,19 @@ const data = {
 			"key_toggle_music_label": "Toggle Music",
 			"key_toggle_music_key": "M",
 			"key_power_shot_label": "Power Shot",
-			"key_power_shot_key": "SPACE"
+			"key_power_shot_key": "SPACE",
+			"results_title": "Results",
+            "start_date": "Start Date",
+            "end_date": "End Date",
+            "player_name": "Player Name",
+            "winner": "Winner",
+            "loser": "Loser",
+            "nav_home": "Home",
+            "nav_profile": "Profile",
+            "nav_settings": "Settings",
+            "nav_logout": "Log out",
+            "logout_success": "Logout successful",
+            "logout_fail": "Logout failed"
 		}
 	},
 	"한국어": {
@@ -42,7 +54,19 @@ const data = {
 			"key_toggle_music_label": "브금온오프",
 			"key_toggle_music_key": "M",
 			"key_power_shot_label": "파워샷",
-			"key_power_shot_key": "SPACE"
+			"key_power_shot_key": "SPACE",
+			"results_title": "결과",
+            "start_date": "시작 날짜",
+            "end_date": "종료 날짜",
+            "player_name": "플레이어 이름",
+            "winner": "승자",
+            "loser": "패자",
+            "nav_home": "홈",
+            "nav_profile": "프로필",
+            "nav_settings": "설정",
+            "nav_logout": "로그아웃",
+            "logout_success": "로그아웃 성공",
+            "logout_fail": "로그아웃 실패"
 		}
 	},
 	"日本語": {
@@ -65,7 +89,19 @@ const data = {
 			"key_toggle_music_label": "音楽のオン/オフ",
 			"key_toggle_music_key": "M",
 			"key_power_shot_label": "パワーショット",
-			"key_power_shot_key": "SPACE"
+			"key_power_shot_key": "SPACE",
+			"results_title": "結果",
+            "start_date": "開始日",
+            "end_date": "終了日",
+            "player_name": "プレイヤー名",
+            "winner": "勝者",
+            "loser": "敗者",
+            "nav_home": "ホーム",
+            "nav_profile": "プロフィール",
+            "nav_settings": "設定",
+            "nav_logout": "ログアウト",
+            "logout_success": "ログアウト成功",
+            "logout_fail": "ログアウト失敗"
 		}
 	}
 };
