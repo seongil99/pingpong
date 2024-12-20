@@ -151,6 +151,7 @@ class MyCurrentGameView(APIView):
             winner__isnull=True,
             ended_at__isnull=True
         ).order_by("-started_at").first()
+<<<<<<< Updated upstream
 
         if normal_game:
             # status 결정
@@ -158,7 +159,11 @@ class MyCurrentGameView(APIView):
                 status = "pending"
             else:
                 status = "ongoing"
+=======
+>>>>>>> Stashed changes
 
+        if normal_game and normal_game.ended_at is not None:
+            status = "ongoing"
             data = {
                 "game_id": normal_game.id,
                 "tournament_id": None,
