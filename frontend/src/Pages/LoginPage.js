@@ -8,48 +8,48 @@ class LoginPage {
         const user = ["test1", "test2", "test3", "test4"];
 
         // 로그인 버튼 생성
-        const loginBtn = createElement(
-            "button",
-            {
-                events: {
-                    click: async () => {
-                        user.map(async v=>{
-                            const url = "/api/v1/users/accounts/registration/"; // 로그인 API 서버 URL
-                            // POST 요청을 통해 서버에 로그인 요청을 보냄
-                            try {
-                                const response = await fetch(url, {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        // 'X-CSRFToken': csrfToken,
-                                    },
-                                    credentials: "include",
-                                    body: JSON.stringify({
-                                        "username": v,
-                                        "email": `${v}@example.com`,
-                                        "password1": "wert2345",
-                                        "password2": "wert2345"
-                                      }),
-                                });
+        // const loginBtn = createElement(
+        //     "button",
+        //     {
+        //         events: {
+        //             click: async () => {
+        //                 user.map(async v=>{
+        //                     const url = "/api/v1/users/accounts/registration/"; // 로그인 API 서버 URL
+        //                     // POST 요청을 통해 서버에 로그인 요청을 보냄
+        //                     try {
+        //                         const response = await fetch(url, {
+        //                             method: "POST",
+        //                             headers: {
+        //                                 "Content-Type": "application/json",
+        //                                 // 'X-CSRFToken': csrfToken,
+        //                             },
+        //                             credentials: "include",
+        //                             body: JSON.stringify({
+        //                                 "username": v,
+        //                                 "email": `${v}@example.com`,
+        //                                 "password1": "wert2345",
+        //                                 "password2": "wert2345"
+        //                               }),
+        //                         });
     
-                                if (!response.ok) {
-                                    throw new Error(`Error: ${response.status}`);
-                                }
+        //                         if (!response.ok) {
+        //                             throw new Error(`Error: ${response.status}`);
+        //                         }
     
-                                const data = await response.json();
-                                // updateNavBarLogin();
-                                console.dir(response);
-                                console.dir(data);
-                            } catch (error) {
-                                console.error("Login failed:", error);
-                                alert("Login failed!");
-                            }
-                        })
-                    }
-                },
-            },
-            "create Users"
-        );
+        //                         const data = await response.json();
+        //                         // updateNavBarLogin();
+        //                         console.dir(response);
+        //                         console.dir(data);
+        //                     } catch (error) {
+        //                         console.error("Login failed:", error);
+        //                         alert("Login failed!");
+        //                     }
+        //                 })
+        //             }
+        //         },
+        //     },
+        //     "create Users"
+        // );
 
         const fortytwoLoginBtn = createElement(
             "button",
@@ -72,7 +72,6 @@ class LoginPage {
             { class: "login-container" },
             title,
             fortytwoLoginBtn,
-            loginBtn
         );
 
         user.map(v => {
