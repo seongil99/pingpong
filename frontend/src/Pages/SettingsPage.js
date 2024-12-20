@@ -10,20 +10,22 @@ class SettingsPage {
         const title1 = createElement(
             "h1",
             { class: "settings-section-title" },
-            "Edit Profile"
+            i18next.t("settings_edit_profile")
         );
         const title2 = createElement(
             "h1",
             { class: "settings-section-title" },
-            "2FA Enable/Disable"
+            i18next.t("settings_2fa")
         );
         const title3 = createElement(
             "h1",
             { class: "settings-section-title" },
-            "Inactive Account"
+            i18next.t("settings_inactive_account")
         );
+
         const editProfileForm = await ProfileForm();
         const mfaStatus = await detectMfaEnabled();
+
         const twoAuthBtn = createElement(
             "button",
             {
@@ -44,8 +46,13 @@ class SettingsPage {
                     },
                 },
             },
-            `2FA ${mfaStatus.status === "enabled" ? "Disable" : "Enable"}`
+            i18next.t(
+                mfaStatus.status === "enabled"
+                    ? "settings_disable_2fa"
+                    : "settings_enable_2fa"
+            )
         );
+
         const inactiveBtn = createElement(
             "button",
             {
@@ -64,8 +71,9 @@ class SettingsPage {
                     },
                 },
             },
-            "Inactive"
+            i18next.t("settings_inactive")
         );
+
         const editProfileSection = createElement(
             "section",
             { class: "settings-section" },
@@ -84,13 +92,15 @@ class SettingsPage {
             title3,
             inactiveBtn
         );
+
         const modal = await SettingsModal();
         const navBar = NavBar();
         const settingsTitle = createElement(
             "h1",
             { class: "settings-title" },
-            "Settings"
+            i18next.t("settings_title")
         );
+
         const sections = createElement(
             "div",
             { class: "settings-sections" },
@@ -98,12 +108,14 @@ class SettingsPage {
             twoAuthSection,
             inactivateAccountSection
         );
+
         const main = createElement(
             "main",
             { id: "settings-main" },
             settingsTitle,
             sections
         );
+
         const container = createElement("div", {}, modal, navBar, main);
         return container;
     }

@@ -27,7 +27,7 @@ class TournamentPage {
         window.addEventListener('urlchange', (event) => {
             window.removeEventListener('urlchange');
             localStorage.setItem("matchType", "null");
-            localStorage.setItem("tid", "null");
+            localStorage.setItem("", "null");
             window.router.navigate(`/home`, false);
         });
         return total;
@@ -41,9 +41,9 @@ class TournamentPage {
             createElement(
                 "div",
                 { class: "text-gray-600" },
-                createElement("span", { id: "start-date", "data-i18n": "start_date" }, `${i18next.t('start_date')}: ${new Date(data.startDate).toLocaleDateString()}`),
+                createElement("span", { id: "start-date", "data-i18n": "start_date" }, `${i18next.t('start_date')}: ${new Date(data.startDate).toLocaleString('ko-KR', { timeZone: 'UTC' })}`),
                 " - ",
-                createElement("span", { id: "end-date", "data-i18n": "end_date" }, `${i18next.t('end_date')}: ${new Date(data.endDate).toLocaleDateString()}`)
+                createElement("span", { id: "end-date", "data-i18n": "end_date" }, `${i18next.t('end_date')}: ${new Date(data.endDate).toLocaleString('ko-KR', { timeZone: 'UTC' })}`)
             )
         );
     }

@@ -1,25 +1,41 @@
 import createElement from "../Utils/createElement.js";
 import DeleteFriend from "../Controller/Friends/DeleteFriends.js";
 
-// User Data Parameter 생략. API 연동 작업 때 추가 예정. 만약 추가하면 삭제 처리도 충분히 쉽게 할 수 있음
+// 친구 정보를 표시하는 컴포넌트
 const FriendInfos = (dataRef) => {
     console.log("dataRef: ", dataRef);
-    const friendImg = createElement(
-        "img",
-        { src: "", alt: "", class: "friend-img" },
-        ""
+
+    // 친구 프로필 이미지 생성
+    const friendImg = createElement("img", {
+        src: dataRef.friend_user.avatar || "/src/Components/profile.png",
+        alt: "Friend Avatar",
+        class: "friend-img",
+    });
+
+    // 친구 ID, 이메일, 상태 정보 생성
+    const userId = createElement(
+        "h3",
+        {
+            class: "user-id",
+            "data-iduser": dataRef.id || "",
+            "data-id": dataRef.friend_user.id || "",
+        },
+        dataRef.friend_user.username || "jonghopa"
     );
 
-    const userId = createElement("h3", { class: "user-id" }, "");
-    const userEmail = createElement("span", { class: "user-email" }, "");
-    const userStatus = createElement("span", { class: "user-status" }, "");
-    friendImg.src = dataRef.friend_user.avatar ||"/src/Components/profile.png";
-    userId.textContent = dataRef.friend_user.username || "jonghopa";
-    userId.dataset.iduser = dataRef.id || null;
-    userId.dataset.id = dataRef.friend_user.id || null;
-    userEmail.textContent =  dataRef.friend_user.username || "jonghopa@student.42seoul.kr";
-    userStatus.textContent = dataRef.friend_user.is_online ? "✅" : "❌";
-    // status.textContent = user.is_online ? "✅" : "❌";
+    const userEmail = createElement(
+        "span",
+        { class: "user-email" },
+        dataRef.friend_user.username || "jonghopa@student.42seoul.kr"
+    );
+
+    const userStatus = createElement(
+        "span",
+        { class: "user-status" },
+        dataRef.friend_user.is_online ? "✅" : "❌"
+    );
+
+    // 친구 정보 상자 생성
     const infoBox = createElement(
         "div",
         { class: "friend-info" },
@@ -27,6 +43,8 @@ const FriendInfos = (dataRef) => {
         userEmail,
         userStatus
     );
+
+    // 삭제 버튼 생성
     const deleteBtn = createElement(
         "button",
         {
@@ -34,26 +52,32 @@ const FriendInfos = (dataRef) => {
             events: {
                 click: async (event) => {
                     const friendList = document.getElementById("friends-list");
-                    const id = event.target.parentElement.querySelector('h3');
-                    console.log('friendList: ', friendList);
-                    console.log('삭제',event.target.parentElement);
-                    await DeleteFriend(id.dataset.iduser);
-                    friendList.removeChild(event.target.parentElement);
+                    const id = event.target.parentElement.querySelector(".user-id");
+
+                    console.log("삭제 요청 ID:", id.dataset.iduser);
+
+                    try {
+                        await DeleteFriend(id.dataset.iduser);
+                        friendList.removeChild(event.target.parentElement);
+                        console.log("삭제 성공");
+                    } catch (error) {
+                        console.error("삭제 실패:", error);
+                    }
                 },
             },
         },
         "삭제"
     );
+
+    // 친구 정보 컨테이너 생성
     const friendInfos = createElement(
         "div",
         {
-            class: `friend-infos`,
+            class: "friend-infos",
             events: {
-                // 클릭 시 해당 유저 프로필 페이지 이동
                 click: (event) => {
-                    console.log(event.target.classList);
-                    if(event.target.classList.contains("friend-delete-btn")) return;
-                    console.log('삭제아님',event);
+                    if (event.target.classList.contains("friend-delete-btn")) return;
+                    console.log("프로필 클릭:", event.target);
                 },
             },
         },
@@ -61,6 +85,7 @@ const FriendInfos = (dataRef) => {
         infoBox,
         deleteBtn
     );
+
     return friendInfos;
 };
 

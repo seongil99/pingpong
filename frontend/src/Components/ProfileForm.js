@@ -89,6 +89,7 @@ const ProfileForm = async () => {
         "button",
         {
             class: "settings-btn profile-edit-btn",
+            id : "btn_edit",
             events: {
                 click: (event) => {
                     document
@@ -103,12 +104,13 @@ const ProfileForm = async () => {
                 },
             },
         },
-        "Edit"
+        i18next.t("btn_edit")
     );
     const saveBtn = createElement(
         "button",
         {
             class: "settings-btn profile-save-btn hide",
+            id: "save-id-btn",
             events: {
                 click: async (event) => {
                     document
@@ -131,12 +133,13 @@ const ProfileForm = async () => {
                 },
             },
         },
-        "Save"
+        i18next.t("save-id-btn")
     );
     const cancelBtn = createElement(
         "button",
         {
             class: "settings-btn profile-cancel-btn hide",
+            id : "btn_cancel",
             events: {
                 click: (event) => {
                     document
@@ -150,7 +153,7 @@ const ProfileForm = async () => {
                 },
             },
         },
-        "Cancel"
+        i18next.t("btn_cancel")
     );
     const profileBtnSet = createElement(
         "div",

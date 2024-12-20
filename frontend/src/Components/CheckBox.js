@@ -40,6 +40,7 @@ function createFormSwitch(socket) {
         {
             type: "button",
             class: "btn btn-primary mt-3",
+            id : "process-btn",
             events: {
                 click: async () => {
                     console.log("this is secondcallback ",  "hiddenvalue", localStorage.getItem("matchType"));
@@ -87,7 +88,7 @@ function createFormSwitch(socket) {
                 }, // 콜백 실행
             },
         },
-        "진행"
+        i18next.t("process-btn")
     );
 
     // 스위치 컨테이너 생성

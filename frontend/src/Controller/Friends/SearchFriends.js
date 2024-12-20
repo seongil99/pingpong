@@ -7,7 +7,7 @@ async function searchFriends(params) {
         }
     })).json();
     response.results.map(v=>{
-        v.avatar = v.avatar.replace("http://", "https://");
+        v.avatar = String(v.avatar).replace("http://", "https://");
     })
     console.log('response: ', response);
     return response.results;
