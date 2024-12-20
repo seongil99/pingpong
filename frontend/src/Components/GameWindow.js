@@ -303,7 +303,8 @@ class AudioManager {
 
   // 모든 사운드 정지
   cleanup() {
-    this.stop();
+    const soundList = ["ball","bgm","power_ball","nomal_ball"];
+    soundList.map(v=>this.stop(v));
     this.sounds.forEach(({ sound }) => {
       sound.disconnect();
       sound.buffer = null;
