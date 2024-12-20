@@ -24,6 +24,8 @@ from backend.sio import sio
 from backend.dbAsync import get_game_users
 from .background_timer import CancellableTimer
 
+from asgiref.sync import sync_to_async
+
 logger = logging.getLogger("django")
 
 server = PingPongServer(sio)
@@ -268,7 +270,7 @@ class GameIO(socketio.AsyncNamespace):
             game = await PingPongHistory.objects.aget(id=game_id)
             logger.info("Game ended: %s", game_id)
             await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
-            if game.tournament_id is not None:
+            if self._get_tournament_id(game) is not None:
                 await server.update_tournament(game, user.id)
             else:
                 await server.save_game_history(game_state, user.id)
@@ -277,3 +279,7 @@ class GameIO(socketio.AsyncNamespace):
         game_state_db.delete_game_state(game_id)
         logger.info("Game state deleted")
         return
+
+    @sync_to_async
+    def _get_tournament_id(self, game):
+        return game.tournament_id
