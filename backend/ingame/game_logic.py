@@ -212,7 +212,8 @@ class PingPongServer:
         """
         게임 루프를 asyncio background task 로 실행
         """
-        await game_state["start_timer"].cancel()
+        if game_state["is_single_player"] is False:
+            await game_state["start_timer"].cancel()
         logger.info("start game loop")
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)

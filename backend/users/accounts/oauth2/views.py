@@ -45,7 +45,7 @@ class FortyTwoLogin(
     SocialLoginView
 ):  # if you want to use Authorization Code Grant, use this
     adapter_class = FortyTwoAdapter
-    callback_url = "https://localhost/oauth2/redirect"
+    callback_url = "https://10.19.204.195/oauth2/redirect"
     client_class = OAuth2Client
 
     def post(self, request, *args, **kwargs):
