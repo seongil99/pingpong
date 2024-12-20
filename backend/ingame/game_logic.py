@@ -570,6 +570,16 @@ class PingPongServer:
 
         self.game_state.delete_game_state(game_id)
 
+        # 게임 종료 후 클라이언트 소켓 연결 종료
+        user1, user2 = await get_game_users(game_id)
+        sid1 = user_to_socket[user1.id]
+        del user_to_socket[user1.id]
+        self.sio.disconnect(sid1)
+        if user2.id != -1:
+            sid2 = user_to_socket[user2.id]
+            self.sio.disconnect(sid2)
+            del user_to_socket[user2.id]
+
         # clean up tasks
         task_list = gameid_to_task[game_id]
         for task in task_list:
@@ -654,6 +664,16 @@ class PingPongServer:
         await self.save_game_history(game_state, None)
         await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)
+
+        user1, user2 = await get_game_users(game_id)
+        sid1 = user_to_socket[user1.id]
+        del user_to_socket[user1.id]
+        self.sio.disconnect(sid1)
+        if user2.id != -1:
+            sid2 = user_to_socket[user2.id]
+            self.sio.disconnect(sid2)
+            del user_to_socket[user2.id]
+
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel("abandoned cancel")
