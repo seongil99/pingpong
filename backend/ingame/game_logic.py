@@ -215,8 +215,9 @@ class PingPongServer:
         logger.info("start game loop")
         game_id = game_state["game_id"]
         game = await GameHistory.objects.aget(id=game_id)
-        if game.tournament_id is not None:
-            Tournament.objects.filter(id=game.tournament_id).update(
+        tournament_id = await self._get_tournament_id(game) 
+        if tournament_id is not None:
+            await Tournament.objects.filter(tournament_id=tournament_id.tournament_id).aupdate(
                 status="ongoing", current_round=1
             )
         InMemoryGameState.reset_current_round(game_state)
@@ -245,6 +246,10 @@ class PingPongServer:
             )
         )
         gameid_to_task[game_id] = task_list
+
+    @sync_to_async
+    def _get_tournament_id(self, game):
+        return game.tournament_id
 
     def _add_ball(self, game_state) -> None:
         ball_num = len(game_state["render_data"]["balls"])
@@ -553,7 +558,8 @@ class PingPongServer:
         await self.save_game_history(game_state, winner_id)
         game = await GameHistory.objects.aget(id=game_state["game_id"])
         game_id = game_state["game_id"]
-        if game.tournament_id is not None:
+        tournament = await self._get_tournament_id(game)
+        if tournament is not None:
             await self.update_tournament(game, winner_id)
         logger.info("Game finished: %s", game_id)
         logger.info("is_single_player: %s", game_state["is_single_player"])
@@ -579,47 +585,57 @@ class PingPongServer:
         )
         with transaction.atomic():
             tournament_game = TournamentGame.objects.get(game_id=game.id)
-            tournament = game.tournament
+            tournament = game.tournament_id
+            winner = User.objects.get(id=winner_id)
             if tournament_game.tournament_round == 1:
                 if tournament.round_1_winner is None:
-                    tournament.round_1_winner.id = winner_id
+                    tournament.round_1_winner = winner
                 else:
-                    tournament.round_2_winner.id = winner_id
+                    tournament.round_2_winner = winner
                     tournament.current_round = 2
+                    tournament_game.tournament_round = 2
             else:
-                tournament.round_3_winner.id = winner_id
+                tournament.round_3_winner = winner
                 tournament.status = "finished"
             tournament.save()
+            tournament_game.save()
 
         tournament_participants = TournamentMatchParticipants.objects.get(
             tournament_id=tournament
         )
         # 다음 라운드 생성
-        if tournament.status != "finished":
-            if tournament.current_round == 1:
-                user1 = tournament_participants.user3_id
-                user2 = tournament_participants.user4_id
-                next_round = 1
-            else:
-                next_round = 2
-                user1 = tournament.round_1_winner
-                user2 = tournament.round_2_winner
-            game_id = GameHistory.objects.create(
-                user1_id=user1,
-                user2_id=user2,
-                gamemode=GameMode.PVP.value,
-                tournament_id=tournament,
-                option_selector_id=tournament_participants.user1_id,
-                multi_ball=tournament.multi_ball,
-            )
-            TournamentGame.objects.create(
-                game_id=game_id,
-                tournament_id=tournament,
-                tournament_round=next_round,
-                user_1_id=tournament.round_1_winner,
-                user_2_id=tournament.round_2_winner,
-                choices="ongoing",
-            )
+        if tournament.status == "finished":
+            return
+        if tournament.current_round == 1:
+            user1 = tournament_participants.user3
+            user2 = tournament_participants.user4
+            logger.info("round 1")
+            logger.info("user: %s", user1)
+            logger.info("user: %s", user2)
+            next_round = 1
+        else:
+            next_round = 2
+            user1 = tournament.round_1_winner
+            user2 = tournament.round_2_winner
+            logger.info("round 2")
+            logger.info("user: %s", user1)
+            logger.info("user: %s", user2)
+        game_id = GameHistory.objects.create(
+            user1=user1,
+            user2=user2,
+            gamemode=GameMode.PVP.value,
+            tournament_id=tournament,
+            option_selector_id=tournament_participants.user1_id,
+            multi_ball=tournament.multi_ball,
+        )
+        TournamentGame.objects.create(
+            game_id=game_id,
+            tournament_id=tournament,
+            tournament_round=next_round,
+            user_1=user1,
+            user_2=user2,
+            status="ongoing",
+        )
 
     async def _clean_one_v_one_game(self, game_id):
         try:

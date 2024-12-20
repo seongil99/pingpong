@@ -122,11 +122,11 @@ class MyCurrentGameView(APIView):
             Q(user1=user) | Q(user2=user) | Q(user3=user) | Q(user4=user)
         ).values_list("tournament_id", flat=True)
 
-        # 진행 중인 토너먼트 가져오기
+        # 진행 중인 가장 최근 토너먼트 가져오기
         tournament = Tournament.objects.filter(
             tournament_id__in=tournament_ids,
             status__in=["pending", "ongoing"]
-        ).first()
+        ).order_by("-created_at").first()
 
         if tournament:
             # 해당 토너먼트의 가장 최근 TournamentGame
@@ -150,7 +150,7 @@ class MyCurrentGameView(APIView):
             (Q(user1=user) | Q(user2=user)),
             winner__isnull=True,
             ended_at__isnull=True
-        ).first()
+        ).order_by("-started_at").first()
 
         if normal_game:
             # status 결정
