@@ -52,6 +52,7 @@ class GameIO(socketio.AsyncNamespace):
 
         # 여러 소켓이 하나의 유저로 들어올 경우
         if user.id in user_to_socket:
+            logger.info("multiple user socket")
             sio.disconnect(sid)
             return
 
@@ -62,7 +63,7 @@ class GameIO(socketio.AsyncNamespace):
             int(game_id)
             game: PingPongHistory = await PingPongHistory.objects.aget(id=game_id)
         except Exception as e:
-            logger.error(str(e), exc_info=True)
+            # logger.error(str(e), exc_info=True)
             sio.disconnect(sid)
             return
 
@@ -80,6 +81,7 @@ class GameIO(socketio.AsyncNamespace):
                 await self._process_authorization(sid, game_id, game.gamemode, game)
                 is False
             ):
+                logger.info("Authorization failed: %s", game_id)
                 return
         except OneVersusOneGame.DoesNotExist:
             logger.info("Game not found: %s", game_id)

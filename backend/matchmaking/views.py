@@ -38,7 +38,7 @@ class PVEMatchView(APIView):
     def post(self, request):
         user = request.user
         try:
-            history = PingPongHistory.objects.create(user_1=user, gamemode="PVE")
+            history = PingPongHistory.objects.create(user1=user, gamemode="PVE")
             history.save()
             history_id = history.id
             data = {
