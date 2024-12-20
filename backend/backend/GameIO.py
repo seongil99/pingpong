@@ -121,7 +121,7 @@ class GameIO(socketio.AsyncNamespace):
         """
         클라이언트로부터 키 입력을 받았을 때 호출되는 메서드
         """
-        # logger.info("Key press: %s", data)
+        logger.info("Key press: %s", data)
         if sid not in user_to_game:
             logger.info("User not in game: %s", sid)
             return
@@ -131,7 +131,7 @@ class GameIO(socketio.AsyncNamespace):
             return
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
-        # logger.info("user_id: %s", user.id)
+        logger.info("user_id: %s", user.id)
 
         if data["key"] != " ":
             await server.handle_player_input(

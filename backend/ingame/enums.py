@@ -7,7 +7,7 @@ class Game(Enum):
     GAME_WIDTH = 100
     GAME_LENGTH = 250
     CONST_BALL_SPEED = 50
-    GAME_SET_SCORE = 5
+    GAME_SET_SCORE = 1
     AI_RATE = 10
     BALL_SIZE = 5
     PADDLE_WIDTH = 20

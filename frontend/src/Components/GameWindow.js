@@ -616,16 +616,26 @@ class PingPongClient {
                 // 게임 종료시 이벤트 리스너 제거
                 window.removeEventListener('keydown', this.onKeyDownBound, false);
                 window.removeEventListener('keyup', this.onKeyUpBound, false);
-                if (localStorage.getItem("matchType") === "PVP")
-                    window.router.navigate(`/result/${this.gameId}`, false);
+                if (localStorage.getItem("matchType") !== "tournament") {
+                    if (this.socket && this.socket.connected) {
+                        console.log('this.socket: ', this.socket);
+                        console.log("disconnect socket");
+                        this.socket.disconnect();
+                        this.socket = null;
+                    }
+                    if(localStorage.getItem("matchType") === "Pve")
+                        window.router.navigate(`/home`, false);
+                    else
+                        window.router.navigate(`/result/${this.gameId}`, false);
+                }
                 else {
                     const pathname = window.location.pathname;
                     let count = 0;
                     const id = setInterval(async () => {
                         if (count > 10) {
                             clearInterval(id); // 반복 실행 중지
-                            console.log('this.socket: ', this.socket);
                             if (this.socket && this.socket.connected){
+                                console.log('this.socket: ', this.socket);
                                 console.log("disconnect socket");
                                 this.socket.disconnect();
                                 this.socket = null;
