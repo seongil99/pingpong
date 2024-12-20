@@ -19,8 +19,9 @@ class MatchingPage {
 
         const pvpButton = this.createMatchButton("PVP", "waiting for PvP User");
         const tournamentButton = this.createMatchButton("tournament", "waiting for Tournament Users");
+        const pveButton = this.createMatchButton("pve", "waiting for start");
 
-        const buttonContainer = createElement("div", { id: "match-btn-container" }, pvpButton, tournamentButton);
+        const buttonContainer = createElement("div", { id: "match-btn-container" }, pvpButton, tournamentButton, pveButton);
 
         const main = createElement("main", { id: "matching-main" }, title, buttonContainer);
         this.container = createElement("div", {}, navBar, main);
@@ -112,6 +113,7 @@ class MatchingPage {
 
     async navigateToGame(gameId) {
         if(this.waitModal){
+            console.log("modal distroryd");
             this.waitModal.modal.dispose();
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;
