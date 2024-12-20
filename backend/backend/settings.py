@@ -243,7 +243,7 @@ CORS_ORIGIN_WHITELIST = [
     "https://localhost:3000",
     "https://localhost",
     "https://127.0.0.1",
-    "https://10.19.204.195" "ws://localhost",
+    "https://10.19.204.195", "ws://localhost",
 ]
 
 CORS_ALLOWED_ORIGINS = [
