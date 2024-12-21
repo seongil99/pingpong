@@ -268,7 +268,7 @@ class GameIO(socketio.AsyncNamespace):
 
     async def _single_player_end(self, game_id, sid):
         game_state = game_state_db.load_game_state(game_id)
-        await socket_send(game_state["render_data"], "gameEnd", game_id)
+        await socket_send(game_state["render_data"], "gameEnd", game_id, "")
         logger.info("Single player game end")
         game_state["gameStart"] = False
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
