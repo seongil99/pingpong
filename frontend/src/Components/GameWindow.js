@@ -305,6 +305,7 @@ class AudioManager {
   cleanup() {
     // this.stopAll();
     this.sounds.forEach(({ sound }) => {
+      sound.stop();
       sound.disconnect();
       sound.buffer = null;
     });
