@@ -5,6 +5,8 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from .error import Errors
 
+import logging
+logger = logging.getLogger('django')
 
 class MFAStatusSerializer(serializers.Serializer):
     """
@@ -37,10 +39,12 @@ class OTPVerificationSerializer(serializers.Serializer):
         # Find the device linked to the user
         device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
         if not device:
+            logger.info('no device')
             raise ValidationError(Errors.NO_DEVICE.value)
 
         # Verify OTP code
         if not device.verify_token(value):
+            logger.info('invalid otp')
             raise ValidationError(Errors.INVALID_OTP.value)
 
         return value

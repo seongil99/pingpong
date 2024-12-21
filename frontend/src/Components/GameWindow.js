@@ -722,3 +722,4 @@ export default class PingPongClient {
     this.renderer.render(this.scene, this.camera);
   }
 }
+

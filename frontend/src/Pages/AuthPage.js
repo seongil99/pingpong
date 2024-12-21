@@ -1,5 +1,5 @@
 import createElement from "../Utils/createElement.js";
-import AuthForm from "../Components/AuthForm.js";
+import AuthForm from "../Components/Auth/AuthForm.js";
 
 class AuthPage {
     template(pathParam, queryParam) {
