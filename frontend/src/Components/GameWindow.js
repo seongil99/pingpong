@@ -322,10 +322,6 @@ class AudioManager {
 
     this.initialized = false;
   }
-
-  dispose() {
-    this.cleanup();
-  }
 }
 
 class PingPongClient {
@@ -385,6 +381,10 @@ class PingPongClient {
     this.animate();
     this.setupSocketListeners();
   }
+  dispose() {
+    this.audio.cleanup();
+  }
+
   makeWindow() {
     // 기존 pushState와 replaceState를 보존
     return createElement(
