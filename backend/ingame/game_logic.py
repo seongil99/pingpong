@@ -187,10 +187,10 @@ class PingPongServer:
             game_state["playerOneId"] = user.id
             return
         user1, user2 = await get_game_users(game_id)
-        if user1.id == user.id:
+        if user1 and user1.id == user.id:
             game_state["render_data"]["oneName"] = user1.username
             game_state["playerOneId"] = user1.id
-        elif user2.id == user.id:
+        elif user2 and user2.id == user.id:
             game_state["render_data"]["twoName"] = user2.username
             game_state["playerTwoId"] = user2.id
 
@@ -576,7 +576,7 @@ class PingPongServer:
             sid1 = user_to_socket[user1.id]
             self.sio.disconnect(sid1)
             del user_to_socket[user1.id]
-        if user2.id != -1 and user2.id in user_to_socket:
+        if user2 is not None and user2.id in user_to_socket:
             sid2 = user_to_socket[user2.id]
             self.sio.disconnect(sid2)
             del user_to_socket[user2.id]
