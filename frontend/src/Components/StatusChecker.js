@@ -1,4 +1,5 @@
 window.onlineSocket = null;
+let heartbeatInterval = null;
 
 function connect() {
   if (
@@ -15,7 +16,7 @@ function connect() {
     console.log("Connected");
 
     // Send heartbeat every 5 seconds
-    setInterval(() => {
+    heartbeatInterval = setInterval(() => {
       if (window.onlineSocket.readyState === WebSocket.OPEN) {
         window.onlineSocket.send(JSON.stringify({ type: "heartbeat" }));
         console.log("Heartbeat sent");
@@ -25,6 +26,12 @@ function connect() {
 
   window.onlineSocket.onclose = () => {
     console.log("Disconnected. Retrying...");
+    
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+
     setTimeout(() => {
       connect();
     }, retryDelay);
