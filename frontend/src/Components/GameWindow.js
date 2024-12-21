@@ -326,6 +326,7 @@ class AudioManager {
 
 class PingPongClient {
   constructor(socket, gameId) {
+    console.log("init pingpongclient");
     this.gameId = gameId;
     this.socket = socket;
     this.scene = new THREE.Scene();
@@ -728,8 +729,9 @@ class PingPongClient {
         this.playerOne.material.color.setHex(this.initColor[0]);
         this.playerTwo.material.color.setHex(this.initColor[1]);
       } else if (gameState.type === "gameWait") {
-      } else if (gameState.type === "sound") {
+        console.log("gameWait", gameState);
         this.gameStart = WAIT_GAME;
+      } else if (gameState.type === "sound") {
         if (gameState.sound == "ballToWall" && this.audio.sounds.has("ball")) {
           this.audio.play("nomal_ball");
         }
