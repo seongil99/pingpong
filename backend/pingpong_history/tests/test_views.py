@@ -203,7 +203,6 @@ class EventViewTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        print(data)
         self.assertEqual(data['id'], self.match_history.id)
         self.assertEqual(data['user1'], self.user1.id)
         self.assertEqual(data['user2'], self.user2.id)

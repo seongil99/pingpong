@@ -13,6 +13,9 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
     """
     온라인 상태 소켓 컨슈머
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = None
 
     async def connect(self):
         """
