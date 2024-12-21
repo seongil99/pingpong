@@ -303,7 +303,7 @@ class AudioManager {
 
   // 모든 사운드 정지
   cleanup() {
-    this.stopAll();
+    // this.stopAll();
     this.sounds.forEach(({ sound }) => {
       sound.disconnect();
       sound.buffer = null;

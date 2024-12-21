@@ -208,6 +208,8 @@ class GameIO(socketio.AsyncNamespace):
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         user_1, user_2 = await get_game_users(game_id)
+        if user is None:
+            return False
         if user in [user_1, user_2]:
             logger.info("Authorization success: %s in %s", user, game_id)
             return True
@@ -276,7 +278,7 @@ class GameIO(socketio.AsyncNamespace):
             logger.info("Game ended: %s", game_id)
             await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
             if self._get_tournament_id(game) is not None:
-                await server.update_tournament(game, user.id)
+                await sync_to_async(server.update_tournament)(game, user.id)
             else:
                 await server.save_game_history(game_state, user.id)
         except Exception as e:

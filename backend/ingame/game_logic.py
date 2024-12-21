@@ -562,7 +562,7 @@ class PingPongServer:
         game_id = game_state["game_id"]
         tournament = await self._get_tournament_id(game)
         if tournament is not None:
-            await self.update_tournament(game, winner_id)
+            await sync_to_async(self.update_tournament)(game, winner_id)
         logger.info("Game finished: %s", game_id)
         logger.info("is_single_player: %s", game_state["is_single_player"])
         if game_state["is_single_player"] is False:
@@ -572,10 +572,11 @@ class PingPongServer:
 
         # 게임 종료 후 클라이언트 소켓 연결 종료
         user1, user2 = await get_game_users(game_id)
-        sid1 = user_to_socket[user1.id]
-        del user_to_socket[user1.id]
-        self.sio.disconnect(sid1)
-        if user2.id != -1:
+        if user1.id in user_to_socket:
+            sid1 = user_to_socket[user1.id]
+            self.sio.disconnect(sid1)
+            del user_to_socket[user1.id]
+        if user2.id != -1 and user2.id in user_to_socket:
             sid2 = user_to_socket[user2.id]
             self.sio.disconnect(sid2)
             del user_to_socket[user2.id]
@@ -584,8 +585,8 @@ class PingPongServer:
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel()
+        del gameid_to_task[game_id]
 
-    @sync_to_async
     def update_tournament(self, game, winner_id):
         TournamentGame.objects.filter(game_id=game.id).update(
             status="finished",
@@ -599,25 +600,25 @@ class PingPongServer:
             tournament_game = TournamentGame.objects.get(game_id=game.id)
             tournament = game.tournament_id
             winner = None if winner_id is None else User.objects.get(id=winner_id)
-            if tournament_game.tournament_round == 1:
-                if tournament.round_1_winner is None:
-                    tournament.round_1_winner = winner
-                else:
-                    tournament.round_2_winner = winner
-                    tournament.current_round = 2
-                    tournament_game.tournament_round = 2
+            if tournament.current_game == 1:
+                tournament.round_1_winner = winner
+            elif tournament.current_game == 2:
+                tournament.round_2_winner = winner
+                tournament.current_round = 2
+                tournament_game.tournament_round = 2
             else:
                 tournament.round_3_winner = winner
                 tournament.status = "finished"
+            tournament.current_game += 1
             tournament.save()
             tournament_game.save()
 
+        if tournament.status == "finished":
+            return
         tournament_participants = TournamentMatchParticipants.objects.get(
             tournament_id=tournament
         )
         # 다음 라운드 생성
-        if tournament.status == "finished":
-            return
         if tournament.current_round == 1:
             user1 = tournament_participants.user3
             user2 = tournament_participants.user4
@@ -650,6 +651,9 @@ class PingPongServer:
             user_2=user2,
             status="ongoing",
         )
+        if user1 is None or user2 is None:
+            winner = user1 if user1 is not None else user2
+            self.update_tournament(game_id, winner.id)
 
     async def _clean_one_v_one_game(self, game_id):
         try:
@@ -664,19 +668,23 @@ class PingPongServer:
         logger.info("Abandoned game: %s", game_state["game_id"])
         game_id = game_state["game_id"]
         await self.save_game_history(game_state, None)
-        await self.update_tournament(game_state, None)
+        game = await GameHistory.objects.aget(id=game_id)
+        if self._get_tournament_id(game) is not None:
+            await sync_to_async(self.update_tournament)(game, None)
         await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)
 
         user1, user2 = await get_game_users(game_id)
-        sid1 = user_to_socket[user1.id]
-        del user_to_socket[user1.id]
-        self.sio.disconnect(sid1)
-        if user2.id != -1:
+        if user1.id in user_to_socket:
+            sid1 = user_to_socket[user1.id]
+            self.sio.disconnect(sid1)
+            del user_to_socket[user1.id]
+        if user2.id != -1 and user2.id in user_to_socket:
             sid2 = user_to_socket[user2.id]
             self.sio.disconnect(sid2)
             del user_to_socket[user2.id]
 
+        await socket_send(game_state["render_data"], "gameEnd", game_id)
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel("abandoned cancel")
@@ -712,6 +720,8 @@ class PingPongServer:
         await game.asave()
 
     def _update_wins_losses(self, game, winner):
+        if game.ended_at is None:
+            winner = None
         asyncio.gather(
             self._update_wins_losses(game.user1, winner),
             self._update_wins_losses(game.user2, winner),
@@ -734,6 +744,10 @@ class PingPongServer:
         await PingPongRound.objects.abulk_create(round_list)
 
     async def _update_wins_losses(self, user, winner):
+        if winner is None:
+            user.loses += 1
+            await user.asave()
+            return
         if user == winner:
             user.wins += 1
         else:
