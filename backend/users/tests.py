@@ -47,6 +47,29 @@ class MyProfileTestCase(APITestCase):
         self.assertEqual(response.data['is_verified'], data['is_verified'])
         self.assertIsNotNone(response.data['avatar'])
 
+    def test_update_my_profile_with_same_username(self):
+        data = {
+            'username': 'seonyoon',
+        }
+        response = self.client.patch(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], data['username'])
+
+    def test_update_my_profile_with_taken_username(self):
+        User.objects.create_user(
+            email="test1@test.com",
+            password="1234",
+            username="test1",
+            is_verified=False,
+            avatar=None,
+        )
+        data = {
+            'username': 'test1',
+        }
+        response = self.client.patch(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Username is already taken')
+
 
 class MyCurrentGameViewTest(APITestCase):
     def setUp(self):

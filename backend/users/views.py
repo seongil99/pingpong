@@ -18,6 +18,8 @@ from .serializers import UserProfileSerializer
 
 import logging
 
+User = get_user_model()
+
 logger = logging.getLogger("django")
 
 
@@ -51,6 +53,16 @@ class MyProfileView(APIView):
             extension = os.path.splitext(data["avatar"].name)[1]  # 파일의 확장자 추출
             data["avatar"].name = f"{user.username}_profile{extension}"
 
+        username = data.get("username")
+        if username:
+            with transaction.atomic():
+                # Check if the username is already taken
+                if User.objects.filter(username=username).exclude(id=user.id).exists():
+                    return Response(
+                        {"error": "Username is already taken"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
         serializer = UserProfileSerializer(
             user, data=data, context={"request": request}, partial=True
         )
@@ -58,11 +70,6 @@ class MyProfileView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# Create your views here.
-
-User = get_user_model()
 
 
 @extend_schema(

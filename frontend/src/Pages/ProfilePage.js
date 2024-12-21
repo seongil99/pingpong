@@ -61,14 +61,17 @@ class ProfilePage {
             if (userHistoryData.results[idx].winner === userid) gameWinCount++;
             const start = new Date(userHistoryData.results[idx].started_at);
             const end = new Date(userHistoryData.results[idx].ended_at);
-            const diff = end.getTime() - start.getTime();
+            const diff =
+                userHistoryData.results[idx].ended_at !== null
+                    ? end.getTime() - start.getTime()
+                    : 0;
             playtime += diff;
             if (longestRallyCount < userHistoryData.results[idx].longest_rally)
                 longestRallyCount = userHistoryData.results[idx].longest_rally;
             averageRallyTotal += userHistoryData.results[idx].average_rally;
-            userHistoryData.results[idx].gamemode === "PVP"
-                ? (mode["pvp"] += 1)
-                : (mode["tournament"] += 1);
+            userHistoryData.results[idx].tournament_id
+                ? (mode["tournament"] += 1)
+                : (mode["pvp"] += 1);
         }
         const gameWinRate = this.#gameTotalCount
             ? `${(gameWinCount / this.#gameTotalCount) * 100} %`
@@ -493,6 +496,7 @@ class ProfilePage {
                         const pagination = document.querySelector(
                             "#history-description-pagination"
                         );
+                        console.log(pagination);
                         pagination.classList.remove("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
@@ -578,14 +582,13 @@ class ProfilePage {
                 user.id
             );
         }
-        const pagination = this.#Pagination(userHistoryData, info, user.id);
+        const pagination = await this.#Pagination(userHistoryData, info, user.id);
         const description = createElement(
             "div",
             {
                 id: "profile-stat-or-history-description",
             },
             chosenDescription,
-            pagination
         );
 
         const main = createElement(
@@ -594,7 +597,8 @@ class ProfilePage {
             profileTitle,
             userProfile,
             statOrHistoryBtnSet,
-            description
+            description,
+            pagination
         );
         const container = createElement("div", {}, navBar, main);
         return container;
