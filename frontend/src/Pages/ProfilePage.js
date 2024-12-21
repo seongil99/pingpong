@@ -562,15 +562,9 @@ class ProfilePage {
         }
         const userHistoryData = await FetchOneUserGameHistory(user.id);
         this.#validateQueryParam(userHistoryData, queryParam);
-        const navBar = NavBar();
-        const profileTitle = createElement(
-            "h1",
-            { class: "profile-title" },
-            `${user.username}님의 프로필`
-        );
-        const userProfile = this.#UserProfile(user);
-        const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(
+        const pagination = await this.#Pagination(
             userHistoryData,
+            info,
             user.id
         );
         let chosenDescription;
@@ -582,7 +576,20 @@ class ProfilePage {
                 user.id
             );
         }
-        const pagination = await this.#Pagination(userHistoryData, info, user.id);
+
+        const container = createElement("div", {}, []);
+        const main = createElement("main", { id: "profile-main" }, []);
+        const navBar = NavBar();
+        const profileTitle = createElement(
+            "h1",
+            { class: "profile-title" },
+            `${user.username}님의 프로필`
+        );
+        const userProfile = this.#UserProfile(user);
+        const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(
+            userHistoryData,
+            user.id
+        );
         const description = createElement(
             "div",
             {
@@ -590,17 +597,12 @@ class ProfilePage {
             },
             chosenDescription,
         );
-
-        const main = createElement(
-            "main",
-            { id: "profile-main" },
-            profileTitle,
-            userProfile,
-            statOrHistoryBtnSet,
-            description,
-            pagination
-        );
-        const container = createElement("div", {}, navBar, main);
+        main.appendChild(profileTitle);
+        main.appendChild(userProfile);
+        main.appendChild(statOrHistoryBtnSet);
+        main.appendChild(description);
+        container.appendChild(navBar);
+        container.appendChild(main);
         return container;
     }
 }
