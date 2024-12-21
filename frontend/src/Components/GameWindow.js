@@ -687,7 +687,7 @@ class PingPongClient {
         );
       } else if (gameState.type === "gameEnd") {
         this.gameStart = END_GAME;
-        this.makeFont(gameState.txt);
+        if (gameState.txt) this.makeFont(gameState.txt);
         this.textdata.lookAt(this.camera.position);
         // 게임 종료시 이벤트 리스너 제거
         window.removeEventListener("keydown", this.onKeyDownBound, false);

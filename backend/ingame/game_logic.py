@@ -684,7 +684,9 @@ class PingPongServer:
             self.sio.disconnect(sid2)
             del user_to_socket[user2.id]
 
-        await socket_send(game_state["render_data"], "gameEnd", game_id)
+        await socket_send(
+            game_state["render_data"], "gameEnd", game_id, "Game abandoned"
+        )
         task_list = gameid_to_task[game_id]
         for task in task_list:
             task.cancel("abandoned cancel")
