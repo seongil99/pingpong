@@ -322,20 +322,60 @@ class AudioManager {
     soundData.sound.setVolume(Math.max(0, Math.min(1, volume)));
   }
 
-  // 모든 사운드 정지
   cleanup() {
-    // this.stopAll();
+    // Clear all sounds in the sound manager
     this.sounds.forEach(({ sound }) => {
+      sound.stop();
       sound.disconnect();
       sound.buffer = null;
     });
     this.sounds.clear();
 
-    if (this.camera && this.listener) {
+    // Clean up the 3D objects in the scene
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        // Dispose geometry and material of meshes
+        object.geometry.dispose();
+        object.material.dispose();
+      } else if (object instanceof THREE.Points) {
+        // Dispose geometry and material of point cloud
+        object.geometry.dispose();
+        object.material.dispose();
+      }
+    });
+
+    // Remove event listeners to prevent memory leaks
+    window.removeEventListener("keydown", this.onKeyDownBound, false);
+    window.removeEventListener("keyup", this.onKeyUpBound, false);
+    this.renderer.domElement.removeEventListener(
+      "mousedown",
+      this.onMouseDown.bind(this),
+      false
+    );
+    this.renderer.domElement.removeEventListener(
+      "mousemove",
+      this.onMouseMove.bind(this),
+      false
+    );
+    this.renderer.domElement.removeEventListener(
+      "mouseup",
+      this.onMouseUp.bind(this),
+      false
+    );
+    window.removeEventListener("resize", this.onWindowResize.bind(this), false);
+    window.removeEventListener("load", this.onWindowResize.bind(this), false);
+
+    // Remove all 3D objects from the scene
+    while (this.scene.children.length > 0) {
+      this.scene.remove(this.scene.children[0]);
+    }
+
+    // Remove camera listener
+    if (this.listener) {
       this.camera.remove(this.listener);
     }
 
-    // AudioContext 종료
+    // Close the audio context (if any)
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
@@ -345,7 +385,28 @@ class AudioManager {
   }
 
   dispose() {
+    // Ensure the cleanup process is called
     this.cleanup();
+
+    // Set relevant properties to null to fully clean up references
+    this.scene = null;
+    this.camera = null;
+    this.audio = null;
+    this.renderer = null;
+    this.balls = null;
+    this.playerOne = null;
+    this.playerTwo = null;
+    this.effect = null;
+    this.textdata = null;
+    this.socket = null;
+    this.secondPlayer = null;
+
+    // Finally, ensure any additional properties are nulled for GC to work efficiently
+    this.initializationPromise = null;
+    this.audioLoader = null;
+    this.audioContext = null;
+    this.listener = null;
+    this.sounds = null;
   }
 }
 

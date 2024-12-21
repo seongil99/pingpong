@@ -666,7 +666,6 @@ class PingPongClient {
     });
 
     this.socket.on("data", (gameState) => {
-      console.log(gameState.type, gameState);
       // console.log(gameState.type, gameState);
       if (gameState.type === "gameState") {
         // console.log(gameState);
