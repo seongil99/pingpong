@@ -669,7 +669,7 @@ class PingPongServer:
         game_id = game_state["game_id"]
         await self.save_game_history(game_state, None)
         game = await GameHistory.objects.aget(id=game_id)
-        if self._get_tournament_id(game) is not None:
+        if await self._get_tournament_id(game) is not None:
             await sync_to_async(self.update_tournament)(game, None)
         await self._clean_one_v_one_game(game_id)
         self.game_state.delete_game_state(game_id)

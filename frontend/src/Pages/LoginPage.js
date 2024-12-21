@@ -56,11 +56,10 @@ class LoginPage {
       {
         events: {
           click: async () => {
-            const host = "10.11.8.5";
+            const host = "localhost";
             const clientId =
               "u-s4t2ud-80c35252b5c6defa03f294f295f7bc83623a37a929b5ade66bed0dbafce4f667";
-            const redirectUri =
-              `https%3A%2F%2F${host}%2Foauth2%2Fredirect`;
+            const redirectUri = `https%3A%2F%2F${host}%2Foauth2%2Fredirect`;
             window.location.href = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
           },
         },

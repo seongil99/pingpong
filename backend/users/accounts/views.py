@@ -9,6 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 from dj_rest_auth.jwt_auth import JWTCookieAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
 from users.serializers import UserStatusSerializer
 from users.accounts.utils import setAccessToken
@@ -48,18 +49,23 @@ class AccountActiveView(GenericAPIView):
     )
     def patch(self, request, *args, **kwargs):
         userId = request.session.get("userId")
-        user = User.objects.get(id=userId)
+        user = request.user
 
-        is_account_active = request.data.get(
-            "is_account_active", user.is_account_active
-        )
-        if is_account_active is not True:
-            return Response(
-                {"success": False, "message": "Invalid value for is_account_active."},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            user.refresh_from_db()
+            is_account_active = request.data.get(
+                "is_account_active", user.is_account_active
             )
-        user.is_account_active = is_account_active
-        user.save()
+            if is_account_active is not True:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid value for is_account_active.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.is_account_active = is_account_active
+            user.save()
         response = Response(self.get_serializer(user).data)
         logger.info(f"response: {request.session['access']}")
         logger.info(f"response: {request.session['refresh']}")

@@ -277,7 +277,7 @@ class GameIO(socketio.AsyncNamespace):
             game = await PingPongHistory.objects.aget(id=game_id)
             logger.info("Game ended: %s", game_id)
             await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
-            if self._get_tournament_id(game) is not None:
+            if await self._get_tournament_id(game) is not None:
                 await sync_to_async(server.update_tournament)(game, user.id)
             else:
                 await server.save_game_history(game_state, user.id)

@@ -1,8 +1,6 @@
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils.decorators import method_decorator
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
@@ -10,13 +8,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from io import BytesIO
-from datetime import timedelta
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiResponse,
 )
 from .detail import Details
 from .error import Errors
+from django.db import transaction
 
 from common.serializers import SimpleResponseSerializer
 from common.error import Error
@@ -33,7 +31,7 @@ import pyotp
 import qrcode
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 User = get_user_model()
 
@@ -196,12 +194,13 @@ class mfa(APIView):
 @permission_classes([IsAuthenticated])
 def qrcode_display(request):
     user = request.user
-    device = TOTPDevice.objects.filter(user=user).first()
+    with transaction.atomic():
+        device = TOTPDevice.objects.filter(user=user).first()
 
-    if not device:
-        device = TOTPDevice.objects.create(
-            user=user, name="default device", confirmed=False
-        )
+        if not device:
+            device = TOTPDevice.objects.create(
+                user=user, name="default device", confirmed=False
+            )
 
     base32_key = convert_hex_to_base32(device.key)
 
