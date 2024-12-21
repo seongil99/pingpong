@@ -15,12 +15,16 @@ logger = logging.getLogger("django")
 
 class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+        super().__init__(*args, **kwargs)
         self.group_name = None
         self.user = None
         self.current_game_id = None
         self.current_opponent_id = None
 
+
+    # ---------------------
+    # Connection Handling
+    # ---------------------
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated and not await self.is_duplicate_user(
@@ -35,6 +39,10 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
+
+    # ---------------------
+    # Message Handling
+    # ---------------------
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         if text_data:
             await self.receive_json(await self.decode_json(text_data), **kwargs)
@@ -86,6 +94,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         f"user_{self.current_opponent_id}", {"type": "match_canceled"}
                     )
                 await self.send_json({"type": "match_canceled"})
+                await self.close()
             elif msg_type == "set_option":
                 game_id = content["game_id"]
                 multiball_option = content["multi_ball"]
@@ -119,8 +128,6 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                         "multi_ball": multiball_option,
                     },
                 )
-
-                # 게임 생성 후 상대방 강제 종료 예시
                 await self.create_one_versus_one_game(self.user, opponent)
                 await self.channel_layer.group_send(
                     f"user_{opponent_id}",
