@@ -1,5 +1,5 @@
-import createElement from "../Utils/createElement.js";
-import DeleteFriend from "../Controller/Friends/DeleteFriends.js";
+import createElement from "../../Utils/createElement.js";
+import DeleteFriend from "../../Controller/Friends/DeleteFriends.js";
 
 // 친구 정보를 표시하는 컴포넌트
 const FriendInfos = (dataRef) => {
@@ -52,7 +52,8 @@ const FriendInfos = (dataRef) => {
             events: {
                 click: async (event) => {
                     const friendList = document.getElementById("friends-list");
-                    const id = event.target.parentElement.querySelector(".user-id");
+                    const id =
+                        event.target.parentElement.querySelector(".user-id");
 
                     console.log("삭제 요청 ID:", id.dataset.iduser);
 
@@ -76,7 +77,8 @@ const FriendInfos = (dataRef) => {
             class: "friend-infos",
             events: {
                 click: (event) => {
-                    if (event.target.classList.contains("friend-delete-btn")) return;
+                    if (event.target.classList.contains("friend-delete-btn"))
+                        return;
                     console.log("프로필 클릭:", event.target);
                 },
             },

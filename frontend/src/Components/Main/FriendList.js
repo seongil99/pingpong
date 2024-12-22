@@ -1,9 +1,9 @@
-import createElement from "../Utils/createElement.js";
-import FetchFriends from "../Controller/Friends/FetchFriends.js";
+import createElement from "../../Utils/createElement.js";
+import FetchFriends from "../../Controller/Friends/FetchFriends.js";
 import FriendInfos from "./FriendInfos.js";
 async function FriendList() {
-    const userData = await FetchFriends(); 
-    console.log('user data',userData);
+    const userData = await FetchFriends();
+    console.log("user data", userData);
     const friendsList = createElement(
         "div",
         { id: "friends-list" },
@@ -16,19 +16,19 @@ async function FriendList() {
                 click: () => {
                     if (
                         document
-                        .querySelector(".modal")
-                        .classList.contains("hide")
+                            .querySelector(".modal")
+                            .classList.contains("hide")
                     ) {
-                        console.log('clicked');
+                        console.log("clicked");
                         document
                             .querySelector(".modal")
                             .classList.remove("hide");
                     }
                 },
             },
-            id:"addFriend-btn"
+            id: "addFriend-btn",
         },
-    i18next.t("addFriend-btn")
+        i18next.t("addFriend-btn")
     );
     const friendsManagement = createElement(
         "div",

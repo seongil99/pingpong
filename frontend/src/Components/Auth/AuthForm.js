@@ -1,5 +1,5 @@
-import createElement from "../Utils/createElement.js";
-import verifyOTP from "../Controller/Auth/verifyOTP.js";
+import createElement from "../../Utils/createElement.js";
+import verifyOTP from "../../Controller/Auth/verifyOTP.js";
 
 const AuthForm = () => {
     const codeNumbersBox = createElement(

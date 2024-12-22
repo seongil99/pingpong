@@ -1,16 +1,16 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 
-function createButtonGroup(params,callback) {
+function createButtonGroup(params, callback) {
     // 왼쪽 버튼 생성
     const matchButton = createElement(
         "button",
         {
             type: "button",
             class: "btn btn-primary",
-			id: params,
-            events:{
-                click : callback
-            }
+            id: params,
+            events: {
+                click: callback,
+            },
         },
         params
     );

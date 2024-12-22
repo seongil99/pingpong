@@ -1,4 +1,4 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 function createLanguageDropdown() {
     // 네비게이션 토글 버튼 생성
     const navbarToggler = createElement(

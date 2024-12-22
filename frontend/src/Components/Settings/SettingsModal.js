@@ -1,25 +1,33 @@
-import createElement from "../Utils/createElement.js";
-import AuthenticatorGuideStep from "./AuthenticatorGuideStep.js";
-import MfaQRcode from "../Components/MfaQRcode.js";
-import enableMfa from "../Controller/Auth/enableMFA.js";
+import createElement from "../../Utils/createElement.js";
+import AuthenticatorGuideStep from "../Auth/AuthenticatorGuideStep.js";
+import enableMfa from "../../Controller/Auth/enableMFA.js";
+import fetchQRcode from "../../Controller/Auth/fetchQRCode.js";
 
 const SettingsModal = async () => {
     const enableTitle = createElement(
         "h1",
         { class: "two-auth-enable-title" },
-        "2FA Enable"
+        i18next.t("settings_enable_2fa")
     );
     const stepOne = createElement(
         "p",
         { class: "authenticator-guide-step-content" },
         "휴대전화나 태블릿에 ",
-        createElement("a", { href: "#" }, "Google 인증"),
+        createElement(
+            "a",
+            { href: "#" },
+            `Google ${i18next.t("settings_authenticator")}`
+        ),
         ", ",
         createElement("a", { href: "#" }, "Duo Mobile"),
         ", ",
         createElement("a", { href: "#" }, "Authy"),
         " 또는 ",
-        createElement("a", { href: "#" }, "Microsoft 인증"),
+        createElement(
+            "a",
+            { href: "#" },
+            `Microsoft ${i18next.t("settings_authenticator")}`
+        ),
         " 앱을 다운로드하여 설치합니다."
     );
     const stepTwo = createElement(
@@ -64,8 +72,7 @@ const SettingsModal = async () => {
                     events: {
                         input: (event) => {
                             const value = event.target.value;
-                            const filteredValue = value.replace(/[^0-9]/g, ""); // 숫자만 남김
-                            // 입력값이 필터링된 값과 다르면 업데이트
+                            const filteredValue = value.replace(/[^0-9]/g, "");
                             if (value !== filteredValue) {
                                 event.target.value = filteredValue;
                             }
@@ -92,7 +99,16 @@ const SettingsModal = async () => {
             )
         )
     );
-    const qrcode = await MfaQRcode();
+    const qrcode = createElement(
+        "img",
+        {
+            src: "",
+            alt: "2FA QR Code",
+            class: "authenticator-guide-step-img",
+            id: "mfa-qrcode",
+        },
+        []
+    );
     const guide = createElement(
         "div",
         { class: "authenticator-guide" },
@@ -152,7 +168,8 @@ const SettingsModal = async () => {
         {
             class: "two-auth-authenticator-btn",
             events: {
-                click: () => {
+                click: async () => {
+                    const qrcodeImg = await fetchQRcode();
                     document
                         .querySelector(".two-auth-package")
                         .classList.add("hide");
@@ -162,6 +179,7 @@ const SettingsModal = async () => {
                     document
                         .querySelector(".settings-modal-prev-btn")
                         .classList.remove("hide");
+                    document.querySelector("#mfa-qrcode").src = qrcodeImg.qrcode;
                 },
             },
         },
@@ -172,11 +190,6 @@ const SettingsModal = async () => {
         { class: "two-auth-package hide" },
         enableTitle,
         twoAuthAuthenticatorBtn
-    );
-    const inactiveAccountCaution = createElement(
-        "div",
-        { class: "inactive-account-caution hide" },
-        "비활성화?"
     );
     const prevBtn = createElement(
         "button",
@@ -195,12 +208,12 @@ const SettingsModal = async () => {
                 },
             },
         },
-        "Prev"
+        i18next.t("settings_modal_prev_btn")
     );
     const confirmBtn = createElement(
         "button",
         { class: "settings-modal-confirm-btn hide" },
-        "Confirm"
+        i18next.t("settings-modal_confirm_btn")
     );
     const cancelBtn = createElement(
         "button",
@@ -217,9 +230,6 @@ const SettingsModal = async () => {
                         .querySelector(".two-auth-authenticator-guide")
                         .classList.add("hide");
                     document
-                        .querySelector(".inactive-account-caution")
-                        .classList.add("hide");
-                    document
                         .querySelector(".settings-modal-prev-btn")
                         .classList.add("hide");
                     document
@@ -228,7 +238,7 @@ const SettingsModal = async () => {
                 },
             },
         },
-        "Cancel"
+        i18next.t("settings_modal_cancel_btn")
     );
     const settingsBtnSet = createElement(
         "div",
@@ -242,7 +252,6 @@ const SettingsModal = async () => {
         { class: "modal-box settings-modal" },
         twoAuthPackage,
         twoAuthAuthenticatorGuide,
-        inactiveAccountCaution,
         settingsBtnSet
     );
     const modal = createElement("div", { class: "modal hide" }, settingsModal);

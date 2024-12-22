@@ -1,17 +1,18 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 import CreateFormSwitch from "./CheckBox.js";
-function createMessageModal(message,callback,socket) {
+function createMessageModal(message, callback, socket) {
     // 메시지 표시 영역 생성
-	const modalTitle = createElement(
+    const modalTitle = createElement(
         "div",
         { class: "modal-title" },
         createElement("h5", {}, `잠시만 기다려 주세요. `)
     );
     const modalBody = createElement(
         "div",
-        { 
-			id: "modal-body-target",
-			class: "modal-body" },
+        {
+            id: "modal-body-target",
+            class: "modal-body",
+        },
         createElement("p", {}, message)
     );
 
@@ -19,22 +20,13 @@ function createMessageModal(message,callback,socket) {
     const btnClose = createElement(
         "button",
         {
-			id: "modal-btn-target",
+            id: "modal-btn-target",
             type: "button",
             class: "btn btn-secondary",
             "data-bs-dismiss": "modal",
-			events: {
-				click: ()=>{
-                    modalInstance.dispose();
-                    modal.parentElement.removeChild(modal);
-                    const btContainer = document.getElementById("match-btn-container");
-                    console.log("call remove");
-                    btContainer.classList.toggle("hide");
-                    localStorage.setItem("matchType", "");
-                    localStorage.setItem("tid", "");
-                    localStorage.setItem("gameId","");
-                }
-			}
+            events: {
+                click: callback ? callback : null,
+            },
         },
         "Close"
     );
@@ -49,19 +41,19 @@ function createMessageModal(message,callback,socket) {
     // 모달 콘텐츠 생성
     const modalContent = createElement(
         "div",
-        { 	
-			class: "modal-content" 
-		},
-		modalTitle,
+        {
+            class: "modal-content",
+        },
+        modalTitle,
         modalBody,
         modalFooter,
-		CreateFormSwitch(socket),
+        CreateFormSwitch(socket)
     );
 
     // 모달 다이얼로그 생성
     const modalDialog = createElement(
         "div",
-        { class: "modal-dialog modal-static" },  // 정적 모달 설정
+        { class: "modal-dialog modal-static" }, // 정적 모달 설정
         modalContent
     );
 
@@ -69,7 +61,7 @@ function createMessageModal(message,callback,socket) {
     const modal = createElement(
         "div",
         {
-			id: "modal-tartget",
+            id: "modal-tartget",
             class: "modal",
             tabindex: "-1",
         },
@@ -79,12 +71,11 @@ function createMessageModal(message,callback,socket) {
     // DOM에 추가
     // Bootstrap 모달 인스턴스 생성
     const modalInstance = new bootstrap.Modal(modal, {
-        backdrop: "static",  // 배경 클릭 비활성화
-        keyboard: false,    // ESC 키 입력 비활성화
+        backdrop: "static", // 배경 클릭 비활성화
+        keyboard: false, // ESC 키 입력 비활성화
     });
 
     // 모달 열기
-    return {element: modal, modal:modalInstance};
-
+    return { element: modal, modal: modalInstance };
 }
 export default createMessageModal;

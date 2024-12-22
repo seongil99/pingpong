@@ -1,8 +1,8 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 import FriendInfos from "./FriendInfos.js";
-import SearchFriends from "../Controller/Friends/SearchFriends.js";
-import AppendFriends from "../Controller/Friends/AppendFriends.js";
-import FetchFriends from "../Controller/Friends/FetchFriends.js";
+import SearchFriends from "../../Controller/Friends/SearchFriends.js";
+import AppendFriends from "../../Controller/Friends/AppendFriends.js";
+import FetchFriends from "../../Controller/Friends/FetchFriends.js";
 
 async function appendFriend(target, list) {
     const ret = await FetchFriends();
@@ -35,27 +35,39 @@ const FriendModal = () => {
             events: {
                 click: async (event) => {
                     if (event.target.classList.contains("search")) {
-                        const input = document.querySelector(".friend-search-input");
+                        const input = document.querySelector(
+                            ".friend-search-input"
+                        );
                         const data = await SearchFriends(input.value);
 
                         input.classList.add("hide");
                         if (!data.length) {
                             event.target.classList.add("hide");
-                            document.querySelector(".friend-modal-message").textContent =
-                                i18next.t("friend_not_found", { username: input.value });
+                            document.querySelector(
+                                ".friend-modal-message"
+                            ).textContent = i18next.t("friend_not_found", {
+                                username: input.value,
+                            });
                         } else {
-                            const friendProfile = document.querySelector(".friend-profile");
+                            const friendProfile =
+                                document.querySelector(".friend-profile");
                             friendProfile.classList.remove("hide");
-                            friendProfile.appendChild(FriendInfos({ friend_user: data[0] }));
-                            document.querySelector(".friend-modal-message").classList.add("hide");
+                            friendProfile.appendChild(
+                                FriendInfos({ friend_user: data[0] })
+                            );
+                            document
+                                .querySelector(".friend-modal-message")
+                                .classList.add("hide");
 
                             event.target.classList.remove("search");
                             event.target.classList.add("add");
                             event.target.textContent = i18next.t("friend_add");
                         }
                     } else if (event.target.classList.contains("add")) {
-                        const friendList = document.getElementById("friends-list");
-                        const profile = document.querySelector(".friend-profile");
+                        const friendList =
+                            document.getElementById("friends-list");
+                        const profile =
+                            document.querySelector(".friend-profile");
                         const userId = profile.querySelector(".user-id");
                         const username = userId.getAttribute("data-id");
 
@@ -64,14 +76,20 @@ const FriendModal = () => {
 
                         profile.replaceChildren();
                         document.querySelector(".modal").classList.add("hide");
-                        document.querySelector(".friend-modal-message").classList.remove("hide");
-                        document.querySelector(".friend-search-input").classList.remove("hide");
+                        document
+                            .querySelector(".friend-modal-message")
+                            .classList.remove("hide");
+                        document
+                            .querySelector(".friend-search-input")
+                            .classList.remove("hide");
 
                         event.target.textContent = i18next.t("friend_search");
                         event.target.classList.remove("add");
                         event.target.classList.add("search");
                     }
-                    document.querySelector(".cancel-modal-btn").classList.add("cancel-result");
+                    document
+                        .querySelector(".cancel-modal-btn")
+                        .classList.add("cancel-result");
                     document.querySelector(".friend-search-input").value = "";
                 },
             },
@@ -85,26 +103,36 @@ const FriendModal = () => {
             class: "cancel-modal-btn",
             events: {
                 click: (event) => {
-                    const friendProfile = document.querySelector(".friend-profile");
+                    const friendProfile =
+                        document.querySelector(".friend-profile");
 
                     if (event.target.classList.contains("cancel-result")) {
                         friendProfile.replaceChildren();
                         friendProfile.classList.add("hide");
-                        document.querySelector(".friend-modal-message").classList.remove("hide");
-                        document.querySelector(".friend-search-input").classList.remove("hide");
+                        document
+                            .querySelector(".friend-modal-message")
+                            .classList.remove("hide");
+                        document
+                            .querySelector(".friend-search-input")
+                            .classList.remove("hide");
 
                         event.target.classList.remove("cancel-result");
                         event.target.classList.add("cancel-modal-btn");
 
-                        const searchBtn = document.querySelector(".search-add-btn");
+                        const searchBtn =
+                            document.querySelector(".search-add-btn");
                         searchBtn.classList.add("search");
                         searchBtn.textContent = i18next.t("friend_search");
                         searchBtn.classList.remove("add", "hide");
-                    } else if (event.target.classList.contains("cancel-modal-btn")) {
+                    } else if (
+                        event.target.classList.contains("cancel-modal-btn")
+                    ) {
                         document.querySelector(".modal").classList.add("hide");
                     }
                     document.querySelector(".friend-search-input").value = "";
-                    document.querySelector(".friend-modal-message").textContent = i18next.t("friend_modal_message");
+                    document.querySelector(
+                        ".friend-modal-message"
+                    ).textContent = i18next.t("friend_modal_message");
                 },
             },
         },

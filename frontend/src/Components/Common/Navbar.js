@@ -1,4 +1,4 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 import LanguageDropdown from "./LangugeDropDown.js";
 
 const logout = async () => {
@@ -40,7 +40,7 @@ function NavBarList() {
         const response = await logout();
         if (response.ok) {
             alert("logout success!!");
-            await window.router.navigate("/", false);
+            window.router.navigate("/", false);
         } else {
             alert("logout fail");
         }

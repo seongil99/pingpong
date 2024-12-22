@@ -1,11 +1,12 @@
 import createElement from "../Utils/createElement.js";
-import NavBar from "../Components/Navbar.js";
+import NavBar from "../Components/Common/Navbar.js";
 import FetchUserData from "../Controller/Profile/FetchUserData.js";
 import FetchOneUserGameHistory from "../Controller/Profile/FetchOneUserGameHistory.js";
 import fetchUserProfile from "../Controller/Settings/fetchUserProfile.js";
-import ScoreChart from "../Components/ScoreChart.js";
+import ScoreChart from "../Components/Profile/ScoreChart.js";
 import calculateDiffDate from "../Utils/calculateDiffDate.js";
-import changeTimeToDate from "../Utils/changeTimeToDate.js";
+import StatDescription from "../Components/Profile/StatDescription.js";
+import UserProfile from "../Components/Profile/UserProfile.js";
 
 class ProfilePage {
     #offset;
@@ -16,131 +17,8 @@ class ProfilePage {
     #pageListContent = [];
     #pageNumBtns = [];
     #pagesBlocks = [];
-    #UserProfile = (userData) => {
-        const profileUserImg = createElement(
-            "img",
-            {
-                class: "profile-user-img",
-                src: `${userData.avatar}`,
-                alt: `${userData.username}'s profile image`,
-            },
-            []
-        );
-        const profileUserName = createElement(
-            "h3",
-            { class: "profile-user-name" },
-            `${userData.username}`
-        );
-        const profileUserEmail = createElement(
-            "span",
-            { class: "profile-user-email" },
-            `${userData.email}`
-        );
-        const profileUserInfos = createElement(
-            "div",
-            { class: "profile-user-infos" },
-            profileUserName,
-            profileUserEmail
-        );
-        const userProfile = createElement(
-            "div",
-            { class: `profile-user-profile ${userData.username}` },
-            profileUserImg,
-            profileUserInfos
-        );
-        return userProfile;
-    };
-
-    #StatDescription = (userHistoryData, userid) => {
-        let gameWinCount = 0;
-        let playtime = 0;
-        let longestRallyCount = 0;
-        let averageRallyTotal = 0;
-        const mode = { pvp: 0, tournament: 0 };
-        for (let idx = 0; idx < this.#gameTotalCount; idx++) {
-            if (userHistoryData.results[idx].winner === userid) gameWinCount++;
-            const start = new Date(userHistoryData.results[idx].started_at);
-            const end = new Date(userHistoryData.results[idx].ended_at);
-            const diff =
-                userHistoryData.results[idx].ended_at !== null
-                    ? end.getTime() - start.getTime()
-                    : 0;
-            playtime += diff;
-            if (longestRallyCount < userHistoryData.results[idx].longest_rally)
-                longestRallyCount = userHistoryData.results[idx].longest_rally;
-            averageRallyTotal += userHistoryData.results[idx].average_rally;
-            userHistoryData.results[idx].tournament_id
-                ? (mode["tournament"] += 1)
-                : (mode["pvp"] += 1);
-        }
-        const gameWinRate = this.#gameTotalCount
-            ? `${(gameWinCount / this.#gameTotalCount) * 100} %`
-            : "게임을 한 판 이상하면 승률을 확인할 수 있습니다.";
-        const longestRally = this.#gameTotalCount
-            ? `${longestRallyCount} 회`
-            : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
-        const averageRally = this.#gameTotalCount
-            ? `약 ${Math.floor(averageRallyTotal / this.#gameTotalCount)} 회`
-            : "게임을 한 판 이상하면 최장 랠리를 확인할 수 있습니다.";
-        const modeCount = this.#gameTotalCount
-            ? `PVP: ${mode["pvp"]}, 토너먼트: ${mode["tournament"]}`
-            : "게임을 한 판 이상하면 가장 많이 한 모드 정보를 볼 수 있습니다.";
-        const totalPlaytime = this.#gameTotalCount
-            ? `${changeTimeToDate(playtime)}`
-            : "게임을 한 판 이상하면 플레이타임 정보를 볼 수 있습니다.";
-        // ** user game count
-        const gameCount = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `게임 수: ${this.#gameTotalCount} 회`
-        );
-        // ** user game win rate
-        const winRate = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `승률: ${gameWinRate}`
-        );
-        // ** user game win count and lose count
-        const winLoseCount = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `승 • 패: ${gameWinCount}/${this.#gameTotalCount - gameWinCount}`
-        );
-        // ** user longest rally
-        const longestRallyText = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `최장 랠리: ${longestRally}`
-        );
-        // ** user average rally
-        const averageRallyText = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `평균 랠리: ${averageRally}`
-        );
-        const modeCountText = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `게임 모드: ${modeCount}`
-        );
-        const totalPlaytimeText = createElement(
-            "span",
-            { class: "stat-description-data" },
-            `플레이 시간: ${totalPlaytime}`
-        );
-        const stat = createElement(
-            "div",
-            { id: "profile-user-stat-description" },
-            gameCount,
-            winRate,
-            winLoseCount,
-            longestRallyText,
-            averageRallyText,
-            modeCountText,
-            totalPlaytimeText
-        );
-        return stat;
-    };
+    #descriptionSet;
+    #currentDescription;
 
     #HistorySession = async (session, userid) => {
         const opponentId =
@@ -156,7 +34,7 @@ class ProfilePage {
             {
                 class: "history-session-game-mode",
             },
-            session.gamemode
+            session.tournament_id ? "토너먼트" : "PVP"
         );
         const gameScore = createElement(
             "span",
@@ -238,13 +116,13 @@ class ProfilePage {
         return item;
     };
 
-    #HistorySessionMatchDashboard = async (session, sessionIdx) => {
+    #HistorySessionMatchDashboard = async (session) => {
         const scoreTitle = createElement(
             "h3",
             { class: "history-session-match-dashboard-title" },
             "Score"
         );
-        const scoreChart = await ScoreChart(session, sessionIdx);
+        const scoreChart = await ScoreChart(session);
         const scoreChartDiv = createElement(
             "div",
             { class: "history-session-chart" },
@@ -257,6 +135,28 @@ class ProfilePage {
             scoreChartDiv
         );
         return match;
+    };
+
+    #HistorySessionTournamentDashboard = async (session) => {
+        const tournamentData = await fetchUserTournamentData(
+            session.tournament_id
+        );
+        const tournament = createElement(
+            "div",
+            { class: "history-session-tournamenet-dashboard" },
+            []
+        );
+        const matchesDiv = createElement(
+            "div",
+            { class: "history-session-matches-div" },
+            []
+        );
+        tournamentData.sessions.map(async v => {
+            const match = await this.#HistorySessionMatchDashboard(v.session);
+            matchesDiv.appendChild(match);
+        })
+        tournament.appendChild(matchesDiv);
+        return tournament;
     };
 
     #handlePageClick = (number, curLimit, userid) => {
@@ -294,7 +194,12 @@ class ProfilePage {
         return pageButton;
     };
 
-    #Pagination = async (userHistoryData, info, userid) => {
+    #Pagination = async (userHistoryData, userid) => {
+        const pagination = createElement(
+            "div",
+            { id: "history-description-pagination" },
+            []
+        );
         const totalPage = this.#limit
             ? Math.floor(this.#gameTotalCount / this.#limit) +
               (this.#gameTotalCount % this.#limit)
@@ -313,15 +218,28 @@ class ProfilePage {
             for (let j = 0; j < curLimit; j++) {
                 const sessionData =
                     userHistoryData.results[this.#limit * (i - 1) + j];
-                const session = await this.#HistorySession(sessionData, userid);
-                let sessionDashboard = "";
-                if (sessionData.gamemode === "PVP")
-                    sessionDashboard = await this.#HistorySessionMatchDashboard(
+                if (sessionData.ended_at !== null) {
+                    const session = await this.#HistorySession(
                         sessionData,
-                        j
+                        userid
                     );
-                content.appendChild(session);
-                content.appendChild(sessionDashboard);
+                    let sessionDashboard = "";
+                    if (sessionData.gamemode === "PVP") {
+                        sessionDashboard =
+                            await this.#HistorySessionMatchDashboard(
+                                sessionData,
+                                j
+                            );
+                    } else {
+                        sessionDashboard =
+                            await this.#HistorySessionTournamentDashboard(
+                                sessionData,
+                                j
+                            );
+                    }
+                    content.appendChild(session);
+                    content.appendChild(sessionDashboard);
+                }
             }
             this.#pageListContent.push(content);
             if (
@@ -430,53 +348,43 @@ class ProfilePage {
             },
             ">"
         );
-        const pagination = createElement(
-            "div",
-            { id: "history-description-pagination" },
-            leftBtn,
-            pageNumsDiv,
-            rightBtn
-        );
-        if (info === "stat") {
-            console.log(info);
-            pagination.classList.add("hide");
-        }
+        pagination.append(leftBtn);
+        pagination.append(pageNumsDiv);
+        pagination.append(rightBtn);
         return pagination;
     };
 
     #HistoryDescription = async (userHistoryData, userid) => {
+        const historyScrollDiv = createElement(
+            "div",
+            { id: "history-scroll-div" },
+            []
+        );
+        const history = createElement("div", { id: "history-description" }, []);
+        const pagination = await this.#Pagination(userHistoryData, userid);
         const historyList = createElement(
             "ul",
             { id: "history-description-list" },
             this.#pageListContent[this.#currentHistoryPage - 1]
         );
-        const history = createElement(
-            "div",
-            { id: "history-description" },
-            historyList
-        );
+        historyScrollDiv.appendChild(historyList);
+        history.appendChild(historyScrollDiv);
+        history.appendChild(pagination);
         return history;
     };
 
-    #StatOrHistoryBtnSet = (userHistoryData, userid) => {
+    #StatOrHistoryBtnSet = (userid) => {
         const statBtn = createElement(
             "button",
             {
                 class: "profile-btn",
                 events: {
                     click: () => {
-                        const pagination = document.querySelector(
-                            "#history-description-pagination"
-                        );
-                        pagination.classList.add("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
                         description.removeChild(description.firstElementChild);
-                        description.insertBefore(
-                            this.#StatDescription(userHistoryData, userid),
-                            pagination
-                        );
+                        description.appendChild(this.#descriptionSet[0]);
                         window.history.pushState(
                             {},
                             `/profile/${userid}/stat`,
@@ -493,22 +401,11 @@ class ProfilePage {
                 class: "profile-btn",
                 events: {
                     click: async () => {
-                        const pagination = document.querySelector(
-                            "#history-description-pagination"
-                        );
-                        console.log(pagination);
-                        pagination.classList.remove("hide");
                         const description = document.querySelector(
                             "#profile-stat-or-history-description"
                         );
                         description.removeChild(description.firstElementChild);
-                        description.insertBefore(
-                            await this.#HistoryDescription(
-                                userHistoryData,
-                                userid
-                            ),
-                            pagination
-                        );
+                        description.appendChild(this.#descriptionSet[1]);
                         window.history.pushState(
                             {},
                             `/profile/${userid}/history`,
@@ -533,7 +430,10 @@ class ProfilePage {
         const regex = /^[1-9]\d*$/;
         const offsetValue = queryParam.get("offset");
         const limitValue = queryParam.get("limit");
-        this.#gameTotalCount = userHistoryData.count;
+        this.#gameTotalCount = 0;
+        userHistoryData.results.map(
+            (v) => (this.#gameTotalCount += v.ended_at !== null)
+        );
         this.#offset = regex.test(offsetValue) ? parseInt(offsetValue) : 1;
         this.#limit = regex.test(limitValue)
             ? parseInt(limitValue)
@@ -554,53 +454,47 @@ class ProfilePage {
 
     async template(pathParam, queryParam) {
         const [_, path, userId, info] = pathParam;
-        let user;
-        if (pathParam.length === 2) {
-            user = await fetchUserProfile();
-        } else {
-            user = await FetchUserData(parseInt(userId));
-        }
+        const user =
+            pathParam.length === 2
+                ? await fetchUserProfile()
+                : await FetchUserData(parseInt(userId));
         const userHistoryData = await FetchOneUserGameHistory(user.id);
         this.#validateQueryParam(userHistoryData, queryParam);
+        const historyDescription = await this.#HistoryDescription(
+            userHistoryData,
+            user.id
+        );
+        this.#descriptionSet = [
+            StatDescription(userHistoryData, user.id),
+            historyDescription,
+        ];
+        const container = createElement("div", {}, []);
+        const main = createElement("main", { id: "profile-main" }, []);
         const navBar = NavBar();
         const profileTitle = createElement(
             "h1",
             { class: "profile-title" },
             `${user.username}님의 프로필`
         );
-        const userProfile = this.#UserProfile(user);
-        const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(
-            userHistoryData,
-            user.id
-        );
-        let chosenDescription;
-        if (info !== "history") {
-            chosenDescription = this.#StatDescription(userHistoryData, user.id);
-        } else {
-            chosenDescription = await this.#HistoryDescription(
-                userHistoryData,
-                user.id
-            );
-        }
-        const pagination = await this.#Pagination(userHistoryData, info, user.id);
+        const userProfile = UserProfile(user);
+        const statOrHistoryBtnSet = this.#StatOrHistoryBtnSet(user.id);
+        this.#currentDescription =
+            info !== "history"
+                ? this.#descriptionSet[0]
+                : this.#descriptionSet[1];
         const description = createElement(
             "div",
             {
                 id: "profile-stat-or-history-description",
             },
-            chosenDescription,
+            this.#currentDescription
         );
-
-        const main = createElement(
-            "main",
-            { id: "profile-main" },
-            profileTitle,
-            userProfile,
-            statOrHistoryBtnSet,
-            description,
-            pagination
-        );
-        const container = createElement("div", {}, navBar, main);
+        main.appendChild(profileTitle);
+        main.appendChild(userProfile);
+        main.appendChild(statOrHistoryBtnSet);
+        main.appendChild(description);
+        container.appendChild(navBar);
+        container.appendChild(main);
         return container;
     }
 }

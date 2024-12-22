@@ -1,4 +1,4 @@
-import createElement from "../Utils/createElement.js";
+import createElement from "../../Utils/createElement.js";
 const AuthenticatorGuideStep = (stepImg, stepNum, stepTitle, stepDescription) => {
     const num = createElement(
         "span",

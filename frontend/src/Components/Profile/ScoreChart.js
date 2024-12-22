@@ -1,18 +1,18 @@
-import FetchMatchData from "../Controller/Profile/FetchMatchData.js";
-import FetchUserData from "../Controller/Profile/FetchUserData.js";
-import createElement from "../Utils/createElement.js";
+import FetchMatchData from "../../Controller/Profile/FetchMatchData.js";
+import FetchUserData from "../../Controller/Profile/FetchUserData.js";
+import createElement from "../../Utils/createElement.js";
 
-const ScoreChart = async (session, sessionIdx) => {
+const ScoreChart = async (session) => {
     const chart = createElement(
         "div",
-        { id: `chart-container${sessionIdx}`, class: "game-session-chart" },
+        { id: `chart-container`, class: "game-session-chart" },
         []
     );
     const user1Data = await FetchUserData(session.user1);
     const user2Data = await FetchUserData(session.user2);
     const matchData = await FetchMatchData(session.id);
     // D3.js로 차트 생성
-    const margin = { top: 40, right: 120, bottom: 30, left: 120 };
+    const margin = { top: 30, right: 100, bottom: 30, left: 100 };
     const width = 400 - margin.left - margin.right;
     const height = 200 - margin.top - margin.bottom;
 
@@ -105,8 +105,8 @@ const ScoreChart = async (session, sessionIdx) => {
                 tooltip
                     .style("display", "inline")
                     .html(`User: ${username}<br>Score: ${score}`)
-                    .style("left", `${event.pageX + 10}px`)
-                    .style("top", `${event.pageY - 28}px`);
+                    .style("left", `${event.pageX - 50}px`)
+                    .style("top", `${event.pageY}px`);
             })
             .on("mouseout", function () {
                 // 마우스가 나가면 툴팁 숨기기
@@ -116,7 +116,7 @@ const ScoreChart = async (session, sessionIdx) => {
     const legend = svg
         .append("g")
         .attr("class", "legend")
-        .attr("transform", `translate(${width + margin.left - 20}, 20)`);
+        .attr("transform", `translate(${width / 3 * 2 + margin.left - 20}, 20)`);
 
     datasets.forEach((dataset, i) => {
         const legendItem = legend

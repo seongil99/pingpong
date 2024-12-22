@@ -1,7 +1,7 @@
 import createElement from "../Utils/createElement.js";
-import NavBar from "../Components/Navbar.js";
-import ProfileForm from "../Components/ProfileForm.js";
-import SettingsModal from "../Components/SettingsModal.js";
+import NavBar from "../Components/Common/Navbar.js";
+import ProfileForm from "../Components/Settings/ProfileForm.js";
+import SettingsModal from "../Components/Settings/SettingsModal.js";
 import detectMfaEnabled from "../Controller/Auth/detectMfaEnabled.js";
 import disableMFA from "../Controller/Auth/disableMFA.js";
 
@@ -48,27 +48,6 @@ class SettingsPage {
             )
         );
 
-        const inactiveBtn = createElement(
-            "button",
-            {
-                class: "settings-btn",
-                events: {
-                    click: (event) => {
-                        document
-                            .querySelector(".modal")
-                            .classList.remove("hide");
-                        document
-                            .querySelector(".inactive-account-caution")
-                            .classList.remove("hide");
-                        document
-                            .querySelector(".settings-modal-confirm-btn")
-                            .classList.remove("hide");
-                    },
-                },
-            },
-            i18next.t("settings_inactive")
-        );
-
         const editProfileSection = createElement(
             "section",
             { class: "settings-section" },
@@ -93,7 +72,7 @@ class SettingsPage {
             "div",
             { class: "settings-sections" },
             editProfileSection,
-            twoAuthSection,
+            twoAuthSection
         );
 
         const main = createElement(
