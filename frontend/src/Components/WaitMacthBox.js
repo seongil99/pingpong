@@ -24,7 +24,16 @@ function createMessageModal(message,callback,socket) {
             class: "btn btn-secondary",
             "data-bs-dismiss": "modal",
 			events: {
-				click: callback ? callback : null
+				click: ()=>{
+                    modalInstance.dispose();
+                    modal.parentElement.removeChild(modal);
+                    const btContainer = document.getElementById("match-btn-container");
+                    console.log("call remove");
+                    btContainer.classList.toggle("hide");
+                    localStorage.setItem("matchType", "");
+                    localStorage.setItem("tid", "");
+                    localStorage.setItem("gameId","");
+                }
 			}
         },
         "Close"

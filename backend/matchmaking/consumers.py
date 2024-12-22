@@ -27,17 +27,23 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     # ---------------------
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated and not await self.is_duplicate_user(
-            self.user.id
-        ):
+        if self.user.is_authenticated and not await self.is_duplicate_user(self.user):
             await self.accept()
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
+            logger.info(f"User {self.user.username} connected to matchmaking")
         else:
+            logger.info("close called because of duplicate user")
             await self.close()
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await MatchRequest.objects.filter(user=self.user).adelete()
+        if self.current_game_id and self.current_opponent_id:
+            await self.channel_layer.group_send(
+                f"user_{self.current_opponent_id}",
+                {"type": "force_disconnect"},
+            )
 
 
     # ---------------------
@@ -62,6 +68,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                             "game_id": game_id,
                         }
                     )
+                    await self.close()
                     return
                 gamemode = content["gamemode"]
                 opponent = await self.find_match(gamemode)
@@ -129,14 +136,16 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     },
                 )
                 await self.create_one_versus_one_game(self.user, opponent)
-                await self.channel_layer.group_send(
-                    f"user_{opponent_id}",
-                    {"type": "force_disconnect"},
-                )
                 await MatchRequest.objects.filter(user=self.user).adelete()
                 await self.close()
         except Exception as e:
             await self.send_json({"type": "error", "message": str(e)})
+            if self.current_game_id and self.current_opponent_id:
+                await self.channel_layer.group_send(
+                    f"user_{self.current_opponent_id}",
+                    {"type": "error", "message": f"Opponent error {str(e)}"},
+                )
+            await self.close()
 
     @database_sync_to_async
     def find_match(self, gamemode):
@@ -195,11 +204,12 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def force_disconnect(self, event):
         await MatchRequest.objects.filter(user=self.user).adelete()
+        await self.send_json({"type": "force_disconnect"})
         await self.close()
 
     @database_sync_to_async
-    def is_duplicate_user(self, user_id):
-        return MatchRequest.objects.filter(user_id=user_id).exists()
+    def is_duplicate_user(self, user):
+        return MatchRequest.objects.filter(user=user).exists()
 
     @database_sync_to_async
     def can_user_set_option(self, game_id):

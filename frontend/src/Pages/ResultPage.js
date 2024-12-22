@@ -6,7 +6,7 @@ class TournamentPage {
   async template(pathParam, queryParam) {
     const [_, path, gameId] = pathParam;
     const checkmatch = localStorage.getItem("matchType");
-    if (checkmatch === "null") window.router.navigate(`/home`, false);
+    if (checkmatch === "null") await window.router.navigate(`/home`, false);
     const type = checkmatch === "PVP" ? "match" : "tournament";
     const data = await getTournamentData(type, gameId);
     const navicontainer = createElement("div", {}, NavBar());
@@ -20,23 +20,12 @@ class TournamentPage {
     );
     const total = createElement("div", {}, navicontainer, main);
 
-    const originalReplaceState = history.replaceState;
-    const urlChangeEvent = new Event("urlchange");
-
-    history.replaceState = function (...args) {
-      originalReplaceState.apply(this, args);
-      window.dispatchEvent(urlChangeEvent);
-    };
-
-    window.addEventListener("urlchange", (event) => {
-      window.removeEventListener("urlchange");
-      localStorage.setItem("matchType", "null");
-      localStorage.setItem("tid", "null");
-      window.router.navigate(`/home`, false);
-    });
     return total;
   }
-
+  dispose(){
+    localStorage.setItem("matchType", "null");
+    localStorage.setItem("tid", "null"); 
+  }
   createHeader(data) {
     return createElement(
       "header",

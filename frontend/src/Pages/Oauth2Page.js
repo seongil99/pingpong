@@ -13,7 +13,7 @@ class Oauth2Page {
                 alert("Failed to login");
                 redirectPath = "/login";
             }
-            window.router.navigate(redirectPath, true);
+            await window.router.navigate(redirectPath, true);
         } catch (error) {
             console.error(error);
         }

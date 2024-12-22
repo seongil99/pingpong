@@ -9,11 +9,10 @@ function createFormSwitch(socket) {
         id: "flexSwitchCheckDefault",
         events: {
             change: (event) => {
-                switchStatusText.textContent = event.target.checked ? "공두개" : "기본";
+                switchStatusText.textContent = event.target.checked ? "공두개" : "공하나";
             },
         },
     });
-
     // 스위치 상태 텍스트 생성
     const switchStatusText = createElement(
         "p",
@@ -21,7 +20,7 @@ function createFormSwitch(socket) {
             id: "switchStatusText",
             class: "mt-2 text-muted",
         },
-        "기본"
+        "공하나"
     );
 
     // 스위치 라벨 생성
@@ -44,7 +43,7 @@ function createFormSwitch(socket) {
             events: {
                 click: async () => {
                     console.log("this is secondcallback ",  "hiddenvalue", localStorage.getItem("matchType"));
-                    if (socket) {
+                    if (socket && localStorage.getItem("matchType") !== "Pve") {
                         let message = null;
                         const type = localStorage.getItem("matchType");
                         const gameId = localStorage.getItem("gameId");
@@ -71,18 +70,18 @@ function createFormSwitch(socket) {
                         if (localStorage.getItem("matchType") === "Pve") {
                             console.log("distroyd");
                             const gameId = await PvpRequest(formCheckInput.checked);
-                            const modalElement = document.getElementById("modal-tartget");
-                            // 부모 엘리먼트를 얻기
-                            const parentElement = modalElement.parentElement;
-                            // 부모 엘리먼트에서 자식 제거
-                            if (parentElement) {
-                                parentElement.removeChild(modalElement);
-                            }
-                            // Bootstrap 모달 인스턴스 얻기
-                            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                            modalInstance.dispose();
+                            // const modalElement = document.getElementById("modal-tartget");
+                            // // 부모 엘리먼트를 얻기
+                            // const parentElement = modalElement.parentElement;
+                            // // 부모 엘리먼트에서 자식 제거
+                            // if (parentElement) {
+                            //     parentElement.removeChild(modalElement);
+                            // }
+                            // // Bootstrap 모달 인스턴스 얻기
+                            // const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                            // modalInstance.hide();
                             console.log(gameId);
-                            window.router.navigate(`/playing/${gameId.game_id}`, false);
+                            await window.router.navigate(`/playing/${gameId.game_id}`, false);
                         }
                     }
                 }, // 콜백 실행
