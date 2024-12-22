@@ -70,16 +70,16 @@ function createFormSwitch(socket) {
                         if (localStorage.getItem("matchType") === "Pve") {
                             console.log("distroyd");
                             const gameId = await PvpRequest(formCheckInput.checked);
-                            const modalElement = document.getElementById("modal-tartget");
-                            // 부모 엘리먼트를 얻기
-                            const parentElement = modalElement.parentElement;
-                            // 부모 엘리먼트에서 자식 제거
-                            if (parentElement) {
-                                parentElement.removeChild(modalElement);
-                            }
-                            // Bootstrap 모달 인스턴스 얻기
-                            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                            modalInstance.hide();
+                            // const modalElement = document.getElementById("modal-tartget");
+                            // // 부모 엘리먼트를 얻기
+                            // const parentElement = modalElement.parentElement;
+                            // // 부모 엘리먼트에서 자식 제거
+                            // if (parentElement) {
+                            //     parentElement.removeChild(modalElement);
+                            // }
+                            // // Bootstrap 모달 인스턴스 얻기
+                            // const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                            // modalInstance.hide();
                             console.log(gameId);
                             await window.router.navigate(`/playing/${gameId.game_id}`, false);
                         }

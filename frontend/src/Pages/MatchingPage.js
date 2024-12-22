@@ -178,9 +178,9 @@ class MatchingPage {
       this.toggleButtonContainer();
 
       // 모달 띄우기
-      this.showWaitModal(waitMessage, () => {
+      this.showWaitModal(waitMessage, async () => {
         // Close 시 처리 로직
-        this.cancelMatch();
+        await this.cancelMatch();
         this.toggleButtonContainer();
       });
     });
@@ -216,34 +216,32 @@ class MatchingPage {
    * 웹소켓 연결 함수
    */
   connectWebSocket(callback) {
+    if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+        console.log("소켓 잇고 클로즈 아님");
+        const title = document.getElementById("modal-body-target");
+        if(title)
+            title.textContent = "소켓생성 에러";
+        const bodymsg = document.getElementById("modal-title-content");
+        if(bodymsg)
+            bodymsg.textContent =  "close 하시고 다시 시도해 주세요";
+        return;
+    }
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const endpoint =
-     this.matchType === "PVP" ? "matchmaking" : "tournament/matchmaking";
+    this.matchType === "PVP" ? "matchmaking" : "tournament/matchmaking";
     const wsUrl = `${protocol}://${window.location.host}/api/ws/${endpoint}/`;
-    try{
-        this.socket = new WebSocket(wsUrl);
-    }
-    catch{
-        this.socket = null;
-        console.log("soket open error");
-        const title = document.getElementById("modal-body-target");
-        const bodymsg = document.getElementById("modal-title-content");
-        title.textContent = "소켓생성 에러";
-        bodymsg.textContent =  "close 하시고 다시 시도해 주세요";
-    }
-    if (!this.socket) return;
+    this.socket = new WebSocket(wsUrl);
+
     this.socket.onopen = () => {
       console.log("WebSocket connected.");
-      callback?.();
+        this.requestMatch();
     };
 
     this.socket.onmessage = (event) => this.handleSocketMessage(event);
     // this.socket.onclose = (event) => this.handleSocketClose(event);
     this.socket.onclose = () => console.log("WebSocket closed!");
     this.socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        this.socket = null;
-        console.log("soket open error");
+        console.error("WebSocket error:", error, this.socket);
         const title = document.getElementById("modal-body-target");
         if(title)
             title.textContent = "소켓생성 에러";
@@ -341,20 +339,39 @@ class MatchingPage {
       console.error("WebSocket is not open.");
     }
   }
+  async closeWebSocketAndWait(timeout = 1000) {
+      if (this.socket.readyState === WebSocket.CLOSED) {
+        return;
+      }
+      this.socket.close();
+      let count = 0;
+      // 타임아웃 설정: 지정된 시간이 지나도 닫히지 않으면 실패 처리
+      const waitngId = setTimeout(() => {
+        console.log("close interval start");
+        if(!this.socket || this.socket.readyState === WebSocket.CLOSED || count >5){
+            console.log("socket closed or count out", this.socket.readyState , " " ,count);
+            this.socket = null;
+            clearInterval(waitngId);
+            return;
+        }
+        console.log("close interval count ",count);
+        count++;
+      }, timeout);
 
+  }
+  
   /**
    * 매칭 취소
    */
-  cancelMatch() {
+  async cancelMatch() {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const message = { type: "cancel_match" };
       console.log("cancel match 1", message);
       this.socket.send(JSON.stringify(message));
       console.log("cancel match 2", this.socket.readyState);
-      this.socket.close();
-      console.log("cancel match 2", this.socket.readyState);
-      this.socket == null;
-      console.log("cancel match 2", this.socket);
+      await this.closeWebSocketAndWait();
+    //   this.socket.close();
+      console.log("cancel match 3", this.socket);
       console.log("Match cancel request sent:", message);
     } else {
       console.error("Failed to cancel match.");

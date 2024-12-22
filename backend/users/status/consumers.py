@@ -27,14 +27,14 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
             await self._set_user_online_status(True)
             await self.accept()
             return
-        logger.info("close called")
+        # logger.info("close called")
         await self.close(code=4001)
 
     async def disconnect(self, close_code):
         """
         온라인 상태소켓 연결 해제
         """
-        logger.info("close code: %s", close_code)
+        # logger.info("close code: %s", close_code)
         if self.user.is_authenticated:
             # Mark user as offline
             await self._set_user_online_status(False)
