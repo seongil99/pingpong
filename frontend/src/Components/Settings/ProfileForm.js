@@ -4,10 +4,13 @@ import UpdateUserProfile from "../../Controller/Settings/UpdateUserProfile.js";
 
 const ProfileForm = async () => {
     let data = await fetchUserProfile();
+    let tempImgUrl = null;
+    let currentProfileImg = data.avatar;
     const openFileBtn = createElement(
         "button",
         {
             id: "open-file-btn",
+            type: "button",
             events: {
                 click: () => {
                     const fileInput = document.getElementById(
@@ -25,12 +28,30 @@ const ProfileForm = async () => {
             type: "file",
             id: "edit-profile-img-input",
             accept: "image/*",
+            events: {
+                change: (event) => {
+                    const file = event.target.files[0];
+                    if (tempImgUrl) {
+                        URL.revokeObjectURL(tempImgUrl);
+                    }
+
+                    // 새로 선택된 파일을 임시 URL로 저장
+                    tempImgUrl = URL.createObjectURL(file);
+
+                    // 미리보기 이미지 설정
+                    document.querySelector("#edit-profile-image").src =
+                        tempImgUrl;
+                    tempImgUrl = document.querySelector(
+                        "#edit-profile-image"
+                    ).src;
+                },
+            },
         },
         []
     );
     const editBg = createElement(
         "button",
-        { class: "edit-bg hide" },
+        { type: "button", class: "edit-bg hide" },
         openFileBtn
     );
     const realImg = createElement(
@@ -72,7 +93,7 @@ const ProfileForm = async () => {
         {
             type: "button",
             class: "settings-btn profile-edit-btn",
-            id : "btn_edit",
+            id: "btn_edit",
             events: {
                 click: (event) => {
                     document
@@ -109,6 +130,9 @@ const ProfileForm = async () => {
             id: "save-id-btn",
             events: {
                 click: async (event) => {
+                    if (tempImgUrl) {
+                        URL.revokeObjectURL(tempImgUrl);
+                    }
                     document
                         .querySelector(".username-input")
                         .classList.add("hide");
@@ -130,9 +154,13 @@ const ProfileForm = async () => {
         {
             type: "button",
             class: "settings-btn profile-cancel-btn hide",
-            id : "btn_cancel",
+            id: "btn_cancel",
             events: {
                 click: (event) => {
+                    if (tempImgUrl) {
+                        URL.revokeObjectURL(tempImgUrl);
+                    }
+
                     document
                         .querySelector(".profile-save-btn")
                         .classList.add("hide");
@@ -144,6 +172,11 @@ const ProfileForm = async () => {
                         .querySelector(".username-input")
                         .classList.add("hide");
                     event.target.classList.add("hide");
+                    document.querySelector("#edit-profile-img-input").value =
+                        "";
+                    document.querySelector(".username-input").value = "";
+                    document.querySelector("#edit-profile-image").src =
+                        currentProfileImg;
                 },
             },
         },
@@ -183,7 +216,6 @@ const ProfileForm = async () => {
                         formData.append("username", usernameInput);
                     }
                     const userData = await UpdateUserProfile(formData);
-                    console.log(userData);
                     document.querySelector(
                         "#edit-profile-image"
                     ).src = `${userData.avatar}`;
