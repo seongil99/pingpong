@@ -27,13 +27,13 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
     # ---------------------
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated and not await self.is_duplicate_user(
-            self.user.id
-        ):
+        if self.user.is_authenticated and not await self.is_duplicate_user(self.user):
             await self.accept()
             self.group_name = f"user_{self.user.id}"
             await self.channel_layer.group_add(self.group_name, self.channel_name)
+            logger.info(f"User {self.user.username} connected to matchmaking")
         else:
+            logger.info("close called because of duplicate user")
             await self.close()
 
     async def disconnect(self, close_code):
@@ -208,8 +208,8 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
         await self.close()
 
     @database_sync_to_async
-    def is_duplicate_user(self, user_id):
-        return MatchRequest.objects.filter(user_id=user_id).exists()
+    def is_duplicate_user(self, user):
+        return MatchRequest.objects.filter(user=user).exists()
 
     @database_sync_to_async
     def can_user_set_option(self, game_id):
