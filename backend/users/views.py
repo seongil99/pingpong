@@ -141,7 +141,9 @@ class MyCurrentGameView(APIView):
         if tournament:
             # 해당 토너먼트의 가장 최근 TournamentGame
             tournament_game = (
-                TournamentGame.objects.filter(tournament_id=tournament)
+                TournamentGame.objects.filter(
+                    tournament_id=tournament, status__in=["pending", "ongoing"]
+                )
                 .order_by("-created_at")
                 .first()
             )

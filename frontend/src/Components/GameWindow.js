@@ -303,8 +303,9 @@ class AudioManager {
 
   // 모든 사운드 정지
   cleanup() {
-    this.stopAll();
+    // this.stopAll();
     this.sounds.forEach(({ sound }) => {
+      sound.stop();
       sound.disconnect();
       sound.buffer = null;
     });
@@ -322,14 +323,11 @@ class AudioManager {
 
     this.initialized = false;
   }
-
-  dispose() {
-    this.cleanup();
-  }
 }
 
 class PingPongClient {
   constructor(socket, gameId) {
+    console.log("init pingpongclient");
     this.gameId = gameId;
     this.socket = socket;
     this.scene = new THREE.Scene();
@@ -385,6 +383,10 @@ class PingPongClient {
     this.animate();
     this.setupSocketListeners();
   }
+  dispose() {
+    this.audio.cleanup();
+  }
+
   makeWindow() {
     // 기존 pushState와 replaceState를 보존
     return createElement(
@@ -728,8 +730,9 @@ class PingPongClient {
         this.playerOne.material.color.setHex(this.initColor[0]);
         this.playerTwo.material.color.setHex(this.initColor[1]);
       } else if (gameState.type === "gameWait") {
-      } else if (gameState.type === "sound") {
+        console.log("gameWait", gameState);
         this.gameStart = WAIT_GAME;
+      } else if (gameState.type === "sound") {
         if (gameState.sound == "ballToWall" && this.audio.sounds.has("ball")) {
           this.audio.play("nomal_ball");
         }

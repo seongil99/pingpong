@@ -208,6 +208,8 @@ class GameIO(socketio.AsyncNamespace):
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
         user = session["user"]
         user_1, user_2 = await get_game_users(game_id)
+        if user is None:
+            return False
         if user in [user_1, user_2]:
             logger.info("Authorization success: %s in %s", user, game_id)
             return True
@@ -266,7 +268,7 @@ class GameIO(socketio.AsyncNamespace):
 
     async def _single_player_end(self, game_id, sid):
         game_state = game_state_db.load_game_state(game_id)
-        await socket_send(game_state["render_data"], "gameEnd", game_id)
+        await socket_send(game_state["render_data"], "gameEnd", game_id, "")
         logger.info("Single player game end")
         game_state["gameStart"] = False
         session = await sio.get_session(sid, namespace=DEFAULT_NAMESPACE)
@@ -275,8 +277,8 @@ class GameIO(socketio.AsyncNamespace):
             game = await PingPongHistory.objects.aget(id=game_id)
             logger.info("Game ended: %s", game_id)
             await OneVersusOneGame.objects.filter(game_id=game_id).adelete()
-            if self._get_tournament_id(game) is not None:
-                await server.update_tournament(game, user.id)
+            if await self._get_tournament_id(game) is not None:
+                await sync_to_async(server.update_tournament)(game, user.id)
             else:
                 await server.save_game_history(game_state, user.id)
         except Exception as e:

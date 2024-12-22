@@ -27,6 +27,7 @@ class Tournament(models.Model):
             (2, 2),
         ],
     )  # 0: pending, 1: 1st round, 2: 2nd round, 3: 3rd round
+    current_game = models.IntegerField(default=1)
     round_1_winner = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="round_1_winner", null=True
     )
@@ -75,10 +76,16 @@ class TournamentGame(models.Model):
     tournament_id = models.ForeignKey(Tournament, on_delete=models.CASCADE)
     tournament_round = models.IntegerField(choices=[(0, 0), (1, 1), (2, 2)])
     user_1 = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="tournament_game_player_one"
+        User,
+        on_delete=models.CASCADE,
+        related_name="tournament_game_player_one",
+        null=True,
     )
     user_2 = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="tournament_game_player_two"
+        User,
+        on_delete=models.CASCADE,
+        related_name="tournament_game_player_two",
+        null=True,
     )
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
