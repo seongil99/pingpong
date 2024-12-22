@@ -1,6 +1,8 @@
 const data = {
     English: {
         translation: {
+            auth_page_title:
+                "Access the Authenticator App where 2FA is registered and enter the code number.",
             nav_home: "Home",
             nav_profile: "Profile",
             nav_settings: "Settings",
@@ -39,7 +41,7 @@ const data = {
             settings_enable_2fa: "Enable 2FA",
             settings_disable_2fa: "Disable 2FA",
             settings_enable_failed_2fa: "2FA enable failed!",
-            settings_disable_failed_2fa: "MFA disable failed!",
+            settings_disable_failed_2fa: "2FA disable failed!",
             settings_modal_cancel_btn: "Cancel",
             settings_modal_confirm_btn: "Confirm",
             settings_modal_prev_btn: "Prev",
@@ -79,6 +81,8 @@ const data = {
     },
     한국어: {
         translation: {
+            auth_page_title:
+                "2FA를 등록한 Authenticator App에 접속해서 코드번호를 입력하세요",
             nav_home: "홈",
             nav_profile: "프로필",
             nav_settings: "설정",
@@ -157,6 +161,8 @@ const data = {
     },
     日本語: {
         translation: {
+            auth_page_title:
+                "2FAを登録したAuthenticatorアプリにアクセスして、コード番号を入力してください。",
             nav_home: "ホーム",
             nav_profile: "プロフィール",
             nav_settings: "設定",

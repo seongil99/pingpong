@@ -116,15 +116,21 @@ class MatchingPage {
         const title = createElement(
             "h2",
             { id: "matching-page-title" },
-            "Matching Page"
+            i18next.t("matching_page_title")
         );
 
-        const pvpButton = this.createMatchButton("PVP", "waiting for PvP User");
+        const pvpButton = this.createMatchButton(
+            "PVP",
+            i18next.t("matching_waiting_pvp")
+        );
         const tournamentButton = this.createMatchButton(
             "tournament",
-            "waiting for Tournament Users"
+            i18next.t("matching_waiting_tournament")
         );
-        const pveButton = this.createMatchButton("Pve", "waiting for start");
+        const pveButton = this.createMatchButton(
+            "Pve",
+            i18next.t("matching_waiting_pve")
+        );
 
         const buttonContainer = createElement(
             "div",
@@ -251,7 +257,6 @@ class MatchingPage {
 
     async navigateToGame(gameId) {
         if (this.waitModal) {
-            console.log("modal distroryd");
             this.waitModal.modal.dispose();
             this.container.removeChild(this.waitModal.element);
             this.waitModal = null;

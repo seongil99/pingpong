@@ -6,7 +6,7 @@ class AuthPage {
         const TwoFactorAuthTitle = createElement(
             "h1",
             {},
-            "2FA를 등록한 Authenticator App에 접속해서 코드번호를 입력하세요"
+            i18next.t("auth_page_title")
         );
         const authForm = AuthForm();
         const container = createElement(
