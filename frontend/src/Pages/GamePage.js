@@ -1,7 +1,7 @@
 import createElement from "../Utils/createElement.js";
 import { io } from "socket.io-client";
 import PingPongClient from "../Components/GameWindow.js";
-
+import isEnded from "../Controller/Game/IsEnded.js";
 class GamePage {
   constructor() {
     this.socket = null;
@@ -10,7 +10,9 @@ class GamePage {
 
   async template(pathParam, queryParam) {
     const [_, path, gameId] = pathParam;
-
+    const backToHome = await isEnded(gameId);
+    if(backToHome)
+        await window.router.navigate(`/home`, false);
     // 소켓 연결
     this.socket = io("/api/game", {
       reconnection: false,
