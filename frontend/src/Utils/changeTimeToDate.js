@@ -6,9 +6,9 @@ const changeTimeToDate = (milliseconds) => {
     const years = Math.floor(days / 365);
 
     const remainingDays = days % 365;
-    const remainingHours = hours % 365;
-    const remainingMinutes = minutes % 365;
-    const remainingSeconds = seconds % 365;
+    const remainingHours = hours % 24;
+    const remainingMinutes = minutes % 60;
+    const remainingSeconds = seconds % 60;
 
     const yearsText = years ? `${years}년 ` : "";
     const daysText = remainingDays ? `${remainingDays}일 ` : "";

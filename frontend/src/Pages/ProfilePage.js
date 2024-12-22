@@ -292,11 +292,11 @@ class ProfilePage {
                                 {},
                                 `/profile/${userid}/history?offset=${
                                     this.#offset
-                                }&limit=${curLimit}`,
+                                }&limit=${this.#limit}`,
                                 window.location.origin +
                                     `/profile/${userid}/history?offset=${
                                         this.#offset
-                                    }&limit=${curLimit}`
+                                    }&limit=${this.#limit}`
                             );
                         }
                     },
@@ -336,11 +336,11 @@ class ProfilePage {
                                 {},
                                 `/profile/${userid}/history?offset=${
                                     this.#offset
-                                }&limit=${curLimit}`,
+                                }&limit=${this.#limit}`,
                                 window.location.origin +
                                     `/profile/${userid}/history?offset=${
                                         this.#offset
-                                    }&limit=${curLimit}`
+                                    }&limit=${this.#limit}`
                             );
                         }
                     },

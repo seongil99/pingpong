@@ -1,6 +1,6 @@
 import createElement from "../Utils/createElement.js";
 import { io } from "socket.io-client";
-import PingPongClient from "../Components/GameWindow.js";
+import PingPongClient from "../Components/Game/GameWindow.js";
 import isEnded from "../Controller/Game/IsEnded.js";
 class GamePage {
   constructor() {
@@ -41,7 +41,7 @@ class GamePage {
   async dispose() {
     // PingPongClient 정리
     if (this.game) {
-      await this.game.dispose(); 
+      await this.game.dispose();
     }
     // 소켓 연결 해제
     if (this.socket && this.socket.connected) {
