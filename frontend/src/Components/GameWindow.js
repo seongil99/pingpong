@@ -1,45 +1,40 @@
-import createElement from "../Utils/createElement.js";
-import NavBar from "../Components/Navbar.js";
 import * as THREE from "three";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import getCurrentUserGameStatus from "../Controller/Game/GetCurrentUserGameStatus.js";
+import createElement from "../Utils/createElement.js";
 
 const WAIT_GAME = 1;
 const START_GAME = 2;
 const END_GAME = 3;
+
 class ImpactEffect {
   constructor(scene) {
     this.scene = scene;
     this.impacts = [];
     this.settings = {
-      rings: 5, // 동심원 갯수
-      particlesPerRing: 30, // 각 링의 파티클 수
-      startRadius: 2, // 시작 반지름
-      maxRadius: 5, // 최대 반지름
-      expandSpeed: 0.5, // 확장 속도
-      duration: 100, // 지속 시간 (ms)
+      rings: 5,
+      particlesPerRing: 30,
+      startRadius: 2,
+      maxRadius: 5,
+      expandSpeed: 0.5,
+      duration: 100,
       colors: [0xfd0140, 0xff140, 0xfb9b2e, 0xf78180],
-      particleSize: 0.5, // 파티클 크기
-      fadeSpeed: 0.02, // 페이드아웃 속도
-      rotationSpeed: 1, // 회전 속도
-      verticalSpeed: 0.1, // 수직 이동 속도
-      thickness: 0.5, // 각 링의 두께a
+      particleSize: 0.5,
+      fadeSpeed: 0.02,
+      rotationSpeed: 1,
+      verticalSpeed: 0.1,
+      thickness: 0.5,
     };
   }
 
   createImpact(position) {
     const rings = [];
-    // console.log(position);
-    // 각 링에 대해
     for (let r = 0; r < this.settings.rings; r++) {
       const geometry = new THREE.BufferGeometry();
       const positions = [];
-      const baseRadius =
-        this.settings.startRadius + r * this.settings.thickness;
+      const baseRadius = this.settings.startRadius + r * this.settings.thickness;
       const particleCount = this.settings.particlesPerRing * (r + 1);
-
-      // 링의 각 파티클 위치 계산
 
       for (let i = 0; i < particleCount; i++) {
         const angle = (i / particleCount) * Math.PI * 2;
@@ -53,7 +48,6 @@ class ImpactEffect {
         new THREE.Float32BufferAttribute(positions, 3)
       );
 
-      // 파티클 머티리얼 생성
       const material = new THREE.PointsMaterial({
         size: this.settings.particleSize,
         color: this.settings.colors[r % this.settings.colors.length],
@@ -76,8 +70,8 @@ class ImpactEffect {
     }
 
     const impact = {
-      rings: rings,
-      position: position,
+      rings,
+      position,
       startTime: Date.now(),
       life: 1.0,
     };
@@ -114,7 +108,6 @@ class ImpactEffect {
             (particleIndex / ring.particleCount) * Math.PI * 2 +
             (ring.rotationOffset + this.settings.rotationSpeed * elapsed);
 
-          // 나선형 효과를 위한 반경 변화
           const radiusVariation =
             Math.sin(angle * (ringIndex + 1) + elapsed * 5) * 0.2;
           const currentRadius = baseRadius * (1 + radiusVariation);
@@ -125,40 +118,26 @@ class ImpactEffect {
             impact.position.z + Math.sin(angle) * currentRadius;
         }
 
-        // 수직 이동
         ring.verticalOffset += this.settings.verticalSpeed;
-
-        // 회전
         ring.rotationOffset += this.settings.rotationSpeed * (ringIndex + 1);
-
         ring.object.geometry.attributes.position.needsUpdate = true;
-
-        // 투명도 조절
         ring.object.material.opacity = Math.max(0, 1 - elapsed);
       });
     }
   }
-
-  // 설정 업데이트
-  updateSettings(newSettings) {
-    this.settings = { ...this.settings, ...newSettings };
-  }
 }
 
-// 오디오 관리 클래스
 class AudioManager {
   constructor(camera) {
     this.camera = camera;
     this.audioContext = null;
     this.listener = null;
-    this.sounds = new Map(); // 여러 사운드 관리를 위한 Map
+    this.sounds = new Map();
     this.audioLoader = null;
     this.initialized = false;
     this.initializationPromise = null;
-    this.isinit = false;
   }
 
-  // 초기화
   async init() {
     if (this.initializationPromise) {
       return this.initializationPromise;
@@ -167,62 +146,46 @@ class AudioManager {
     this.initializationPromise = new Promise((resolve) => {
       const handleInteraction = async () => {
         if (this.initialized) return;
-
-        // AudioContext 초기화
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.audioContext = new AudioContext();
 
-        // Three.js 오디오 컴포넌트 초기화
         this.listener = new THREE.AudioListener();
         this.audioLoader = new THREE.AudioLoader();
         this.camera.add(this.listener);
 
-        // suspended 상태인 경우 resume
         if (this.audioContext.state === "suspended") {
           await this.audioContext.resume();
         }
         this.initialized = true;
-        await this.loadSound(
-          "ball",
+
+        // 예시로 4개 사운드 로드
+        await this.loadSound("ball",
           "https://raw.githubusercontent.com/alsksssass/ft_pingpong/master/public/localdata/sound/ball.mp3",
-          {
-            loop: false,
-            volume: 0.9,
-          }
+          { loop: false, volume: 0.9 }
         );
-        await this.loadSound(
-          "bgm",
+        await this.loadSound("bgm",
           "https://raw.githubusercontent.com/alsksssass/ft_pingpong/master/public/localdata/sound/bgm.mp3",
-          {
-            loop: true,
-            volume: 0.9,
-          }
+          { loop: true, volume: 0.9 }
         );
-        await this.loadSound(
-          "power_ball",
+        await this.loadSound("power_ball",
           "https://raw.githubusercontent.com/alsksssass/ft_pingpong/master/public/localdata/sound/power_ball.mp3",
-          {
-            loop: false,
-            volume: 0.9,
-          }
+          { loop: false, volume: 0.9 }
         );
-        await this.loadSound(
-          "nomal_ball",
+        await this.loadSound("nomal_ball",
           "https://raw.githubusercontent.com/alsksssass/ft_pingpong/master/public/localdata/sound/nomal_ball.mp3",
-          {
-            loop: false,
-            volume: 0.9,
-          }
+          { loop: false, volume: 0.9 }
         );
+
         this.play("bgm");
-        // 이벤트 리스너 제거
+
+        // 등록했던 이벤트 제거
         ["click", "touchstart", "keydown"].forEach((event) => {
           document.removeEventListener(event, handleInteraction);
         });
 
         resolve();
       };
-      // 사용자 상호작용 이벤트 리스너 추가
+
       ["click", "touchstart", "keydown"].forEach((event) => {
         document.addEventListener(event, handleInteraction);
       });
@@ -231,28 +194,20 @@ class AudioManager {
     return this.initializationPromise;
   }
 
-  // 새로운 사운드 로드
   async loadSound(name, path, options = {}) {
     if (!this.initialized) {
-      throw new Error("AudioManager not initialized. Call init() first.");
+      throw new Error("AudioManager not initialized.");
     }
-
     return new Promise((resolve, reject) => {
       this.audioLoader.load(
         path,
         (buffer) => {
           const sound = new THREE.Audio(this.listener);
           sound.setBuffer(buffer);
-
-          // 기본 옵션 설정
           sound.setVolume(options.volume ?? 0.5);
           sound.setLoop(options.loop ?? false);
-          sound.autoplay = name === "bgm" || false;
-          // Map에 사운드 저장
-          this.sounds.set(name, {
-            sound,
-            options: { ...options },
-          });
+          sound.autoplay = name === "bgm";
+          this.sounds.set(name, { sound, options: { ...options } });
           resolve(sound);
         },
         undefined,
@@ -261,73 +216,68 @@ class AudioManager {
     });
   }
 
-  // 사운드 재생
   play(name) {
     const soundData = this.sounds.get(name);
     if (!soundData) {
       console.warn(`Sound "${name}" not found`);
       return;
     }
-
     const { sound } = soundData;
     if (!sound.isPlaying) {
       sound.play();
     }
   }
 
-  // 사운드 정지
   stop(name) {
     const soundData = this.sounds.get(name);
+    console.log("stop sound 1");
     if (!soundData) {
       console.warn(`Sound "${name}" not found`);
       return;
     }
-
+    console.log("stop sound 2");
     const { sound } = soundData;
     if (sound.isPlaying) {
+    console.log("stop sound 3");
       sound.stop();
       sound.disconnect();
     }
   }
 
-  // 볼륨 조절
   setVolume(name, volume) {
     const soundData = this.sounds.get(name);
     if (!soundData) {
       console.warn(`Sound "${name}" not found`);
       return;
     }
-
     soundData.sound.setVolume(Math.max(0, Math.min(1, volume)));
   }
 
-  // 모든 사운드 정지
   cleanup() {
-    // this.stopAll();
-    this.sounds.forEach(({ sound }) => {
-      sound.stop();
+    this.sounds.forEach(({ sound }, soundKey) => {
+      console.log("sound delete", soundKey, sound);
+      if (sound.isPlaying) {
+        sound.stop(soundKey);
+      }
       sound.disconnect();
       sound.buffer = null;
     });
     this.sounds.clear();
-
+  
     if (this.camera && this.listener) {
       this.camera.remove(this.listener);
     }
-
-    // AudioContext 종료
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
-
     this.initialized = false;
   }
+  
 }
 
-class PingPongClient {
+export default class PingPongClient {
   constructor(socket, gameId) {
-    console.log("init pingpongclient");
     this.gameId = gameId;
     this.socket = socket;
     this.scene = new THREE.Scene();
@@ -337,72 +287,115 @@ class PingPongClient {
       0.1,
       1000
     );
+
+    // 오디오 매니저
     this.audio = new AudioManager(this.camera);
-    //bgm play
     this.audio.init();
+
+    // THREE 렌더러
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // 게임 기본 속성
     this.gameWidth = 100;
     this.gameLenth = 250;
     this.initColor = [0xffffff, 0xff0000, 0x000000, 0x0000cc];
     this.gameStart = WAIT_GAME;
-    //두번째 플레이어 확인
     this.secondPlayer = false;
-    //공 갯수
     this.balls = [];
-    // 텍스트
     this.textdata = null;
-    //이펙트
     this.effect = new ImpactEffect(this.scene);
 
-    // 마우스 이벤트 관련 변수
-    this.isDragging = false;
-    this.previousMousePosition = {
-      x: 0,
-      y: 0,
-    };
-    // 카메라 설정
-    this.camSetPosition = true;
+    // 카메라 관련
     this.cameraRadius = 200;
     this.cameraTheta = 1.56;
     this.cameraPhi = 1.03;
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
-    this.updateCameraPosition();
 
+    // 마우스 드래그 관련
+    this.isDragging = false;
+    this.previousMousePosition = { x: 0, y: 0 };
+
+    // **bind 함수**를 클래스 필드에 저장
+    this.onKeyDownBound = this.onKeyDown.bind(this);
+    this.onKeyUpBound = this.onKeyUp.bind(this);
+    this.onMouseDownBound = this.onMouseDown.bind(this);
+    this.onMouseMoveBound = this.onMouseMove.bind(this);
+    this.onMouseUpBound = this.onMouseUp.bind(this);
+    this.onWindowResizeBound = this.onWindowResize.bind(this);
+    this.animate = this.animate.bind(this);
+
+    this.updateCameraPosition();
     this.makeWindow();
     this.setupLights();
     this.setupEventListeners();
 
+    // 오브젝트들
     this.playerOne = this.makeGameBar(0, 6, 100, 1);
     this.playerTwo = this.makeGameBar(0, 6, -100, 0);
     this.ball = this.createBall();
     this.makeTable();
     this.makeLine();
     this.makeGuideLines();
-    this.animate = this.animate.bind(this);
+
+    // 애니메이션 시작
     this.animate();
+
+    // 소켓 리스너 등록
     this.setupSocketListeners();
   }
+
+  // 페이지 떠날 때 정리할 메서드
   dispose() {
+    // 1) 오디오 정리
     this.audio.cleanup();
+
+    // 2) 이벤트 리스너 해제
+    window.removeEventListener("keydown", this.onKeyDownBound, false);
+    window.removeEventListener("keyup", this.onKeyUpBound, false);
+    this.renderer.domElement.removeEventListener(
+      "mousedown",
+      this.onMouseDownBound,
+      false
+    );
+    this.renderer.domElement.removeEventListener(
+      "mousemove",
+      this.onMouseMoveBound,
+      false
+    );
+    this.renderer.domElement.removeEventListener(
+      "mouseup",
+      this.onMouseUpBound,
+      false
+    );
+    window.removeEventListener("resize", this.onWindowResizeBound, false);
+    window.removeEventListener("load", this.onWindowResizeBound, false);
+
+    // 3) Three.js renderer dispose
+    this.renderer.dispose();
+
+    // (추가) 필요하다면 scene 내 geometry/material dispose (체크 후 필요 시)
+    // this.scene.traverse((obj) => {
+    //   if (obj.isMesh) {
+    //     obj.geometry.dispose();
+    //     obj.material.dispose();
+    //   }
+    // });
+
+    console.log("PingPongClient dispose() done.");
   }
 
   makeWindow() {
-    // 기존 pushState와 replaceState를 보존
-    return createElement(
-      "div",
-      { class: "gameWindow" },
-      this.renderer.domElement
-    );
+    return createElement("div", { class: "gameWindow" }, this.renderer.domElement);
   }
+
   makeFont(msg) {
     const loader = new FontLoader();
     loader.load(
-      // '/localdata/helvetiker_regular.typeface.json',
       "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
       (font) => {
         const textGeo = new TextGeometry(msg, {
-          font: font,
+          font,
           size: 10,
           height: 1,
           curveSegments: 1,
@@ -417,11 +410,11 @@ class PingPongClient {
         const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
         const textMesh = new THREE.Mesh(textGeo, material);
         textMesh.position.set(0, 50, 0);
+
         if (this.textdata) {
-          // 기존 텍스트 지오메트리 삭제 및 업데이트
-          this.scene.remove(this.textdata); // 씬에서 텍스트 제거
-          this.textdata.geometry.dispose(); // geometry 메모리 해제
-          this.textdata.material.dispose(); // material 메모리 해제
+          this.scene.remove(this.textdata);
+          this.textdata.geometry.dispose();
+          this.textdata.material.dispose();
           this.textdata = null;
         }
         this.scene.add(textMesh);
@@ -436,77 +429,63 @@ class PingPongClient {
   }
 
   setupEventListeners() {
-    this.onKeyDownBound = this.onKeyDown.bind(this);
-    this.onKeyUpBound = this.onKeyUp.bind(this);
     window.addEventListener("keydown", this.onKeyDownBound, false);
     window.addEventListener("keyup", this.onKeyUpBound, false);
+
     this.renderer.domElement.addEventListener(
       "mousedown",
-      this.onMouseDown.bind(this),
+      this.onMouseDownBound,
       false
     );
     this.renderer.domElement.addEventListener(
       "mousemove",
-      this.onMouseMove.bind(this),
+      this.onMouseMoveBound,
       false
     );
-    this.renderer.domElement.addEventListener(
-      "mouseup",
-      this.onMouseUp.bind(this),
-      false
-    );
-    window.addEventListener("resize", this.onWindowResize.bind(this), false);
-    window.addEventListener("load", this.onWindowResize.bind(this), false);
+    this.renderer.domElement.addEventListener("mouseup", this.onMouseUpBound, false);
+
+    window.addEventListener("resize", this.onWindowResizeBound, false);
+    window.addEventListener("load", this.onWindowResizeBound, false);
   }
 
   onKeyDown(event) {
-    // console.log('keydown', event.key);
     let key = event.key.toUpperCase();
     key = key === "ARROWRIGHT" ? "D" : key === "ARROWLEFT" ? "A" : key;
+
     if (!this.secondPlayer && (key === "A" || key === "D")) {
-      this.socket.emit("keypress", {
-        key: key,
-        pressed: true,
-        who: this.secondPlayer,
-      });
+      this.socket.emit("keypress", { key, pressed: true, who: this.secondPlayer });
     } else if (this.secondPlayer && (key === "A" || key === "D")) {
       this.socket.emit("keypress", {
         key: key === "A" ? "D" : "A",
         pressed: true,
         who: this.secondPlayer,
       });
-    } else if (key === " ")
+    } else if (key === " ") {
       this.socket.emit("keypress", {
         key: " ",
         pressed: true,
         who: this.secondPlayer,
       });
-    else if (key === "M") {
-      if (this.audio.sounds.get("bgm").sound);
-      {
-        this.audio.sounds.get("bgm").sound.isPlaying
-          ? this.audio.stop("bgm")
-          : this.audio.play("bgm");
+    } else if (key === "M") {
+      const bgmData = this.audio.sounds.get("bgm");
+      if (bgmData?.sound) {
+        bgmData.sound.isPlaying ? this.audio.stop("bgm") : this.audio.play("bgm");
       }
     } else if (key === "C") {
       const player = !this.secondPlayer ? this.playerOne : this.playerTwo;
-      const nowIndexColor = this.initColor.indexOf(
-        player.material.color.getHex()
-      );
-      player.material.color.set(
-        this.initColor[
-          nowIndexColor >= this.initColor.length - 1 ? 0 : nowIndexColor + 1
-        ]
-      );
+      const nowIndexColor = this.initColor.indexOf(player.material.color.getHex());
+      const nextColor =
+        nowIndexColor >= this.initColor.length - 1 ? 0 : nowIndexColor + 1;
+      player.material.color.set(this.initColor[nextColor]);
     }
   }
 
   onKeyUp(event) {
     let key = event.key.toUpperCase();
     key = key === "ARROWRIGHT" ? "D" : key === "ARROWLEFT" ? "A" : key;
-    // console.log('keyup', key);
+
     if (!this.secondPlayer && (key === "A" || key === "D")) {
-      this.socket.emit("keypress", { key: key, pressed: false });
+      this.socket.emit("keypress", { key, pressed: false });
     } else if (this.secondPlayer && (key === "A" || key === "D")) {
       this.socket.emit("keypress", {
         key: key === "A" ? "D" : "A",
@@ -517,25 +496,18 @@ class PingPongClient {
 
   onMouseDown(event) {
     this.isDragging = true;
-    this.previousMousePosition = {
-      x: event.clientX,
-      y: event.clientY,
-    };
+    this.previousMousePosition.x = event.clientX;
+    this.previousMousePosition.y = event.clientY;
   }
 
   onMouseMove(event) {
     if (!this.isDragging) return;
-
     const deltaMove = {
       x: event.clientX - this.previousMousePosition.x,
       y: event.clientY - this.previousMousePosition.y,
     };
-
-    this.previousMousePosition = {
-      x: event.clientX,
-      y: event.clientY,
-    };
-
+    this.previousMousePosition.x = event.clientX;
+    this.previousMousePosition.y = event.clientY;
     this.rotateCamera(deltaMove);
   }
 
@@ -549,6 +521,7 @@ class PingPongClient {
     this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi));
     this.updateCameraPosition();
   }
+
   updateCameraPosition() {
     this.camera.position.x =
       this.cameraRadius * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
@@ -559,7 +532,6 @@ class PingPongClient {
   }
 
   onWindowResize() {
-    // console.log('resize');
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -573,20 +545,17 @@ class PingPongClient {
     return ballMesh;
   }
 
-  // 여러 개의 공을 생성하는 메서드
   createBalls(count) {
-    // 기존 공들 제거
+    // 기존 공 제거
     this.balls.forEach((ball) => {
       this.scene.remove(ball);
       ball.geometry.dispose();
       ball.material.dispose();
     });
     this.balls = [];
-
-    // 새로운 공들 생성
+    // 새 공 생성
     for (let i = 0; i < count; i++) {
-      const ball = this.createBall();
-      this.balls.push(ball);
+      this.balls.push(this.createBall());
     }
   }
 
@@ -601,13 +570,9 @@ class PingPongClient {
       gameState.playerTwo.y,
       gameState.playerTwo.z
     );
-
-    // 공의 개수가 변경된 경우 공들을 새로 생성
     if (this.balls.length !== gameState.balls.length) {
       this.createBalls(gameState.balls.length);
     }
-
-    // 각 공의 위치 업데이트
     gameState.balls.forEach((ballData, index) => {
       this.balls[index].position.set(
         ballData.position.x,
@@ -645,14 +610,12 @@ class PingPongClient {
   makeLine() {
     const lineGeometry = new THREE.BoxGeometry(this.gameWidth, 6, 1);
     const lineMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
-    const line = new THREE.Mesh(lineGeometry, lineMaterial);
-    this.scene.add(line);
+    this.scene.add(new THREE.Mesh(lineGeometry, lineMaterial));
   }
 
   makeGuideLines() {
     const guideGeometry = new THREE.BoxGeometry(1, 10, this.gameLenth);
     const guideMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
-
     this.leftGuide = new THREE.Mesh(guideGeometry, guideMaterial);
     this.leftGuide.position.set(-this.gameWidth / 2, 5, 0);
     this.scene.add(this.leftGuide);
@@ -664,13 +627,10 @@ class PingPongClient {
 
   setupSocketListeners() {
     this.socket.on("connect", () => {
-      console.log("Connected to server");
+      console.log("Socket connected");
     });
-
-    this.socket.on("data", (gameState) => {
-      // console.log(gameState.type, gameState);
+    this.socket.on("data", async (gameState) => {
       if (gameState.type === "gameState") {
-        // console.log(gameState);
         this.gameStart = START_GAME;
         this.updateGameState(gameState);
       } else if (gameState.type === "score") {
@@ -680,7 +640,6 @@ class PingPongClient {
             : `${gameState.twoName} ${gameState.score.playerTwo} : ${gameState.score.playerOne} ${gameState.oneName}`
         );
       } else if (gameState.type === "gameStart") {
-        console.log("gameStart");
         this.gameStart = START_GAME;
         this.makeFont(
           !this.secondPlayer
@@ -690,38 +649,42 @@ class PingPongClient {
       } else if (gameState.type === "gameEnd") {
         this.gameStart = END_GAME;
         this.makeFont(gameState.txt);
-        this.textdata.lookAt(this.camera.position);
-        // 게임 종료시 이벤트 리스너 제거
+        await this.dispose();
+        if (this.textdata) {
+          this.textdata.lookAt(this.camera.position);
+        }
         window.removeEventListener("keydown", this.onKeyDownBound, false);
         window.removeEventListener("keyup", this.onKeyUpBound, false);
+        // 간단 예시
         if (localStorage.getItem("matchType") !== "tournament") {
-          if (localStorage.getItem("matchType") === "Pve")
+          if (localStorage.getItem("matchType") === "Pve") {
             window.router.navigate(`/home`, false);
-          else window.router.navigate(`/result/${this.gameId}`, false);
+          } else {
+            window.router.navigate(`/result/${this.gameId}`, false);
+          }
         } else {
-          const pathname = window.location.pathname;
+          // Tournament 경우
           let count = 0;
           const id = setInterval(async () => {
             if (count > 10) {
-              clearInterval(id); // 반복 실행 중지
+              clearInterval(id);
               window.router.navigate(`/home`, false);
               return;
             }
             try {
-              clearInterval(id); // 반복 실행 중지
-              const result = await getCurrentUserGameStatus(); // 비동기 실행
+              clearInterval(id);
+              const result = await getCurrentUserGameStatus();
               if (!result) {
-                const tournament_id = localStorage.getItem("tid");
+                  const tournament_id = localStorage.getItem("tid");
                 window.router.navigate(`/result/${tournament_id}`, false);
-              } else
+            } else {
                 window.router.navigate(`/playing/${result.game_id}`, false);
-              console.log(result);
-            } catch (error) {
-              console.error("Error fetching game status:", error);
+              }
+            } catch (err) {
+              console.error("Error fetching game status:", err);
             }
-
             count++;
-          }, 2000); // 실행 간격 설정 (밀리초)
+          }, 2000);
         }
       } else if (gameState.type === "secondPlayer") {
         this.secondPlayer = true;
@@ -730,14 +693,13 @@ class PingPongClient {
         this.playerOne.material.color.setHex(this.initColor[0]);
         this.playerTwo.material.color.setHex(this.initColor[1]);
       } else if (gameState.type === "gameWait") {
-        console.log("gameWait", gameState);
         this.gameStart = WAIT_GAME;
+        console.log("gameWait", gameState);
       } else if (gameState.type === "sound") {
-        if (gameState.sound == "ballToWall" && this.audio.sounds.has("ball")) {
+        if (gameState.sound === "ballToWall" && this.audio.sounds.has("ball")) {
           this.audio.play("nomal_ball");
         }
       } else if (gameState.type === "effect") {
-        console.log("effect");
         this.effect.createImpact(gameState.op);
         this.audio.play("power_ball");
       }
@@ -753,17 +715,10 @@ class PingPongClient {
     } else if (this.gameStart === WAIT_GAME) {
       this.makeFont("waiting for player!");
     } else if (this.gameStart === END_GAME) {
-      this.textdata.rotation.y += 0.05;
+      if (this.textdata) {
+        this.textdata.rotation.y += 0.05;
+      }
     }
     this.renderer.render(this.scene, this.camera);
   }
 }
-
-// class rendGame{
-// 	async template() {
-// 		const game = new PingPongClient();
-// 		return game.makeWindow();
-// 	}
-// }
-// export default rendGame;
-export default PingPongClient;
