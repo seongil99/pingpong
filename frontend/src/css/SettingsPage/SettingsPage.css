@@ -1,3 +1,9 @@
+#settings-main {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 10px;
+}
+
 .settings-btn {
     font-size: 16px;
     padding: 7px 10px;
