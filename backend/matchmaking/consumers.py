@@ -62,6 +62,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                             "game_id": game_id,
                         }
                     )
+                    await self.close()
                     return
                 gamemode = content["gamemode"]
                 opponent = await self.find_match(gamemode)
@@ -137,6 +138,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                 await self.close()
         except Exception as e:
             await self.send_json({"type": "error", "message": str(e)})
+            await self.close()
 
     @database_sync_to_async
     def find_match(self, gamemode):
