@@ -38,6 +38,11 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if self.current_game_id and self.current_opponent_id:
+            await self.channel_layer.group_send(
+                f"user_{self.current_opponent_id}",
+                {"type": "force_disconnect"},
+            )
 
 
     # ---------------------
@@ -130,14 +135,15 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
                     },
                 )
                 await self.create_one_versus_one_game(self.user, opponent)
-                await self.channel_layer.group_send(
-                    f"user_{opponent_id}",
-                    {"type": "force_disconnect"},
-                )
                 await MatchRequest.objects.filter(user=self.user).adelete()
                 await self.close()
         except Exception as e:
             await self.send_json({"type": "error", "message": str(e)})
+            if self.current_game_id and self.current_opponent_id:
+                await self.channel_layer.group_send(
+                    f"user_{self.current_opponent_id}",
+                    {"type": "error", "message": f"Opponent error {str(e)}"},
+                )
             await self.close()
 
     @database_sync_to_async
@@ -197,6 +203,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def force_disconnect(self, event):
         await MatchRequest.objects.filter(user=self.user).adelete()
+        await self.send_json({"type": "force_disconnect"})
         await self.close()
 
     @database_sync_to_async
