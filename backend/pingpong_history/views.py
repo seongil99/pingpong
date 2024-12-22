@@ -1,3 +1,4 @@
+from django.db import transaction
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -132,3 +133,27 @@ class PingPongHistoryDetailView(APIView):
 
         serializer = PingPongHistorySessionSerializer(history)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PingPongHistoryIsEndedByGameId(APIView):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='game_id',
+                description="PingPongHistory ID",
+                required=True,
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH
+            ),
+        ],
+        responses={"is_ended": bool},
+    )
+    @transaction.atomic
+    def get(self, request, game_id):
+        try:
+            history = PingPongHistory.objects.get(id=game_id)
+            is_ended = history.ended_at is not None
+        except PingPongHistory.DoesNotExist:
+            return Response({"error": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"is_ended": is_ended}, status=status.HTTP_200_OK)
