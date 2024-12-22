@@ -6,7 +6,7 @@ class TournamentPage {
   async template(pathParam, queryParam) {
     const [_, path, gameId] = pathParam;
     const checkmatch = localStorage.getItem("matchType");
-    if (checkmatch === "null") window.router.navigate(`/home`, false);
+    if (checkmatch === "null") await window.router.navigate(`/home`, false);
     const type = checkmatch === "PVP" ? "match" : "tournament";
     const data = await getTournamentData(type, gameId);
     const navicontainer = createElement("div", {}, NavBar());

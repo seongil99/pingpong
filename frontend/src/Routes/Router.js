@@ -27,7 +27,7 @@ class Router {
         ); // 첫 로딩
     }
 
-    navigate(pathname, isRedirect) {
+    async navigate(pathname, isRedirect) {
         isRedirect
             ? window.history.replaceState(
                   {},
@@ -39,7 +39,7 @@ class Router {
                   pathname,
                   window.location.origin + pathname
               );
-        this.render(pathname);
+        await this.render(pathname);
     }
 
     #parseQueryParams(pathname) {
@@ -112,7 +112,7 @@ class Router {
         const [routeMethod, authCheckpath, correctRoute] =
             this.#hasRoute(pathname);
         if (routeMethod === "static" && pathname !== "/oauth2/redirect" && queries.size !== 0) {
-            window.router.navigate(pathname, true);
+            await window.router.navigate(pathname, true);
             return;
         }
         const isAuthorization = await this.#checkAuthorization(authCheckpath);
@@ -121,7 +121,7 @@ class Router {
             if (isAuthorization === ANONYMOUS || isAuthorization === NOLOGIN)
                 redirectPath = "/login";
             else if (isAuthorization === LOGIN) redirectPath = "/home";
-            window.router.navigate(redirectPath, true);
+            await window.router.navigate(redirectPath, true);
             return;
         }
         if(this.currentRouteInstanse && typeof this.currentRouteInstanse.dispose === 'function')

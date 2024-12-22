@@ -320,9 +320,9 @@ class MatchingPage {
   async navigateToGame(gameId) {
     const serverdgameId = await getCurrentUserGameStatus();
     if (!serverdgameId) {
-      window.router.navigate(`/playing/${gameId}`, false);
+      await window.router.navigate(`/playing/${gameId}`, false);
     } else {
-      window.router.navigate(`/playing/${serverdgameId.game_id}`, false);
+      await window.router.navigate(`/playing/${serverdgameId.game_id}`, false);
     }
   }
 

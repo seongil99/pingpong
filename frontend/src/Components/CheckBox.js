@@ -81,7 +81,7 @@ function createFormSwitch(socket) {
                             const modalInstance = bootstrap.Modal.getInstance(modalElement);
                             modalInstance.hide();
                             console.log(gameId);
-                            window.router.navigate(`/playing/${gameId.game_id}`, false);
+                            await window.router.navigate(`/playing/${gameId.game_id}`, false);
                         }
                     }
                 }, // 콜백 실행

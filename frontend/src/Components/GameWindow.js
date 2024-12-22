@@ -649,7 +649,7 @@ export default class PingPongClient {
       } else if (gameState.type === "gameEnd") {
         this.gameStart = END_GAME;
         this.makeFont(gameState.txt);
-        await this.dispose();
+        // await this.dispose();
         if (this.textdata) {
           this.textdata.lookAt(this.camera.position);
         }
@@ -658,9 +658,9 @@ export default class PingPongClient {
         // 간단 예시
         if (localStorage.getItem("matchType") !== "tournament") {
           if (localStorage.getItem("matchType") === "Pve") {
-            window.router.navigate(`/home`, false);
+            await window.router.navigate(`/home`, false);
           } else {
-            window.router.navigate(`/result/${this.gameId}`, false);
+            await window.router.navigate(`/result/${this.gameId}`, false);
           }
         } else {
           // Tournament 경우
@@ -668,7 +668,7 @@ export default class PingPongClient {
           const id = setInterval(async () => {
             if (count > 10) {
               clearInterval(id);
-              window.router.navigate(`/home`, false);
+              await window.router.navigate(`/home`, false);
               return;
             }
             try {
@@ -676,9 +676,9 @@ export default class PingPongClient {
               const result = await getCurrentUserGameStatus();
               if (!result) {
                   const tournament_id = localStorage.getItem("tid");
-                window.router.navigate(`/result/${tournament_id}`, false);
+                await window.router.navigate(`/result/${tournament_id}`, false);
             } else {
-                window.router.navigate(`/playing/${result.game_id}`, false);
+                await window.router.navigate(`/playing/${result.game_id}`, false);
               }
             } catch (err) {
               console.error("Error fetching game status:", err);

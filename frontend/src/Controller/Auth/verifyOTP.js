@@ -15,7 +15,7 @@ const verifyOTP = async (otp) => {
             return ;
         }
         alert("2FA verification successful!");
-        window.router.navigate("/home", true);
+        await window.router.navigate("/home", true);
     } catch (error) {
         console.error("Error:", error);
         document.getElementById("error-message").textContent =
