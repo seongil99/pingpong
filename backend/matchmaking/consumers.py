@@ -38,6 +38,7 @@ class MatchmakingConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await MatchRequest.objects.filter(user=self.user).adelete()
         if self.current_game_id and self.current_opponent_id:
             await self.channel_layer.group_send(
                 f"user_{self.current_opponent_id}",
